@@ -1,0 +1,859 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\presentation\\components\\pages\\conocimiento\\baseconocimiento.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:presentation\\components\\pages\\conocimiento\\baseconocimiento.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\presentation\\components\\pages\\spoc\\panelspoc.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:presentation\\components\\pages\\spoc\\panelspoc.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\presentation\\components\\pages\\incidentes\\crearincidente.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:presentation\\components\\pages\\incidentes\\crearincidente.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\dtos\\incidentedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\dtos\\incidentedto.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\presentation\\components\\pages\\incidentes\\misincidentes.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:presentation\\components\\pages\\incidentes\\misincidentes.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\presentation\\components\\pages\\tecnico\\misasignaciones.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:presentation\\components\\pages\\tecnico\\misasignaciones.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\presentation\\components\\pages\\incidentes\\detalleincidente.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:presentation\\components\\pages\\incidentes\\detalleincidente.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\presentation\\components\\pages\\incidentes\\listaincidentes.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:presentation\\components\\pages\\incidentes\\listaincidentes.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\presentation\\components\\pages\\home.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:presentation\\components\\pages\\home.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\presentation\\components\\layout\\navmenu.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:presentation\\components\\layout\\navmenu.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\presentation\\controllers\\escalamientocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:presentation\\controllers\\escalamientocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\application\\services\\escalamientoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:application\\services\\escalamientoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\application\\services\\conocimientoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:application\\services\\conocimientoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\application\\services\\notificacionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:application\\services\\notificacionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\application\\services\\asignacionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:application\\services\\asignacionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\interfaces\\iservices\\iasignacionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\interfaces\\iservices\\iasignacionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\entities\\asignacion.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\entities\\asignacion.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\presentation\\controllers\\asignacionescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:presentation\\controllers\\asignacionescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\interfaces\\irepositories\\iincidenterepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\interfaces\\irepositories\\iincidenterepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\infrastructure\\data\\repositories\\usuariorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:infrastructure\\data\\repositories\\usuariorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\infrastructure\\data\\repositories\\incidenterepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:infrastructure\\data\\repositories\\incidenterepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\interfaces\\iservices\\iescalamientoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\interfaces\\iservices\\iescalamientoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\presentation\\controllers\\usuarioscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:presentation\\controllers\\usuarioscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\presentation\\controllers\\conocimientocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:presentation\\controllers\\conocimientocontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\presentation\\controllers\\notificacionescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:presentation\\controllers\\notificacionescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\presentation\\controllers\\incidentescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:presentation\\controllers\\incidentescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\infrastructure\\data\\repositories\\conocimientorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:infrastructure\\data\\repositories\\conocimientorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\infrastructure\\data\\repositories\\notificacionrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:infrastructure\\data\\repositories\\notificacionrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\infrastructure\\data\\repositories\\asignacionrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:infrastructure\\data\\repositories\\asignacionrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\infrastructure\\data\\repositories\\repository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:infrastructure\\data\\repositories\\repository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\presentation\\components\\_imports.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:presentation\\components\\_imports.razor||{40D31677-CBC0-4297-A9EF-89D907823A98}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\infrastructure\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:infrastructure\\data\\appdbcontext.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\interfaces\\iservices\\inotificacionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\interfaces\\iservices\\inotificacionservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\interfaces\\iservices\\iconocimientoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\interfaces\\iservices\\iconocimientoservice.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\interfaces\\irepositories\\irepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\interfaces\\irepositories\\irepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\entities\\conocimiento.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\entities\\conocimiento.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\entities\\categoria.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\entities\\categoria.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\entities\\estado.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\entities\\estado.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\entities\\historial.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\entities\\historial.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\entities\\incidente.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\entities\\incidente.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\entities\\nivelsoporte.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\entities\\nivelsoporte.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\entities\\notificacion.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\entities\\notificacion.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\entities\\rol.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\entities\\rol.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\entities\\usuario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\entities\\usuario.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\fisei.incidentes.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:fisei.incidentes.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\interfaces\\irepositories\\iusuariorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\interfaces\\irepositories\\iusuariorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\interfaces\\irepositories\\iconocimientorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\interfaces\\irepositories\\iconocimientorepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\interfaces\\irepositories\\iasignacionrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\interfaces\\irepositories\\iasignacionrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|c:\\users\\usuario\\documents\\ihc\\fisei.incidentes\\core\\interfaces\\irepositories\\inotificacionrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{A218A83E-36FE-4BE8-A57F-99E27F638A78}|FISEI.Incidentes.csproj|solutionrelative:core\\interfaces\\irepositories\\inotificacionrepository.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 5,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 3,
+              "Title": "Program.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Program.cs",
+              "RelativeDocumentMoniker": "Program.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Program.cs",
+              "RelativeToolTip": "Program.cs",
+              "ViewState": "AgIAACUAAAAAAAAAAAAQwB8AAAAUAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-12T00:02:20.334Z",
+              "IsPinned": true
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{aa2115a1-9712-457b-9047-dbb71ca2cdd2}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{0ad07096-bba9-4900-a651-0598d26f6d24}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "PanelSPOC.razor",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\Pages\\SPOC\\PanelSPOC.razor",
+              "RelativeDocumentMoniker": "Presentation\\Components\\Pages\\SPOC\\PanelSPOC.razor",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\Pages\\SPOC\\PanelSPOC.razor",
+              "RelativeToolTip": "Presentation\\Components\\Pages\\SPOC\\PanelSPOC.razor",
+              "ViewState": "AgIAABABAAAAAAAAAADwvwMAAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-11-15T00:09:03.483Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "BaseConocimiento.razor",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\Pages\\Conocimiento\\BaseConocimiento.razor",
+              "RelativeDocumentMoniker": "Presentation\\Components\\Pages\\Conocimiento\\BaseConocimiento.razor",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\Pages\\Conocimiento\\BaseConocimiento.razor",
+              "RelativeToolTip": "Presentation\\Components\\Pages\\Conocimiento\\BaseConocimiento.razor",
+              "ViewState": "AgIAAAcBAAAAAAAAAADwvwgBAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-11-15T00:09:46.105Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 49,
+              "Title": "INotificacionRepository.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IRepositories\\INotificacionRepository.cs",
+              "RelativeDocumentMoniker": "Core\\Interfaces\\IRepositories\\INotificacionRepository.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IRepositories\\INotificacionRepository.cs",
+              "RelativeToolTip": "Core\\Interfaces\\IRepositories\\INotificacionRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-18T14:01:01.651Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 48,
+              "Title": "IAsignacionRepository.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IRepositories\\IAsignacionRepository.cs",
+              "RelativeDocumentMoniker": "Core\\Interfaces\\IRepositories\\IAsignacionRepository.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IRepositories\\IAsignacionRepository.cs",
+              "RelativeToolTip": "Core\\Interfaces\\IRepositories\\IAsignacionRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-18T14:00:45.869Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 47,
+              "Title": "IConocimientoRepository.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IRepositories\\IConocimientoRepository.cs",
+              "RelativeDocumentMoniker": "Core\\Interfaces\\IRepositories\\IConocimientoRepository.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IRepositories\\IConocimientoRepository.cs",
+              "RelativeToolTip": "Core\\Interfaces\\IRepositories\\IConocimientoRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-18T14:00:29.413Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 46,
+              "Title": "IUsuarioRepository.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IRepositories\\IUsuarioRepository.cs",
+              "RelativeDocumentMoniker": "Core\\Interfaces\\IRepositories\\IUsuarioRepository.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IRepositories\\IUsuarioRepository.cs",
+              "RelativeToolTip": "Core\\Interfaces\\IRepositories\\IUsuarioRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAsAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-18T14:00:07.524Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "CrearIncidente.razor",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\Pages\\Incidentes\\CrearIncidente.razor",
+              "RelativeDocumentMoniker": "Presentation\\Components\\Pages\\Incidentes\\CrearIncidente.razor",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\Pages\\Incidentes\\CrearIncidente.razor",
+              "RelativeToolTip": "Presentation\\Components\\Pages\\Incidentes\\CrearIncidente.razor",
+              "ViewState": "AgIAAJwAAAAAAAAAAAAAwK0AAAAXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-11-14T23:46:59.384Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "IncidenteDTO.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\DTOs\\IncidenteDTO.cs",
+              "RelativeDocumentMoniker": "Core\\DTOs\\IncidenteDTO.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\DTOs\\IncidenteDTO.cs",
+              "RelativeToolTip": "Core\\DTOs\\IncidenteDTO.cs",
+              "ViewState": "AgIAAB4AAAAAAAAAAAAowAIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T18:05:21.246Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 5,
+              "Title": "MisIncidentes.razor",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\Pages\\Incidentes\\MisIncidentes.razor",
+              "RelativeDocumentMoniker": "Presentation\\Components\\Pages\\Incidentes\\MisIncidentes.razor",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\Pages\\Incidentes\\MisIncidentes.razor",
+              "RelativeToolTip": "Presentation\\Components\\Pages\\Incidentes\\MisIncidentes.razor",
+              "ViewState": "AgIAAKoAAAAAAAAAAAAiwLgAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-11-15T00:15:37.743Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
+              "Title": "MisAsignaciones.razor",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\Pages\\Tecnico\\MisAsignaciones.razor",
+              "RelativeDocumentMoniker": "Presentation\\Components\\Pages\\Tecnico\\MisAsignaciones.razor",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\Pages\\Tecnico\\MisAsignaciones.razor",
+              "RelativeToolTip": "Presentation\\Components\\Pages\\Tecnico\\MisAsignaciones.razor",
+              "ViewState": "AgIAAH8AAAAAAAAAAAAAAKYAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-11-15T00:09:24.453Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 7,
+              "Title": "DetalleIncidente.razor",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\Pages\\Incidentes\\DetalleIncidente.razor",
+              "RelativeDocumentMoniker": "Presentation\\Components\\Pages\\Incidentes\\DetalleIncidente.razor",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\Pages\\Incidentes\\DetalleIncidente.razor",
+              "RelativeToolTip": "Presentation\\Components\\Pages\\Incidentes\\DetalleIncidente.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAcAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-11-15T00:08:33.647Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 8,
+              "Title": "ListaIncidentes.razor",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\Pages\\Incidentes\\ListaIncidentes.razor",
+              "RelativeDocumentMoniker": "Presentation\\Components\\Pages\\Incidentes\\ListaIncidentes.razor",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\Pages\\Incidentes\\ListaIncidentes.razor",
+              "RelativeToolTip": "Presentation\\Components\\Pages\\Incidentes\\ListaIncidentes.razor",
+              "ViewState": "AgIAAKsAAAAAAAAAAAAAAMAAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-11-14T23:46:35.827Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "Home.razor",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\Pages\\Home.razor",
+              "RelativeDocumentMoniker": "Presentation\\Components\\Pages\\Home.razor",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\Pages\\Home.razor",
+              "RelativeToolTip": "Presentation\\Components\\Pages\\Home.razor",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-11-14T23:45:33.708Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 10,
+              "Title": "NavMenu.razor",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\Layout\\NavMenu.razor",
+              "RelativeDocumentMoniker": "Presentation\\Components\\Layout\\NavMenu.razor",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\Layout\\NavMenu.razor",
+              "RelativeToolTip": "Presentation\\Components\\Layout\\NavMenu.razor",
+              "ViewState": "AgIAACgAAAAAAAAAAAAUwAIAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-11-14T23:45:05.786Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 12,
+              "Title": "EscalamientoService.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Application\\Services\\EscalamientoService.cs",
+              "RelativeDocumentMoniker": "Application\\Services\\EscalamientoService.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Application\\Services\\EscalamientoService.cs",
+              "RelativeToolTip": "Application\\Services\\EscalamientoService.cs",
+              "ViewState": "AgIAACIAAAAAAAAAAAAuwBIAAAAwAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T23:22:46.681Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 11,
+              "Title": "EscalamientoController.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Controllers\\EscalamientoController.cs",
+              "RelativeDocumentMoniker": "Presentation\\Controllers\\EscalamientoController.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Controllers\\EscalamientoController.cs",
+              "RelativeToolTip": "Presentation\\Controllers\\EscalamientoController.cs",
+              "ViewState": "AgIAABIAAAAAAAAAAAA4wCkAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T23:10:21.563Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 13,
+              "Title": "ConocimientoService.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Application\\Services\\ConocimientoService.cs",
+              "RelativeDocumentMoniker": "Application\\Services\\ConocimientoService.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Application\\Services\\ConocimientoService.cs",
+              "RelativeToolTip": "Application\\Services\\ConocimientoService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAFMAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T23:25:10.411Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 14,
+              "Title": "NotificacionService.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Application\\Services\\NotificacionService.cs",
+              "RelativeDocumentMoniker": "Application\\Services\\NotificacionService.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Application\\Services\\NotificacionService.cs",
+              "RelativeToolTip": "Application\\Services\\NotificacionService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAGoAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T23:24:56.291Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 15,
+              "Title": "AsignacionService.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Application\\Services\\AsignacionService.cs",
+              "RelativeDocumentMoniker": "Application\\Services\\AsignacionService.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Application\\Services\\AsignacionService.cs",
+              "RelativeToolTip": "Application\\Services\\AsignacionService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAL4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T23:22:26.311Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 18,
+              "Title": "AsignacionesController.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Controllers\\AsignacionesController.cs",
+              "RelativeDocumentMoniker": "Presentation\\Controllers\\AsignacionesController.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Controllers\\AsignacionesController.cs",
+              "RelativeToolTip": "Presentation\\Controllers\\AsignacionesController.cs",
+              "ViewState": "AgIAAIEAAAAAAAAAAIBJwAkAAAAnAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T23:10:06.663Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 16,
+              "Title": "IAsignacionService.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IServices\\IAsignacionService.cs",
+              "RelativeDocumentMoniker": "Core\\Interfaces\\IServices\\IAsignacionService.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IServices\\IAsignacionService.cs",
+              "RelativeToolTip": "Core\\Interfaces\\IServices\\IAsignacionService.cs",
+              "ViewState": "AgIAAAgAAAAAAAAAAAAcwAcAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T18:01:33.085Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 17,
+              "Title": "Asignacion.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\Asignacion.cs",
+              "RelativeDocumentMoniker": "Core\\Entities\\Asignacion.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\Asignacion.cs",
+              "RelativeToolTip": "Core\\Entities\\Asignacion.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-13T17:19:08.156Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 19,
+              "Title": "IIncidenteRepository.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IRepositories\\IIncidenteRepository.cs",
+              "RelativeDocumentMoniker": "Core\\Interfaces\\IRepositories\\IIncidenteRepository.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IRepositories\\IIncidenteRepository.cs",
+              "RelativeToolTip": "Core\\Interfaces\\IRepositories\\IIncidenteRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T18:01:23.864Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 20,
+              "Title": "UsuarioRepository.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Infrastructure\\Data\\Repositories\\UsuarioRepository.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Data\\Repositories\\UsuarioRepository.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Infrastructure\\Data\\Repositories\\UsuarioRepository.cs",
+              "RelativeToolTip": "Infrastructure\\Data\\Repositories\\UsuarioRepository.cs",
+              "ViewState": "AgIAADcAAAAAAAAAAIBZwAcAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T21:21:20.194Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 21,
+              "Title": "IncidenteRepository.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Infrastructure\\Data\\Repositories\\IncidenteRepository.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Data\\Repositories\\IncidenteRepository.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Infrastructure\\Data\\Repositories\\IncidenteRepository.cs",
+              "RelativeToolTip": "Infrastructure\\Data\\Repositories\\IncidenteRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAARAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T21:21:10.715Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 22,
+              "Title": "IEscalamientoService.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IServices\\IEscalamientoService.cs",
+              "RelativeDocumentMoniker": "Core\\Interfaces\\IServices\\IEscalamientoService.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IServices\\IEscalamientoService.cs",
+              "RelativeToolTip": "Core\\Interfaces\\IServices\\IEscalamientoService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAAVAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T18:02:27.924Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 23,
+              "Title": "UsuariosController.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Controllers\\UsuariosController.cs",
+              "RelativeDocumentMoniker": "Presentation\\Controllers\\UsuariosController.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Controllers\\UsuariosController.cs",
+              "RelativeToolTip": "Presentation\\Controllers\\UsuariosController.cs",
+              "ViewState": "AgIAADsAAAAAAAAAAIBJwD0AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T23:10:47.153Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 24,
+              "Title": "ConocimientoController.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Controllers\\ConocimientoController.cs",
+              "RelativeDocumentMoniker": "Presentation\\Controllers\\ConocimientoController.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Controllers\\ConocimientoController.cs",
+              "RelativeToolTip": "Presentation\\Controllers\\ConocimientoController.cs",
+              "ViewState": "AgIAAGkAAAAAAAAAAIBJwGsAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T23:10:39.713Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 25,
+              "Title": "NotificacionesController.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Controllers\\NotificacionesController.cs",
+              "RelativeDocumentMoniker": "Presentation\\Controllers\\NotificacionesController.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Controllers\\NotificacionesController.cs",
+              "RelativeToolTip": "Presentation\\Controllers\\NotificacionesController.cs",
+              "ViewState": "AgIAAFQAAAAAAAAAAIBJwFYAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T23:10:31.033Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 26,
+              "Title": "IncidentesController.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Controllers\\IncidentesController.cs",
+              "RelativeDocumentMoniker": "Presentation\\Controllers\\IncidentesController.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Controllers\\IncidentesController.cs",
+              "RelativeToolTip": "Presentation\\Controllers\\IncidentesController.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABEAAAAQAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T23:08:41.283Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 27,
+              "Title": "ConocimientoRepository.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Infrastructure\\Data\\Repositories\\ConocimientoRepository.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Data\\Repositories\\ConocimientoRepository.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Infrastructure\\Data\\Repositories\\ConocimientoRepository.cs",
+              "RelativeToolTip": "Infrastructure\\Data\\Repositories\\ConocimientoRepository.cs",
+              "ViewState": "AgIAADEAAAAAAAAAAEBVwDUAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T21:21:41.752Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 28,
+              "Title": "NotificacionRepository.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Infrastructure\\Data\\Repositories\\NotificacionRepository.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Data\\Repositories\\NotificacionRepository.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Infrastructure\\Data\\Repositories\\NotificacionRepository.cs",
+              "RelativeToolTip": "Infrastructure\\Data\\Repositories\\NotificacionRepository.cs",
+              "ViewState": "AgIAACkAAAAAAAAAAABRwCwAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T21:21:35.988Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 29,
+              "Title": "AsignacionRepository.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Infrastructure\\Data\\Repositories\\AsignacionRepository.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Data\\Repositories\\AsignacionRepository.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Infrastructure\\Data\\Repositories\\AsignacionRepository.cs",
+              "RelativeToolTip": "Infrastructure\\Data\\Repositories\\AsignacionRepository.cs",
+              "ViewState": "AgIAADYAAAAAAAAAAABRwDkAAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T21:21:29.466Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 30,
+              "Title": "Repository.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Infrastructure\\Data\\Repositories\\Repository.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Data\\Repositories\\Repository.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Infrastructure\\Data\\Repositories\\Repository.cs",
+              "RelativeToolTip": "Infrastructure\\Data\\Repositories\\Repository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAcAAAASAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T21:19:54.999Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 31,
+              "Title": "_Imports.razor",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\_Imports.razor",
+              "RelativeDocumentMoniker": "Presentation\\Components\\_Imports.razor",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Presentation\\Components\\_Imports.razor",
+              "RelativeToolTip": "Presentation\\Components\\_Imports.razor",
+              "ViewState": "AgIAAAwAAAAAAAAAAIBJwAgAAAAXAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000759|",
+              "WhenOpened": "2025-11-14T18:46:57.035Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 32,
+              "Title": "AppDbContext.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Infrastructure\\Data\\AppDbContext.cs",
+              "RelativeDocumentMoniker": "Infrastructure\\Data\\AppDbContext.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Infrastructure\\Data\\AppDbContext.cs",
+              "RelativeToolTip": "Infrastructure\\Data\\AppDbContext.cs",
+              "ViewState": "AgIAAF8AAAAAAAAAAAAmwAEAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-13T17:14:33.305Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 33,
+              "Title": "INotificacionService.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IServices\\INotificacionService.cs",
+              "RelativeDocumentMoniker": "Core\\Interfaces\\IServices\\INotificacionService.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IServices\\INotificacionService.cs",
+              "RelativeToolTip": "Core\\Interfaces\\IServices\\INotificacionService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T18:03:47.564Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 34,
+              "Title": "IConocimientoService.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IServices\\IConocimientoService.cs",
+              "RelativeDocumentMoniker": "Core\\Interfaces\\IServices\\IConocimientoService.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IServices\\IConocimientoService.cs",
+              "RelativeToolTip": "Core\\Interfaces\\IServices\\IConocimientoService.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAkAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T18:04:06.597Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 35,
+              "Title": "IRepository.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IRepositories\\IRepository.cs",
+              "RelativeDocumentMoniker": "Core\\Interfaces\\IRepositories\\IRepository.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Interfaces\\IRepositories\\IRepository.cs",
+              "RelativeToolTip": "Core\\Interfaces\\IRepositories\\IRepository.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA4AAAABAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T18:01:01.634Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 36,
+              "Title": "Conocimiento.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\Conocimiento.cs",
+              "RelativeDocumentMoniker": "Core\\Entities\\Conocimiento.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\Conocimiento.cs",
+              "RelativeToolTip": "Core\\Entities\\Conocimiento.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAUAAAAoAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T18:04:36.568Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 37,
+              "Title": "Categoria.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\Categoria.cs",
+              "RelativeDocumentMoniker": "Core\\Entities\\Categoria.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\Categoria.cs",
+              "RelativeToolTip": "Core\\Entities\\Categoria.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T18:03:03.024Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 38,
+              "Title": "Estado.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\Estado.cs",
+              "RelativeDocumentMoniker": "Core\\Entities\\Estado.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\Estado.cs",
+              "RelativeToolTip": "Core\\Entities\\Estado.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T18:12:25.394Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 39,
+              "Title": "Historial.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\Historial.cs",
+              "RelativeDocumentMoniker": "Core\\Entities\\Historial.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\Historial.cs",
+              "RelativeToolTip": "Core\\Entities\\Historial.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T18:12:28.404Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 40,
+              "Title": "Incidente.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\Incidente.cs",
+              "RelativeDocumentMoniker": "Core\\Entities\\Incidente.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\Incidente.cs",
+              "RelativeToolTip": "Core\\Entities\\Incidente.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T18:12:26.447Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 41,
+              "Title": "NivelSoporte.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\NivelSoporte.cs",
+              "RelativeDocumentMoniker": "Core\\Entities\\NivelSoporte.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\NivelSoporte.cs",
+              "RelativeToolTip": "Core\\Entities\\NivelSoporte.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T18:12:27.528Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 42,
+              "Title": "Notificacion.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\Notificacion.cs",
+              "RelativeDocumentMoniker": "Core\\Entities\\Notificacion.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\Notificacion.cs",
+              "RelativeToolTip": "Core\\Entities\\Notificacion.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T18:12:37.104Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 43,
+              "Title": "Rol.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\Rol.cs",
+              "RelativeDocumentMoniker": "Core\\Entities\\Rol.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\Rol.cs",
+              "RelativeToolTip": "Core\\Entities\\Rol.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T18:12:35.824Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 44,
+              "Title": "Usuario.cs",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\Usuario.cs",
+              "RelativeDocumentMoniker": "Core\\Entities\\Usuario.cs",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\Core\\Entities\\Usuario.cs",
+              "RelativeToolTip": "Core\\Entities\\Usuario.cs",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-11-14T18:12:33.034Z"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 45,
+              "Title": "FISEI.Incidentes.csproj",
+              "DocumentMoniker": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\FISEI.Incidentes.csproj",
+              "RelativeDocumentMoniker": "FISEI.Incidentes.csproj",
+              "ToolTip": "C:\\Users\\USUARIO\\Documents\\IHC\\FISEI.Incidentes\\FISEI.Incidentes.csproj",
+              "RelativeToolTip": "FISEI.Incidentes.csproj",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAEwAAAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
+              "WhenOpened": "2025-11-13T17:16:31.981Z"
+            }
+          ]
+        },
+        {
+          "DockedWidth": 545,
+          "SelectedChildIndex": -1,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{f4e46f1e-cf83-40aa-b568-a627394bc994}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,62 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using FISEI.Incidentes.Core.Entities;
+using FISEI.Incidentes.Core.Interfaces.IRepositories;
+
+namespace FISEI.Incidentes.Presentation.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class UsuariosController : ControllerBase
+    {
+        private readonly IUsuarioRepository _usuarioRepository;
+
+        public UsuariosController(IUsuarioRepository usuarioRepository)
+        {
+            _usuarioRepository = usuarioRepository;
+        }
+
+        /// <summary>
+        /// Obtiene todos los usuarios activos
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Usuario>>> GetUsuarios()
+        {
+            var usuarios = await _usuarioRepository.GetAllAsync();
+            return Ok(usuarios);
+        }
+
+        /// <summary>
+        /// Obtiene un usuario por ID
+        /// </summary>
+        [HttpGet("{id}")]
+        public async Task<ActionResult<Usuario>> GetUsuario(int id)
+        {
+            var usuario = await _usuarioRepository.GetByIdAsync(id);
+            
+            if (usuario == null)
+                return NotFound(new { message = "Usuario no encontrado" });
+
+            return Ok(usuario);
+        }
+
+        /// <summary>
+        /// Obtiene técnicos de un nivel de soporte
+        /// </summary>
+        [HttpGet("tecnicos/nivel/{idNivel}")]
+        public async Task<ActionResult<IEnumerable<Usuario>>> GetTecnicosPorNivel(int idNivel)
+        {
+            var tecnicos = await _usuarioRepository.GetTecnicosPorNivelAsync(idNivel);
+            return Ok(tecnicos);
+        }
+
+        /// <summary>
+        /// Verifica si un usuario es SPOC
+        /// </summary>
+        [HttpGet("{id}/es-spoc")]
+        public async Task<ActionResult<bool>> EsSPOC(int id)
+        {
+            var esSPOC = await _usuarioRepository.EsSPOCAsync(id);
+            return Ok(new { esSPOC });
+        }
+    }
+}

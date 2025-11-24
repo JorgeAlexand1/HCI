@@ -1,0 +1,187 @@
+﻿@page "/crear-incidente"
+@using FISEI.Incidentes.Core.Entities
+@using FISEI.Incidentes.Core.DTOs
+@using FISEI.Incidentes.Core.Interfaces.IRepositories
+@using FISEI.Incidentes.Core.Interfaces.IServices
+@inject IIncidenteRepository IncidenteRepository
+@inject IAsignacionService AsignacionService
+@inject INotificacionService NotificacionService
+@inject NavigationManager Navigation
+@rendermode InteractiveServer
+
+<PageTitle>Crear Incidente - FISEI</PageTitle>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">📝 Crear Nuevo Incidente</h4>
+            </div>
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty(mensajeError))
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        @mensajeError
+                        <button type="button" class="btn-close" @onclick="() => mensajeError = null"></button>
+                    </div>
+                }
+
+                @if (!string.IsNullOrEmpty(mensajeExito))
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle"></i>
+                        @mensajeExito
+                    </div>
+                }
+
+                <EditForm Model="@nuevoIncidente" 
+                          OnValidSubmit="@EnviarFormulario" 
+                          FormName="FormCrearIncidente">
+                    <DataAnnotationsValidator />
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Título *</label>
+                        <InputText class="form-control" @bind-Value="nuevoIncidente.Titulo" 
+                                   placeholder="Ej: Error en el sistema de registro" />
+                        <ValidationMessage For="@(() => nuevoIncidente.Titulo)" class="text-danger" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Descripción *</label>
+                        <InputTextArea class="form-control" @bind-Value="nuevoIncidente.Descripcion" 
+                                       rows="5" placeholder="Describe el problema en detalle..." />
+                        <ValidationMessage For="@(() => nuevoIncidente.Descripcion)" class="text-danger" />
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Categoría *</label>
+                            <InputSelect class="form-select" @bind-Value="nuevoIncidente.IdCategoria">
+                                <option value="0">-- Seleccionar --</option>
+                                <option value="1">Hardware</option>
+                                <option value="2">Software</option>
+                                <option value="3">Red</option>
+                                <option value="4">Acceso</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => nuevoIncidente.IdCategoria)" class="text-danger" />
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Servicio *</label>
+                            <InputSelect class="form-select" @bind-Value="nuevoIncidente.IdServicio">
+                                <option value="0">-- Seleccionar --</option>
+                                <option value="1">Correo Institucional</option>
+                                <option value="2">Sistema Académico</option>
+                                <option value="3">Laboratorios</option>
+                                <option value="4">Internet</option>
+                            </InputSelect>
+                            <ValidationMessage For="@(() => nuevoIncidente.IdServicio)" class="text-danger" />
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i>
+                        Tu incidente será automáticamente asignado a un técnico del nivel N1.
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <button type="button" class="btn btn-secondary" @onclick="Cancelar" disabled="@isSubmitting">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </button>
+                        <button type="submit" class="btn btn-primary" disabled="@isSubmitting">
+                            @if (isSubmitting)
+                            {
+                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                <text>Creando...</text>
+                            }
+                            else
+                            {
+                                <i class="bi bi-check-circle"></i>
+                                <text> Crear Incidente</text>
+                            }
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private CrearIncidenteDTO nuevoIncidente = new() { IdUsuario = 1 }; // TODO: Obtener del contexto de usuario
+    private bool isSubmitting = false;
+    private string? mensajeError;
+    private string? mensajeExito;
+
+    private async Task EnviarFormulario()
+    {
+        isSubmitting = true;
+        mensajeError = null;
+        mensajeExito = null;
+
+        try
+        {
+            // Crear el incidente directamente usando el repositorio
+            var incidente = new Incidente
+            {
+                Titulo = nuevoIncidente.Titulo,
+                Descripcion = nuevoIncidente.Descripcion,
+                IdCategoria = nuevoIncidente.IdCategoria,
+                IdServicio = nuevoIncidente.IdServicio,
+                IdUsuario = nuevoIncidente.IdUsuario,
+                IdEstado = 1, // Abierto
+                IdNivelSoporte = 1, // N1 por defecto
+                FechaCreacion = DateTime.Now
+            };
+
+            Console.WriteLine($"[DEBUG] Creando incidente: {incidente.Titulo}");
+
+            var incidenteCreado = await IncidenteRepository.AddAsync(incidente);
+
+            Console.WriteLine($"[DEBUG] Incidente creado con ID: {incidenteCreado.IdIncidente}");
+
+            // Notificar creación
+            try
+            {
+                await NotificacionService.NotificarNuevoIncidenteAsync(incidenteCreado.IdIncidente);
+                Console.WriteLine("[DEBUG] Notificación enviada");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[WARNING] Error al enviar notificación: {ex.Message}");
+            }
+
+            // Asignar automáticamente
+            try
+            {
+                await AsignacionService.AsignarAutomaticamenteAsync(incidenteCreado.IdIncidente);
+                Console.WriteLine("[DEBUG] Incidente asignado automáticamente");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"[WARNING] Error al asignar incidente: {ex.Message}");
+            }
+
+            mensajeExito = $"✅ Incidente #{incidenteCreado.IdIncidente} creado exitosamente";
+
+            // Esperar 1.5 segundos y redirigir
+            await Task.Delay(1500);
+            Navigation.NavigateTo("/mis-incidentes");
+        }
+        catch (Exception ex)
+        {
+            mensajeError = $"❌ Error al crear el incidente: {ex.Message}";
+            Console.WriteLine($"[ERROR] Error completo: {ex}");
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    private void Cancelar()
+    {
+        Navigation.NavigateTo("/incidentes");
+    }
+}

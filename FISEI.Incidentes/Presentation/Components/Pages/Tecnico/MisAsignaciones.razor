@@ -1,0 +1,167 @@
+﻿@page "/mis-asignaciones"
+@using FISEI.Incidentes.Core.Entities
+@using FISEI.Incidentes.Core.Interfaces.IRepositories
+@using FISEI.Incidentes.Infrastructure.Data.Repositories
+@inject IAsignacionRepository AsignacionRepository
+@inject NavigationManager Navigation
+
+<PageTitle>Mis Asignaciones - FISEI</PageTitle>
+
+<h1 class="mb-4">🔧 Mis Asignaciones</h1>
+
+@if (isLoading)
+{
+    <div class="text-center">
+        <div class="spinner-border" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Resumen -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-center bg-primary text-white">
+                <div class="card-body">
+                    <h3>@asignaciones.Count()</h3>
+                    <p class="mb-0">Total Asignados</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center bg-warning text-dark">
+                <div class="card-body">
+                    <h3>@asignaciones.Count(a => a.Incidente.Estado.Nombre == "Abierto")</h3>
+                    <p class="mb-0">Pendientes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-center bg-success text-white">
+                <div class="card-body">
+                    <h3>@asignaciones.Count(a => a.Incidente.Estado.Nombre == "Cerrado")</h3>
+                    <p class="mb-0">Resueltos</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Asignaciones -->
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">📋 Incidentes Asignados</h5>
+        </div>
+        <div class="card-body">
+            @if (!asignaciones.Any())
+            {
+                <div class="alert alert-info">
+                    No tienes incidentes asignados en este momento.
+                </div>
+            }
+            else
+            {
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Título</th>
+                            <th>Estado</th>
+                            <th>Nivel</th>
+                            <th>Asignado el</th>
+                            <th>Tiempo Transcurrido</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var asignacion in asignaciones.OrderByDescending(a => a.FechaAsignacion))
+                        {
+                            <tr>
+                                <td><strong>#@asignacion.Incidente.IdIncidente</strong></td>
+                                <td>@asignacion.Incidente.Titulo</td>
+                                <td>
+                                    <span class="badge bg-@GetEstadoBadgeColor(asignacion.Incidente.Estado.Nombre)">
+                                        @asignacion.Incidente.Estado.Nombre
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-secondary">N@asignacion.Incidente.IdNivelSoporte</span>
+                                </td>
+                                <td>@asignacion.FechaAsignacion.ToString("dd/MM/yyyy HH:mm")</td>
+                                <td>
+                                    @{
+                                        var tiempo = DateTime.Now - asignacion.FechaAsignacion;
+                                        var color = tiempo.TotalHours > 24 ? "text-danger" : "text-muted";
+                                    }
+                                    <span class="@color">
+                                        @FormatearTiempo(tiempo)
+                                    </span>
+                                </td>
+                                <td>
+                                    <button class="btn btn-sm btn-primary" 
+                                            @onclick="() => VerDetalle(asignacion.Incidente.IdIncidente)">
+                                        <i class="bi bi-eye"></i> Ver
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private List<Asignacion> asignaciones = new();
+    private int idTecnicoActual = 2; // TODO: Obtener del contexto de usuario autenticado
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarAsignaciones();
+    }
+
+    private async Task CargarAsignaciones()
+    {
+        isLoading = true;
+        try
+        {
+            asignaciones = (await AsignacionRepository.GetAsignacionesPorTecnicoAsync(idTecnicoActual)).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private void VerDetalle(int idIncidente)
+    {
+        Navigation.NavigateTo($"/incidente/{idIncidente}");
+    }
+
+    private string GetEstadoBadgeColor(string estado)
+    {
+        return estado switch
+        {
+            "Abierto" => "warning",
+            "En Proceso" => "info",
+            "Cerrado" => "success",
+            _ => "secondary"
+        };
+    }
+
+    private string FormatearTiempo(TimeSpan tiempo)
+    {
+        if (tiempo.TotalHours < 1)
+            return $"{(int)tiempo.TotalMinutes} minutos";
+        else if (tiempo.TotalDays < 1)
+            return $"{(int)tiempo.TotalHours} horas";
+        else
+            return $"{(int)tiempo.TotalDays} días";
+    }
+}

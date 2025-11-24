@@ -1,0 +1,132 @@
+﻿using Microsoft.AspNetCore.Mvc;
+using FISEI.Incidentes.Core.Entities;
+using FISEI.Incidentes.Core.Interfaces.IServices;
+using FISEI.Incidentes.Infrastructure.Data.Repositories;
+
+namespace FISEI.Incidentes.Presentation.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class AsignacionesController : ControllerBase
+    {
+        private readonly IAsignacionService _asignacionService;
+        private readonly IAsignacionRepository _asignacionRepository;
+
+        public AsignacionesController(
+            IAsignacionService asignacionService,
+            IAsignacionRepository asignacionRepository)
+        {
+            _asignacionService = asignacionService;
+            _asignacionRepository = asignacionRepository;
+        }
+
+        /// <summary>
+        /// Obtiene todas las asignaciones
+        /// </summary>
+        [HttpGet]
+        public async Task<ActionResult<IEnumerable<Asignacion>>> GetAsignaciones()
+        {
+            var asignaciones = await _asignacionRepository.GetAllAsync();
+            return Ok(asignaciones);
+        }
+
+        /// <summary>
+        /// Obtiene la asignación activa de un incidente
+        /// </summary>
+        [HttpGet("incidente/{idIncidente}")]
+        public async Task<ActionResult<Asignacion>> GetAsignacionPorIncidente(int idIncidente)
+        {
+            var asignacion = await _asignacionRepository.GetAsignacionActivaPorIncidenteAsync(idIncidente);
+            
+            if (asignacion == null)
+                return NotFound(new { message = "No hay asignación activa para este incidente" });
+
+            return Ok(asignacion);
+        }
+
+        /// <summary>
+        /// Obtiene asignaciones de un técnico
+        /// </summary>
+        [HttpGet("tecnico/{idTecnico}")]
+        public async Task<ActionResult<IEnumerable<Asignacion>>> GetAsignacionesPorTecnico(int idTecnico)
+        {
+            var asignaciones = await _asignacionRepository.GetAsignacionesPorTecnicoAsync(idTecnico);
+            return Ok(asignaciones);
+        }
+
+        /// <summary>
+        /// Asigna automáticamente un incidente (distribución equitativa)
+        /// </summary>
+        [HttpPost("asignar-automatico/{idIncidente}")]
+        public async Task<ActionResult<Asignacion>> AsignarAutomaticamente(int idIncidente)
+        {
+            try
+            {
+                var asignacion = await _asignacionService.AsignarAutomaticamenteAsync(idIncidente);
+                return Ok(asignacion);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Asignación manual por SPOC
+        /// </summary>
+        [HttpPost("asignar-manual")]
+        public async Task<ActionResult<Asignacion>> AsignarManualmente(
+            [FromQuery] int idIncidente, 
+            [FromQuery] int idTecnico, 
+            [FromQuery] int idUsuarioSPOC)
+        {
+            try
+            {
+                var asignacion = await _asignacionService.AsignarManualmenteAsync(idIncidente, idTecnico, idUsuarioSPOC);
+                return Ok(asignacion);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Unauthorized(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Permite a un técnico tomar un incidente sin asignar
+        /// </summary>
+        [HttpPost("tomar/{idIncidente}")]
+        public async Task<ActionResult<Asignacion>> TomarIncidente(int idIncidente, [FromQuery] int idTecnico)
+        {
+            try
+            {
+                var asignacion = await _asignacionService.TomarIncidenteAsync(idIncidente, idTecnico);
+                return Ok(asignacion);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+
+        /// <summary>
+        /// Reasigna un incidente a otro técnico
+        /// </summary>
+        [HttpPut("reasignar")]
+        public async Task<IActionResult> Reasignar([FromQuery] int idIncidente, [FromQuery] int idNuevoTecnico)
+        {
+            try
+            {
+                await _asignacionService.ReasignarAsync(idIncidente, idNuevoTecnico);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+        }
+    }
+}

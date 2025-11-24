@@ -1,0 +1,10 @@
+{
+  "openapi": "3.0.4",
+  "info": {
+    "title": "FISEI Incidentes API",
+    "description": "API para la gestión de incidentes en la FISEI",
+    "version": "v1"
+  },
+  "paths": { },
+  "components": { }
+}

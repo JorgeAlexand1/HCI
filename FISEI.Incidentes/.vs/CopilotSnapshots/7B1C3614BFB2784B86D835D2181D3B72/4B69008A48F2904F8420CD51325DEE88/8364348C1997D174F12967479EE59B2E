@@ -1,0 +1,45 @@
+﻿using Microsoft.EntityFrameworkCore;
+using FISEI.Incidentes.Core.Entities;
+using FISEI.Incidentes.Core.Interfaces.IRepositories;
+
+namespace FISEI.Incidentes.Infrastructure.Data.Repositories
+{
+    public class NotificacionRepository : Repository<Notificacion>, INotificacionRepository
+    {
+        public NotificacionRepository(ApplicationDbContext context) : base(context)
+        {
+        }
+
+        public async Task<IEnumerable<Notificacion>> GetNotificacionesNoLeidasAsync(int idUsuario)
+        {
+            return await _dbSet
+                .Where(n => n.IdUsuarioDestino == idUsuario && !n.Leido)
+                .OrderByDescending(n => n.FechaEnvio)
+                .ToListAsync();
+        }
+
+        public async Task MarcarComoLeidaAsync(int idNotificacion)
+        {
+            var notificacion = await _dbSet.FindAsync(idNotificacion);
+            if (notificacion != null)
+            {
+                notificacion.Leido = true;
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        public async Task MarcarTodasComoLeidasAsync(int idUsuario)
+        {
+            var notificaciones = await _dbSet
+                .Where(n => n.IdUsuarioDestino == idUsuario && !n.Leido)
+                .ToListAsync();
+
+            foreach (var notificacion in notificaciones)
+            {
+                notificacion.Leido = true;
+            }
+
+            await _context.SaveChangesAsync();
+        }
+    }
+}

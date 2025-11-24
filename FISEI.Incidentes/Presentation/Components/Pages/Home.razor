@@ -1,0 +1,149 @@
+﻿@page "/"
+@using FISEI.Incidentes.Core.Interfaces.IRepositories
+@using FISEI.Incidentes.Core.Entities
+@inject IIncidenteRepository IncidenteRepository
+
+<PageTitle>Dashboard - FISEI Incidentes</PageTitle>
+
+<h1 class="mb-4">📊 Dashboard de Incidentes</h1>
+
+@if (isLoading)
+{
+    <div class="text-center">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Tarjetas de Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Total Incidentes</h5>
+                    <h2>@totalIncidentes</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h5 class="card-title">Abiertos</h5>
+                    <h2>@incidentesAbiertos</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <h5 class="card-title">En Proceso</h5>
+                    <h2>@incidentesEnProceso</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Cerrados</h5>
+                    <h2>@incidentesCerrados</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Incidentes Recientes -->
+    <div class="card">
+        <div class="card-header">
+            <h5>Incidentes Recientes</h5>
+        </div>
+        <div class="card-body">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Título</th>
+                        <th>Estado</th>
+                        <th>Nivel</th>
+                        <th>Fecha Creación</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var incidente in incidentesRecientes)
+                    {
+                        <tr>
+                            <td>@incidente.IdIncidente</td>
+                            <td>@incidente.Titulo</td>
+                            <td>
+                                <span class="badge bg-@GetEstadoBadgeColor(incidente.Estado.Nombre)">
+                                    @incidente.Estado.Nombre
+                                </span>
+                            </td>
+                            <td>
+                                <span class="badge bg-secondary">
+                                    N@incidente.IdNivelSoporte
+                                </span>
+                            </td>
+                            <td>@incidente.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                <a href="/incidente/@incidente.IdIncidente" class="btn btn-sm btn-primary">
+                                    Ver Detalle
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}
+
+@code {
+    private bool isLoading = true;
+    private int totalIncidentes;
+    private int incidentesAbiertos;
+    private int incidentesEnProceso;
+    private int incidentesCerrados;
+    private List<Incidente> incidentesRecientes = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        try
+        {
+            var todosIncidentes = await IncidenteRepository.GetAllAsync();
+            totalIncidentes = todosIncidentes.Count();
+            
+            incidentesAbiertos = todosIncidentes.Count(i => i.Estado.Nombre == "Abierto");
+            incidentesEnProceso = todosIncidentes.Count(i => i.Estado.Nombre == "En Proceso");
+            incidentesCerrados = todosIncidentes.Count(i => i.Estado.Nombre == "Cerrado");
+
+            incidentesRecientes = todosIncidentes
+                .OrderByDescending(i => i.FechaCreacion)
+                .Take(10)
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            // TODO: Implementar manejo de errores
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private string GetEstadoBadgeColor(string estado)
+    {
+        return estado switch
+        {
+            "Abierto" => "warning",
+            "En Proceso" => "info",
+            "Cerrado" => "success",
+            "Cancelado" => "danger",
+            _ => "secondary"
+        };
+    }
+}
