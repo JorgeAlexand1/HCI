@@ -1,0 +1,18 @@
+@page "/"
+
+@inject NavigationManager Navigation
+
+@if (!_redirected)
+{
+    <p>Redirigiendo al login…</p>
+}
+
+@code {
+    private bool _redirected;
+
+    protected override void OnInitialized()
+    {
+        _redirected = true;
+        Navigation.NavigateTo("/login", forceLoad: true);
+    }
+}

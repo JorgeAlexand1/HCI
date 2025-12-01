@@ -4,25 +4,35 @@ using System.ComponentModel.DataAnnotations;
 namespace FISEI.Incidentes.Core.DTOs
 {
     /// <summary>
-    /// DTO para creación de incidentes
+    /// DTO para creaciï¿½n de incidentes
     /// </summary>
     public class CrearIncidenteDTO
     {
-        [Required(ErrorMessage = "El título es obligatorio")]
-        [StringLength(200, ErrorMessage = "El título no puede exceder 200 caracteres")]
+        [Required(ErrorMessage = "El tï¿½tulo es obligatorio")]
+        [StringLength(200, ErrorMessage = "El tï¿½tulo no puede exceder 200 caracteres")]
         public string Titulo { get; set; } = null!;
 
-        [Required(ErrorMessage = "La descripción es obligatoria")]
-        [StringLength(1000, ErrorMessage = "La descripción no puede exceder 1000 caracteres")]
+        [Required(ErrorMessage = "La descripciï¿½n es obligatoria")]
+        [StringLength(1000, ErrorMessage = "La descripciï¿½n no puede exceder 1000 caracteres")]
         public string Descripcion { get; set; } = null!;
 
-        [Range(1, int.MaxValue, ErrorMessage = "Debes seleccionar una categoría")]
+        [Range(1, int.MaxValue, ErrorMessage = "Debes seleccionar una categorï¿½a")]
         public int IdCategoria { get; set; }
 
         [Range(1, int.MaxValue, ErrorMessage = "Debes seleccionar un servicio")]
         public int IdServicio { get; set; }
 
         public int IdUsuario { get; set; }
+
+        // ITIL v3: opcionales para priorizaciÃ³n
+        [StringLength(20)]
+        public string? Prioridad { get; set; }
+
+        [StringLength(20)]
+        public string? Impacto { get; set; }
+
+        [StringLength(20)]
+        public string? Urgencia { get; set; }
     }
 
     /// <summary>

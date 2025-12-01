@@ -23,7 +23,6 @@ namespace FISEI.Incidentes.Infrastructure.Data.Repositories
         {
             return await _dbSet
                 .Include(a => a.Usuario)
-                    .ThenInclude(u => u.Rol)
                 .Include(a => a.Incidente)
                 .FirstOrDefaultAsync(a => a.IdIncidente == idIncidente && a.Activo);
         }

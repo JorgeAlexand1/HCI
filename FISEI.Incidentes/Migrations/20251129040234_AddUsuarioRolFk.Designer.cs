@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FISEI.Incidentes.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20251114184816_MigracionCompleta_ITIL_v1")]
-    partial class MigracionCompleta_ITIL_v1
+    [Migration("20251129040234_AddUsuarioRolFk")]
+    partial class AddUsuarioRolFk
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -189,14 +189,24 @@ namespace FISEI.Incidentes.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdIncidente"));
 
+                    b.Property<string>("CausaRaiz")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<string>("Descripcion")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("FechaAsignacion")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("FechaCierre")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaPrimeraRespuesta")
                         .HasColumnType("datetime2");
 
                     b.Property<int>("IdCategoria")
@@ -214,10 +224,29 @@ namespace FISEI.Incidentes.Migrations
                     b.Property<int>("IdUsuario")
                         .HasColumnType("int");
 
+                    b.Property<int?>("IdUsuarioPropietarioActual")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Impacto")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Prioridad")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Resolucion")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<string>("Titulo")
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
+
+                    b.Property<string>("Urgencia")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.HasKey("IdIncidente");
 
@@ -307,6 +336,62 @@ namespace FISEI.Incidentes.Migrations
                     b.ToTable("ROL");
                 });
 
+            modelBuilder.Entity("FISEI.Incidentes.Core.Entities.SLA", b =>
+                {
+                    b.Property<int>("IdSLA")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdSLA"));
+
+                    b.Property<string>("Descripcion")
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("IdServicio")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.HasKey("IdSLA");
+
+                    b.HasIndex("IdServicio");
+
+                    b.ToTable("SLA");
+                });
+
+            modelBuilder.Entity("FISEI.Incidentes.Core.Entities.SLAObjetivo", b =>
+                {
+                    b.Property<int>("IdSLAObjetivo")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("IdSLAObjetivo"));
+
+                    b.Property<int>("IdSLA")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinutosPrimeraRespuesta")
+                        .HasColumnType("int");
+
+                    b.Property<int>("MinutosResolucion")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Prioridad")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.HasKey("IdSLAObjetivo");
+
+                    b.HasIndex("IdSLA");
+
+                    b.ToTable("SLA_OBJETIVO");
+                });
+
             modelBuilder.Entity("FISEI.Incidentes.Core.Entities.Servicio", b =>
                 {
                     b.Property<int>("IdServicio")
@@ -362,8 +447,12 @@ namespace FISEI.Incidentes.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("nvarchar(100)");
 
-                    b.Property<int>("IdRol")
+                    b.Property<int?>("IdRol")
                         .HasColumnType("int");
+
+                    b.Property<string>("IdentityUserId")
+                        .HasMaxLength(450)
+                        .HasColumnType("nvarchar(450)");
 
                     b.Property<string>("Nombre")
                         .IsRequired()
@@ -487,13 +576,30 @@ namespace FISEI.Incidentes.Migrations
                     b.Navigation("Usuario");
                 });
 
+            modelBuilder.Entity("FISEI.Incidentes.Core.Entities.SLA", b =>
+                {
+                    b.HasOne("FISEI.Incidentes.Core.Entities.Servicio", null)
+                        .WithMany()
+                        .HasForeignKey("IdServicio")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("FISEI.Incidentes.Core.Entities.SLAObjetivo", b =>
+                {
+                    b.HasOne("FISEI.Incidentes.Core.Entities.SLA", null)
+                        .WithMany()
+                        .HasForeignKey("IdSLA")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("FISEI.Incidentes.Core.Entities.Usuario", b =>
                 {
                     b.HasOne("FISEI.Incidentes.Core.Entities.Rol", "Rol")
                         .WithMany()
                         .HasForeignKey("IdRol")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("Rol");
                 });

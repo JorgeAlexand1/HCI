@@ -4,11 +4,13 @@ using FISEI.Incidentes.Core.DTOs;
 using FISEI.Incidentes.Core.Interfaces.IServices;
 using FISEI.Incidentes.Infrastructure.Data.Repositories;
 using FISEI.Incidentes.Core.Interfaces.IRepositories;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FISEI.Incidentes.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class IncidentesController : ControllerBase
     {
         private readonly IIncidenteRepository _incidenteRepository;
@@ -64,6 +66,9 @@ namespace FISEI.Incidentes.Presentation.Controllers
                     IdCategoria = incidenteDto.IdCategoria,
                     IdServicio = incidenteDto.IdServicio,
                     IdUsuario = incidenteDto.IdUsuario,
+                    Prioridad = string.IsNullOrWhiteSpace(incidenteDto.Prioridad) ? "P3" : incidenteDto.Prioridad,
+                    Impacto = string.IsNullOrWhiteSpace(incidenteDto.Impacto) ? "Medio" : incidenteDto.Impacto,
+                    Urgencia = string.IsNullOrWhiteSpace(incidenteDto.Urgencia) ? "Media" : incidenteDto.Urgencia,
                     IdEstado = 1, // Abierto por defecto
                     IdNivelSoporte = 1, // N1 por defecto
                     FechaCreacion = DateTime.Now
@@ -71,10 +76,10 @@ namespace FISEI.Incidentes.Presentation.Controllers
 
                 var nuevoIncidente = await _incidenteRepository.AddAsync(incidente);
 
-                // Notificar creación
+                // Notificar creaciï¿½n
                 await _notificacionService.NotificarNuevoIncidenteAsync(nuevoIncidente.IdIncidente);
 
-                // Asignar automáticamente
+                // Asignar automï¿½ticamente
                 await _asignacionService.AsignarAutomaticamenteAsync(nuevoIncidente.IdIncidente);
 
                 return CreatedAtAction(

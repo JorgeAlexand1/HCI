@@ -1,8 +1,10 @@
 ﻿using FISEI.Incidentes.Core.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace FISEI.Incidentes.Infrastructure.Data
 {
+    // DbContext simple basado en el dominio (sin Identity)
     public class ApplicationDbContext : DbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
@@ -12,7 +14,6 @@ namespace FISEI.Incidentes.Infrastructure.Data
 
         // Tablas
         public DbSet<Usuario> Usuarios { get; set; }
-        public DbSet<Rol> Roles { get; set; }
         public DbSet<Categoria> Categorias { get; set; }
         public DbSet<Estado> EstadosIncidentes { get; set; }
         public DbSet<Incidente> Incidentes { get; set; }
@@ -22,19 +23,22 @@ namespace FISEI.Incidentes.Infrastructure.Data
         public DbSet<Asignacion> Asignaciones { get; set; }
         public DbSet<Notificacion> Notificaciones { get; set; }
         public DbSet<Conocimiento> BaseConocimiento { get; set; }
+        public DbSet<SLA> SLAs { get; set; }
+        public DbSet<SLAObjetivo> SLAObjetivos { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            base.OnModelCreating(modelBuilder);
-
-            // =========================================
-            // Relaciones de USUARIO
-            // =========================================
+            // No llamar a base.OnModelCreating de Identity
+            // Relación USUARIO ↔ ROL (opcional)
             modelBuilder.Entity<Usuario>()
                 .HasOne(u => u.Rol)
                 .WithMany()
                 .HasForeignKey(u => u.IdRol)
-                .OnDelete(DeleteBehavior.Restrict);
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // =========================================
+            // Relaciones de USUARIO
+            // =========================================
 
             // =========================================
             // Relaciones de INCIDENTE
@@ -119,6 +123,21 @@ namespace FISEI.Incidentes.Infrastructure.Data
                 .WithMany()
                 .HasForeignKey(c => c.IdIncidenteOrigen)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            // =========================================
+            // Relaciones de SLA
+            // =========================================
+            modelBuilder.Entity<SLA>()
+                .HasOne<Servicio>()
+                .WithMany()
+                .HasForeignKey(s => s.IdServicio)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<SLAObjetivo>()
+                .HasOne<SLA>()
+                .WithMany()
+                .HasForeignKey(o => o.IdSLA)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

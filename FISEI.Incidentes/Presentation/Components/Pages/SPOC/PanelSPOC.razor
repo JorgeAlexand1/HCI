@@ -110,7 +110,7 @@ else
                                     <select class="form-select form-select-sm" 
                                             @onchange="@((e) => SeleccionarTecnico(incidente.IdIncidente, int.Parse(e.Value?.ToString() ?? "0")))">
                                         <option value="0">-- Seleccionar --</option>
-                                        @foreach (var tecnico in tecnicos.Where(t => t.Rol.Nombre.Contains($"N{incidente.IdNivelSoporte}")))
+                                        @foreach (var tecnico in tecnicos) @* filtro pendiente usando roles Identity *@
                                         {
                                             <option value="@tecnico.IdUsuario">
                                                 @tecnico.Nombre (@ObtenerCargaTecnico(tecnico.IdUsuario))
@@ -159,7 +159,7 @@ else
                         <div class="card">
                             <div class="card-body">
                                 <h6>@tecnico.Nombre</h6>
-                                <small class="text-muted">@tecnico.Rol.Nombre</small>
+                                <small class="text-muted">(rol)</small>
                                 <div class="progress mt-2">
                                     <div class="progress-bar @ObtenerColorCarga(carga)" 
                                          role="progressbar" 

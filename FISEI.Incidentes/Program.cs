@@ -4,6 +4,9 @@ using FISEI.Incidentes.Infrastructure.Data;
 using FISEI.Incidentes.Infrastructure.Data.Repositories;
 using FISEI.Incidentes.Presentation.Components;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using FISEI.Incidentes.Application.Services;        
 using Microsoft.OpenApi.Models;  // ✅ CAMBIAR ESTA LÍNEA
 
@@ -11,16 +14,47 @@ namespace FISEI.Incidentes
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
             // ---------------------------------------------------------
-            // 1️⃣ Configurar la cadena de conexión a SQL Server
+            // 1️⃣ Configurar la cadena de conexión a SQL Server + Identity
             // ---------------------------------------------------------
             var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+            Console.WriteLine("[STARTUP] Connection string usado: " + connectionString);
             builder.Services.AddDbContext<ApplicationDbContext>(options =>
                 options.UseSqlServer(connectionString));
+
+            // Sin ASP.NET Identity: autenticación gestionada por `Usuarios` + JWT
+
+            // ---------------------------------------------------------
+            // JWT Authentication
+            // ---------------------------------------------------------
+            var jwtSection = builder.Configuration.GetSection("Jwt");
+            var secretKey = jwtSection.GetValue<string>("Key") ?? "CHANGEME_SUPER_SECRET_KEY"; // fallback
+            var keyBytes = Encoding.UTF8.GetBytes(secretKey);
+
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
+            .AddJwtBearer(options =>
+            {
+                options.RequireHttpsMetadata = false;
+                options.SaveToken = true;
+                options.TokenValidationParameters = new TokenValidationParameters
+                {
+                    ValidateIssuer = true,
+                    ValidateAudience = true,
+                    ValidateLifetime = true,
+                    ValidateIssuerSigningKey = true,
+                    ValidIssuer = jwtSection.GetValue<string>("Issuer"),
+                    ValidAudience = jwtSection.GetValue<string>("Audience"),
+                    IssuerSigningKey = new SymmetricSecurityKey(keyBytes)
+                };
+            });
 
             // ---------------------------------------------------------
             // 📦 Registrar Repositorios (Dependency Injection)
@@ -39,11 +73,20 @@ namespace FISEI.Incidentes
             builder.Services.AddScoped<IEscalamientoService, EscalamientoService>();
             builder.Services.AddScoped<INotificacionService, NotificacionService>();
             builder.Services.AddScoped<IConocimientoService, ConocimientoService>();
+            builder.Services.AddScoped<FISEI.Incidentes.Infrastructure.Services.EmailService>();
+            builder.Services.AddScoped<SlaService>();
             // ---------------------------------------------------------
             // 2️⃣ Agregar servicios para Blazor y controladores API
             // ---------------------------------------------------------
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
+            
+            // Register HttpClient for Blazor components
+            builder.Services.AddHttpClient();
+            builder.Services.AddScoped<HttpClient>(sp => new HttpClient
+            {
+                BaseAddress = new Uri(builder.Configuration["AppBaseUrl"] ?? "http://localhost:5023/")
+            });
 
             builder.Services.AddControllers()
                 .AddJsonOptions(options =>
@@ -65,11 +108,16 @@ namespace FISEI.Incidentes
                 });
             });
 
+            // Registrar DomainSeeder para poblar roles/usuarios de dominio
+            builder.Services.AddScoped<DomainSeeder>();
+
             var app = builder.Build();
 
             // ---------------------------------------------------------
             // 4️⃣ Configurar el pipeline HTTP
             // ---------------------------------------------------------
+            // (Registro de seeder ya realizado antes del build)
+
             if (app.Environment.IsDevelopment())
             {
                 app.UseSwagger();
@@ -87,12 +135,23 @@ namespace FISEI.Incidentes
             app.UseHttpsRedirection();
             app.UseStaticFiles();
             app.UseRouting();
+            app.UseAuthentication();
+            app.UseAuthorization();
             app.UseAntiforgery();
 
             app.MapControllers(); // ✅ Para habilitar los endpoints de la API
 
             app.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();
+
+            // Aplicar migraciones y seeding de la base de datos
+            using (var scope = app.Services.CreateScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                await db.Database.MigrateAsync();
+                var domainSeeder = scope.ServiceProvider.GetRequiredService<DomainSeeder>();
+                await domainSeeder.SeedAsync();
+            }
 
             app.Run();
         }

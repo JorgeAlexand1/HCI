@@ -13,36 +13,30 @@ namespace FISEI.Incidentes.Infrastructure.Data.Repositories
         public override async Task<IEnumerable<Usuario>> GetAllAsync()
         {
             return await _dbSet
-                .Include(u => u.Rol)
                 .Where(u => u.Activo)
                 .ToListAsync();
         }
 
         public override async Task<Usuario?> GetByIdAsync(int id)
         {
-            return await _dbSet
-                .Include(u => u.Rol)
-                .FirstOrDefaultAsync(u => u.IdUsuario == id);
+            return await _dbSet.FirstOrDefaultAsync(u => u.IdUsuario == id);
         }
 
         public async Task<Usuario?> GetByCorreoAsync(string correo)
         {
-            return await _dbSet
-                .Include(u => u.Rol)
-                .FirstOrDefaultAsync(u => u.Correo == correo && u.Activo);
+            return await _dbSet.FirstOrDefaultAsync(u => u.Correo == correo && u.Activo);
         }
 
         /// <summary>
-        /// Obtiene técnicos del nivel de soporte especificado (para asignación)
+        /// Obtiene tï¿½cnicos del nivel de soporte especificado (para asignaciï¿½n)
         /// </summary>
         public async Task<IEnumerable<Usuario>> GetTecnicosPorNivelAsync(int idNivelSoporte)
         {
-            // Asumiendo que los roles tienen nombres específicos: "Técnico N1", "Técnico N2", "Técnico N3"
-            var nombreNivel = $"Técnico N{idNivelSoporte}";
-            
-            return await _dbSet
+            // Filtrar por roles de dominio tipo SupportN{nivel}
+            var roleName = $"SupportN{idNivelSoporte}";
+            return await _context.Usuarios
                 .Include(u => u.Rol)
-                .Where(u => u.Activo && u.Rol.Nombre.Contains(nombreNivel))
+                .Where(u => u.Activo && u.Rol != null && u.Rol.Nombre == roleName)
                 .ToListAsync();
         }
 
@@ -51,11 +45,10 @@ namespace FISEI.Incidentes.Infrastructure.Data.Repositories
         /// </summary>
         public async Task<bool> EsSPOCAsync(int idUsuario)
         {
-            var usuario = await _dbSet
-                .Include(u => u.Rol)
+            var usuario = await _context.Usuarios.Include(u => u.Rol)
                 .FirstOrDefaultAsync(u => u.IdUsuario == idUsuario);
-
-            return usuario?.Rol.Nombre == "SPOC";
+            if (usuario?.Rol?.Nombre == null) return false;
+            return usuario.Rol.Nombre == "ServiceDesk" || usuario.Rol.Nombre == "SPOC";
         }
     }
 }

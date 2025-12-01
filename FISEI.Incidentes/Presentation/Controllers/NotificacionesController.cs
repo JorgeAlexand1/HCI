@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using FISEI.Incidentes.Core.Entities;
+using Microsoft.AspNetCore.Authorization;
 using FISEI.Incidentes.Core.Interfaces.IServices;
 using FISEI.Incidentes.Core.Interfaces.IRepositories;
 
@@ -7,6 +8,7 @@ namespace FISEI.Incidentes.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class NotificacionesController : ControllerBase
     {
         private readonly INotificacionService _notificacionService;
@@ -21,7 +23,7 @@ namespace FISEI.Incidentes.Presentation.Controllers
         }
 
         /// <summary>
-        /// Obtiene notificaciones no leídas de un usuario
+        /// Obtiene notificaciones no leï¿½das de un usuario
         /// </summary>
         [HttpGet("no-leidas/{idUsuario}")]
         public async Task<ActionResult<IEnumerable<Notificacion>>> GetNotificacionesNoLeidas(int idUsuario)
@@ -31,7 +33,7 @@ namespace FISEI.Incidentes.Presentation.Controllers
         }
 
         /// <summary>
-        /// Marca una notificación como leída
+        /// Marca una notificaciï¿½n como leï¿½da
         /// </summary>
         [HttpPut("marcar-leida/{idNotificacion}")]
         public async Task<IActionResult> MarcarComoLeida(int idNotificacion)
@@ -48,7 +50,7 @@ namespace FISEI.Incidentes.Presentation.Controllers
         }
 
         /// <summary>
-        /// Marca todas las notificaciones de un usuario como leídas
+        /// Marca todas las notificaciones de un usuario como leï¿½das
         /// </summary>
         [HttpPut("marcar-todas-leidas/{idUsuario}")]
         public async Task<IActionResult> MarcarTodasComoLeidas(int idUsuario)
@@ -65,7 +67,7 @@ namespace FISEI.Incidentes.Presentation.Controllers
         }
 
         /// <summary>
-        /// Envía una notificación manual
+        /// Envï¿½a una notificaciï¿½n manual
         /// </summary>
         [HttpPost("enviar")]
         public async Task<IActionResult> EnviarNotificacion(
@@ -76,7 +78,7 @@ namespace FISEI.Incidentes.Presentation.Controllers
             try
             {
                 await _notificacionService.EnviarNotificacionAsync(idUsuario, mensaje, tipo);
-                return Ok(new { message = "Notificación enviada" });
+                return Ok(new { message = "Notificaciï¿½n enviada" });
             }
             catch (Exception ex)
             {

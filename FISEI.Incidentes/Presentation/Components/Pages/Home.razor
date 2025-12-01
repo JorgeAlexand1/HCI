@@ -1,7 +1,11 @@
-﻿@page "/"
+﻿@page "/home"
 @using FISEI.Incidentes.Core.Interfaces.IRepositories
 @using FISEI.Incidentes.Core.Entities
+@using FISEI.Incidentes.Application.Services
 @inject IIncidenteRepository IncidenteRepository
+@inject SlaService SlaService
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@attribute [Microsoft.AspNetCore.Authorization.Authorize]
 
 <PageTitle>Dashboard - FISEI Incidentes</PageTitle>
 
@@ -53,6 +57,74 @@ else
         </div>
     </div>
 
+    <!-- Métricas SLA -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Vencidos</h5>
+                    <h2>@slaVencidos</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning text-dark">
+                <div class="card-body">
+                    <h5 class="card-title">Vencen hoy</h5>
+                    <h2>@slaVencenHoy</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <h5 class="card-title">Cumplidos</h5>
+                    <h2>@slaCumplidos</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-secondary text-white">
+                <div class="card-body">
+                    <h5 class="card-title">% Cumplimiento</h5>
+                    <h2>@string.Format("{0:P0}", slaPorcentajeCumplimiento)</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Próximos vencimientos -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Próximos vencimientos (SLA)</h5>
+        </div>
+        <div class="card-body">
+            <table class="table table-sm">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Título</th>
+                        <th>Servicio</th>
+                        <th>Estado</th>
+                        <th>Vence</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in proximosVencimientos)
+                    {
+                        <tr>
+                            <td>@item.incidente.IdIncidente</td>
+                            <td>@item.incidente.Titulo</td>
+                            <td>@item.incidente.Servicio?.Nombre</td>
+                            <td>@item.incidente.Estado?.Nombre</td>
+                            <td>@item.vence.ToString("dd/MM/yyyy HH:mm")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
     <!-- Incidentes Recientes -->
     <div class="card">
         <div class="card-header">
@@ -98,6 +170,54 @@ else
             </table>
         </div>
     </div>
+
+    <!-- Distribución por Estado y Categoría -->
+    <div class="row mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Distribución por Estado</h5>
+                </div>
+                <div class="card-body">
+                    @foreach (var kv in distPorEstado)
+                    {
+                        var porcentaje = totalIncidentes > 0 ? (int)Math.Round(100.0 * kv.Value / totalIncidentes) : 0;
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between">
+                                <span>@kv.Key</span>
+                                <span>@kv.Value (@porcentaje%)</span>
+                            </div>
+                            <div class="progress" role="progressbar" aria-valuenow="@porcentaje" aria-valuemin="0" aria-valuemax="100">
+                                <div class="progress-bar @GetEstadoBarClass(kv.Key)" style="width:@porcentaje%"></div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Distribución por Categoría</h5>
+                </div>
+                <div class="card-body">
+                    @foreach (var kv in distPorCategoria)
+                    {
+                        var porcentaje = totalIncidentes > 0 ? (int)Math.Round(100.0 * kv.Value / totalIncidentes) : 0;
+                        <div class="mb-2">
+                            <div class="d-flex justify-content-between">
+                                <span>@kv.Key</span>
+                                <span>@kv.Value (@porcentaje%)</span>
+                            </div>
+                            <div class="progress" role="progressbar" aria-valuenow="@porcentaje" aria-valuemin="0" aria-valuemax="100">
+                                <div class="progress-bar bg-info" style="width:@porcentaje%"></div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
 }
 
 @code {
@@ -107,6 +227,13 @@ else
     private int incidentesEnProceso;
     private int incidentesCerrados;
     private List<Incidente> incidentesRecientes = new();
+        private Dictionary<string, int> distPorEstado = new();
+        private Dictionary<string, int> distPorCategoria = new();
+    private int slaVencidos;
+    private int slaVencenHoy;
+    private int slaCumplidos;
+    private double slaPorcentajeCumplimiento;
+    private List<(Incidente incidente, DateTime vence)> proximosVencimientos = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -115,14 +242,40 @@ else
             var todosIncidentes = await IncidenteRepository.GetAllAsync();
             totalIncidentes = todosIncidentes.Count();
             
-            incidentesAbiertos = todosIncidentes.Count(i => i.Estado.Nombre == "Abierto");
-            incidentesEnProceso = todosIncidentes.Count(i => i.Estado.Nombre == "En Proceso");
-            incidentesCerrados = todosIncidentes.Count(i => i.Estado.Nombre == "Cerrado");
+            // Ajustar nombres de estados al catálogo seed: Nuevo, En Progreso, Resuelto, Cerrado
+            incidentesAbiertos = todosIncidentes.Count(i => i.Estado.Nombre == "Nuevo" || i.Estado.Nombre == "Asignado");
+            incidentesEnProceso = todosIncidentes.Count(i => i.Estado.Nombre == "En Progreso");
+            incidentesCerrados = todosIncidentes.Count(i => i.Estado.Nombre == "Resuelto" || i.Estado.Nombre == "Cerrado");
 
             incidentesRecientes = todosIncidentes
                 .OrderByDescending(i => i.FechaCreacion)
                 .Take(10)
                 .ToList();
+            // Distribuciones
+            distPorEstado = todosIncidentes
+                .GroupBy(i => i.Estado?.Nombre ?? "(Sin estado)")
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            distPorCategoria = todosIncidentes
+                .GroupBy(i => i.Categoria?.Nombre ?? "(Sin categoría)")
+                .ToDictionary(g => g.Key, g => g.Count());
+
+            // SLA real usando SlaService
+            var metrics = await SlaService.GetGlobalMetricsAsync();
+            slaVencidos = metrics.IncidentesVencidos;
+            slaVencenHoy = metrics.IncidentesVencenHoy;
+            slaCumplidos = metrics.IncidentesCumplidos;
+            slaPorcentajeCumplimiento = metrics.PorcentajeCumplimiento / 100.0; // para formato P0 en UI
+
+            // Próximos vencimientos (abiertos) calculando tiempo objetivo resolución
+            var objetivos = new List<(Incidente inc, DateTime vence)>();
+            foreach (var inc in todosIncidentes.Where(i => i.FechaCierre == null))
+            {
+                var detail = await SlaService.GetIncidentSlaAsync(inc.IdIncidente);
+                if (detail == null) continue;
+                objetivos.Add((inc, detail.LimiteResolucion));
+            }
+            proximosVencimientos = objetivos.OrderBy(o => o.vence).Take(10).ToList();
         }
         catch (Exception ex)
         {
@@ -146,4 +299,21 @@ else
             _ => "secondary"
         };
     }
+
+    private string GetEstadoBarClass(string estado)
+    {
+        // Mapea a clases de barra de progreso de Bootstrap
+        return estado switch
+        {
+            "Nuevo" => "bg-warning",
+            "Asignado" => "bg-secondary",
+            "En Progreso" => "bg-info",
+            "Resuelto" => "bg-primary",
+            "Cerrado" => "bg-success",
+            "Cancelado" => "bg-danger",
+            _ => ""
+        };
+    }
 }
+
+@code { }

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using FISEI.Incidentes.Core.Entities;
 using FISEI.Incidentes.Core.Interfaces.IServices;
 using FISEI.Incidentes.Core.Interfaces.IRepositories;
@@ -7,6 +8,7 @@ namespace FISEI.Incidentes.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class AsignacionesController : ControllerBase
     {
         private readonly IAsignacionService _asignacionService;
@@ -31,7 +33,7 @@ namespace FISEI.Incidentes.Presentation.Controllers
         }
 
         /// <summary>
-        /// Obtiene la asignación activa de un incidente
+        /// Obtiene la asignaciï¿½n activa de un incidente
         /// </summary>
         [HttpGet("incidente/{idIncidente}")]
         public async Task<ActionResult<Asignacion>> GetAsignacionPorIncidente(int idIncidente)
@@ -39,13 +41,13 @@ namespace FISEI.Incidentes.Presentation.Controllers
             var asignacion = await _asignacionRepository.GetAsignacionActivaPorIncidenteAsync(idIncidente);
             
             if (asignacion == null)
-                return NotFound(new { message = "No hay asignación activa para este incidente" });
+                return NotFound(new { message = "No hay asignaciï¿½n activa para este incidente" });
 
             return Ok(asignacion);
         }
 
         /// <summary>
-        /// Obtiene asignaciones de un técnico
+        /// Obtiene asignaciones de un tï¿½cnico
         /// </summary>
         [HttpGet("tecnico/{idTecnico}")]
         public async Task<ActionResult<IEnumerable<Asignacion>>> GetAsignacionesPorTecnico(int idTecnico)
@@ -55,7 +57,7 @@ namespace FISEI.Incidentes.Presentation.Controllers
         }
 
         /// <summary>
-        /// Asigna automáticamente un incidente (distribución equitativa)
+        /// Asigna automï¿½ticamente un incidente (distribuciï¿½n equitativa)
         /// </summary>
         [HttpPost("asignar-automatico/{idIncidente}")]
         public async Task<ActionResult<Asignacion>> AsignarAutomaticamente(int idIncidente)
@@ -72,7 +74,7 @@ namespace FISEI.Incidentes.Presentation.Controllers
         }
 
         /// <summary>
-        /// Asignación manual por SPOC
+        /// Asignaciï¿½n manual por SPOC
         /// </summary>
         [HttpPost("asignar-manual")]
         public async Task<ActionResult<Asignacion>> AsignarManualmente(
@@ -96,7 +98,7 @@ namespace FISEI.Incidentes.Presentation.Controllers
         }
 
         /// <summary>
-        /// Permite a un técnico tomar un incidente sin asignar
+        /// Permite a un tï¿½cnico tomar un incidente sin asignar
         /// </summary>
         [HttpPost("tomar/{idIncidente}")]
         public async Task<ActionResult<Asignacion>> TomarIncidente(int idIncidente, [FromQuery] int idTecnico)
@@ -113,7 +115,7 @@ namespace FISEI.Incidentes.Presentation.Controllers
         }
 
         /// <summary>
-        /// Reasigna un incidente a otro técnico
+        /// Reasigna un incidente a otro tï¿½cnico
         /// </summary>
         [HttpPut("reasignar")]
         public async Task<IActionResult> Reasignar([FromQuery] int idIncidente, [FromQuery] int idNuevoTecnico)

@@ -1,0 +1,50 @@
+@page "/verify-email"
+@rendermode InteractiveServer
+@inject NavigationManager Nav
+@inject HttpClient Http
+
+<h3>Verificación de correo</h3>
+
+@if (state == "loading")
+{
+    <div class="alert alert-info">Verificando…</div>
+}
+else if (state == "ok")
+{
+    <div class="alert alert-success">Correo verificado correctamente.</div>
+    <a class="btn btn-primary" href="/login">Ir al login</a>
+}
+else if (state == "already")
+{
+    <div class="alert alert-warning">Este correo ya estaba verificado.</div>
+    <a class="btn btn-primary" href="/login">Ir al login</a>
+}
+else
+{
+    <div class="alert alert-danger">No se pudo verificar el correo. El enlace puede ser inválido o expirado.</div>
+}
+
+@code {
+    private string state = "loading";
+
+    protected override async Task OnInitializedAsync()
+    {
+        var uri = new Uri(Nav.Uri);
+        var query = System.Web.HttpUtility.ParseQueryString(uri.Query);
+        var email = query.Get("email") ?? string.Empty;
+        var token = query.Get("token") ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(token)) { state = "error"; return; }
+        try
+        {
+            var endpoint = $"api/auth/verify-email?email={Uri.EscapeDataString(email)}&token={Uri.EscapeDataString(token)}";
+            var resp = await Http.GetAsync(endpoint);
+            if (resp.IsSuccessStatusCode)
+            {
+                var txt = await resp.Content.ReadAsStringAsync();
+                if (txt.Contains("ya verificado", StringComparison.OrdinalIgnoreCase)) state = "already"; else state = "ok";
+            }
+            else state = "error";
+        }
+        catch { state = "error"; }
+    }
+}
