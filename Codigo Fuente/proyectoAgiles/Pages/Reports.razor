@@ -1,0 +1,541 @@
+@page "/admin/reports"
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@using System.Net.Http.Json
+@layout proyectoAgiles.Layout.MainLayout
+@inject HttpClient HttpClient
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@inject proyectoAgiles.Services.AuthService AuthService
+
+<PageTitle>Reportes y Estadísticas - UTA</PageTitle>
+
+<!-- Incluir el archivo JavaScript de reportes -->
+<script src="~/js/reports.js"></script>
+
+<div class="reports-page">
+    <!-- Header con botón volver -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="back-button-container">
+                <button class="btn btn-outline-light" @onclick="GoBack">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver
+                </button>
+            </div>
+            <div class="header-text">
+                <h1 class="page-title">
+                    <div class="title-icon-wrapper">
+                        <i class="fas fa-chart-bar"></i>
+                        <div class="icon-decoration"></div>
+                    </div>
+                    Reportes y Estadísticas
+                </h1>
+                <p class="page-subtitle">
+                    Genere reportes detallados de solicitudes de escalafón y exporte información por docente
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        <!-- Filtros de reporte -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card filter-card">
+                    <div class="card-header">
+                        <h3><i class="fas fa-filter"></i> Filtros de Reporte</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-list"></i>
+                                        Estado de Solicitud
+                                    </label>
+                                    <select class="form-control" @bind="selectedStatus">
+                                        <option value="">Todos los estados</option>
+                                        <option value="Pendiente">Pendiente</option>
+                                        <option value="EnRevision">En Revisión</option>
+                                        <option value="Verificado">Verificado</option>
+                                        <option value="AprobadoPresidente">Aprobado por Presidente</option>
+                                        <option value="RechazadoComision">Rechazado por Comisión</option>
+                                        <option value="AprobadoConsejo">Aprobado por Consejo</option>
+                                        <option value="RechazadoConsejo">Rechazado por Consejo</option>
+                                        <option value="Procesado">Procesado</option>
+                                        <option value="Finalizado">Finalizado</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-graduation-cap"></i>
+                                        Tipo de Promoción
+                                    </label>
+                                    <select class="form-control" @bind="selectedPromotionType">
+                                        <option value="">Todos los tipos</option>
+                                        <option value="Auxiliar">Auxiliar</option>
+                                        <option value="Agregado">Agregado</option>
+                                        <option value="Principal">Principal</option>
+                                        <option value="Titular">Titular</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-calendar"></i>
+                                        Fecha Desde
+                                    </label>
+                                    <input type="date" class="form-control" @bind="startDate" />
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-calendar"></i>
+                                        Fecha Hasta
+                                    </label>
+                                    <input type="date" class="form-control" @bind="endDate" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <i class="fas fa-search"></i>
+                                        Buscar Docente
+                                    </label>
+                                    <input type="text" class="form-control" placeholder="Nombre o cédula del docente" @bind="searchTerm" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-12">
+                                <div class="filter-actions">
+                                    <button class="btn btn-primary" @onclick="GenerateReport" disabled="@isLoading">
+                                        @if (isLoading)
+                                        {
+                                            <span class="spinner-border spinner-border-sm" role="status"></span>
+                                            <span>Generando...</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-chart-line"></i>
+                                            <span>Generar Reporte</span>
+                                        }
+                                    </button>
+                                    <button class="btn btn-secondary" @onclick="ClearFilters">
+                                        <i class="fas fa-eraser"></i>
+                                        Limpiar Filtros
+                                    </button>
+                                    <button class="btn btn-success" @onclick="ExportToPDF" disabled="@(reportData?.Any() != true || isExporting)">
+                                        @if (isExporting)
+                                        {
+                                            <span class="spinner-border spinner-border-sm" role="status"></span>
+                                            <span>Generando PDF...</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-file-pdf"></i>
+                                            <span>Generar PDF</span>
+                                        }
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas generales -->
+        @if (reportData?.Any() == true)
+        {
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card stats-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-chart-pie"></i> Resumen del Reporte</h3>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-lg-2 col-md-4 col-6">
+                                    <div class="stat-item">
+                                        <div class="stat-icon total">
+                                            <i class="fas fa-clipboard-list"></i>
+                                        </div>
+                                        <div class="stat-content">
+                                            <h4>@reportData.Count()</h4>
+                                            <p>Total Solicitudes</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-2 col-md-4 col-6">
+                                    <div class="stat-item">
+                                        <div class="stat-icon pending">
+                                            <i class="fas fa-clock"></i>
+                                        </div>
+                                        <div class="stat-content">
+                                            <h4>@reportData.Count(r => r.Status == "Pendiente")</h4>
+                                            <p>Pendientes</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-2 col-md-4 col-6">
+                                    <div class="stat-item">
+                                        <div class="stat-icon approved">
+                                            <i class="fas fa-check-circle"></i>
+                                        </div>
+                                        <div class="stat-content">
+                                            <h4>@reportData.Count(r => r.Status == "AprobadoConsejo" || r.Status == "Procesado")</h4>
+                                            <p>Aprobadas</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-2 col-md-4 col-6">
+                                    <div class="stat-item">
+                                        <div class="stat-icon rejected">
+                                            <i class="fas fa-times-circle"></i>
+                                        </div>
+                                        <div class="stat-content">
+                                            <h4>@reportData.Count(r => r.Status.Contains("Rechazado"))</h4>
+                                            <p>Rechazadas</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-2 col-md-4 col-6">
+                                    <div class="stat-item">
+                                        <div class="stat-icon review">
+                                            <i class="fas fa-search"></i>
+                                        </div>
+                                        <div class="stat-content">
+                                            <h4>@reportData.Count(r => r.Status == "EnRevision" || r.Status == "Verificado")</h4>
+                                            <p>En Proceso</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-lg-2 col-md-4 col-6">
+                                    <div class="stat-item">
+                                        <div class="stat-icon finalized">
+                                            <i class="fas fa-flag-checkered"></i>
+                                        </div>
+                                        <div class="stat-content">
+                                            <h4>@reportData.Count(r => r.Status == "Finalizado")</h4>
+                                            <p>Finalizadas</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Tabla de resultados -->
+        @if (reportData?.Any() == true)
+        {
+            <div class="row">
+                <div class="col-12">
+                    <div class="card results-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-table"></i> Resultados del Reporte</h3>
+                            <div class="card-actions">
+                                <button class="btn btn-sm btn-outline-primary" @onclick="ToggleView">
+                                    @if (isDetailedView)
+                                    {
+                                        <i class="fas fa-compress"></i>
+                                        <span>Vista Resumida</span>
+                                    }
+                                    else
+                                    {
+                                        <i class="fas fa-expand"></i>
+                                        <span>Vista Detallada</span>
+                                    }
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-striped table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Docente</th>
+                                            <th>Cédula</th>
+                                            <th>Facultad</th>
+                                            @if (isDetailedView)
+                                            {
+                                                <th>Carrera</th>
+                                                <th>Email</th>
+                                            }
+                                            <th>Nivel Actual</th>
+                                            <th>Nivel Solicitado</th>
+                                            <th>Estado</th>
+                                            <th>Fecha Solicitud</th>
+                                            @if (isDetailedView)
+                                            {
+                                                <th>Años Exp.</th>
+                                                <th>Observaciones</th>
+                                            }
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var solicitud in reportData)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <div class="teacher-info">
+                                                        <strong>@solicitud.DocenteNombre</strong>
+                                                    </div>
+                                                </td>
+                                                <td>@solicitud.DocenteCedula</td>
+                                                <td>@(solicitud.Facultad ?? "N/A")</td>
+                                                @if (isDetailedView)
+                                                {
+                                                    <td>@(solicitud.Carrera ?? "N/A")</td>
+                                                    <td>@solicitud.DocenteEmail</td>
+                                                }
+                                                <td>
+                                                    <span class="badge badge-info">@solicitud.NivelActual</span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge badge-primary">@solicitud.NivelSolicitado</span>
+                                                </td>
+                                                <td>
+                                                    <span class="status-badge @GetStatusClass(solicitud.Status)">
+                                                        @GetStatusText(solicitud.Status)
+                                                    </span>
+                                                </td>
+                                                <td>@solicitud.FechaSolicitud.ToString("dd/MM/yyyy")</td>
+                                                @if (isDetailedView)
+                                                {
+                                                    <td>@solicitud.AnosExperiencia</td>
+                                                    <td>
+                                                        @if (!string.IsNullOrEmpty(solicitud.Observaciones))
+                                                        {
+                                                            <span class="truncated-text" title="@solicitud.Observaciones">
+                                                                @(solicitud.Observaciones.Length > 30 ? solicitud.Observaciones.Substring(0, 30) + "..." : solicitud.Observaciones)
+                                                            </span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">Sin observaciones</span>
+                                                        }
+                                                    </td>
+                                                }
+                                                <td>
+                                                    <div class="action-buttons">
+                                                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ExportTeacherReport(solicitud)" title="Exportar ficha del docente">
+                                                            <i class="fas fa-download"></i>
+                                                        </button>
+                                                        <button class="btn btn-sm btn-outline-info" @onclick="() => ViewDetails(solicitud)" title="Ver detalles">
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else if (reportGenerated && reportData?.Any() != true)
+        {
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <div class="empty-state">
+                                <i class="fas fa-search fa-3x text-muted mb-3"></i>
+                                <h4>No se encontraron resultados</h4>
+                                <p class="text-muted">
+                                    No hay solicitudes que coincidan con los filtros seleccionados.
+                                    <br>Intente ajustar los criterios de búsqueda.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<ProyectoAgiles.Application.DTOs.SolicitudEscalafonDto>? reportData;
+    private bool isLoading = false;
+    private bool isExporting = false;
+    private bool reportGenerated = false;
+    private bool isDetailedView = false;
+
+    // Filtros
+    private string selectedStatus = string.Empty;
+    private string selectedPromotionType = string.Empty;
+    private DateTime? startDate;
+    private DateTime? endDate;
+    private string searchTerm = string.Empty;
+
+    // Datos para dropdowns - eliminados ya que no se usan
+    //private List<string> facultades = new List<string>();
+
+    protected override Task OnInitializedAsync()
+    {
+        // Configurar fechas por defecto (último año)
+        endDate = DateTime.Today;
+        startDate = DateTime.Today.AddYears(-1);
+        return Task.CompletedTask;
+    }
+
+    private async Task GenerateReport()
+    {
+        isLoading = true;
+        reportGenerated = false;
+
+        try
+        {
+            var queryParams = new List<string>();
+
+            if (!string.IsNullOrEmpty(selectedStatus))
+                queryParams.Add($"status={Uri.EscapeDataString(selectedStatus)}");
+
+            if (!string.IsNullOrEmpty(selectedPromotionType))
+                queryParams.Add($"promotionType={Uri.EscapeDataString(selectedPromotionType)}");
+
+            if (startDate.HasValue)
+                queryParams.Add($"startDate={startDate.Value:yyyy-MM-dd}");
+
+            if (endDate.HasValue)
+                queryParams.Add($"endDate={endDate.Value:yyyy-MM-dd}");
+
+            if (!string.IsNullOrEmpty(searchTerm))
+                queryParams.Add($"search={Uri.EscapeDataString(searchTerm)}");
+
+            var queryString = queryParams.Any() ? "?" + string.Join("&", queryParams) : "";
+            var response = await HttpClient.GetAsync($"/api/Reports/solicitudes{queryString}");
+
+            if (response.IsSuccessStatusCode)
+            {
+                var apiResponse = await response.Content.ReadFromJsonAsync<ProyectoAgiles.Application.DTOs.ApiResponse<List<ProyectoAgiles.Application.DTOs.SolicitudEscalafonDto>>>();
+                reportData = apiResponse?.Data ?? new List<ProyectoAgiles.Application.DTOs.SolicitudEscalafonDto>();
+            }
+            else
+            {
+                reportData = new List<ProyectoAgiles.Application.DTOs.SolicitudEscalafonDto>();
+            }
+
+            reportGenerated = true;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error generating report: {ex.Message}");
+            reportData = new List<ProyectoAgiles.Application.DTOs.SolicitudEscalafonDto>();
+            reportGenerated = true;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ClearFilters()
+    {
+        selectedStatus = string.Empty;
+        selectedPromotionType = string.Empty;
+        searchTerm = string.Empty;
+        startDate = DateTime.Today.AddYears(-1);
+        endDate = DateTime.Today;
+        reportData = null;
+        reportGenerated = false;
+    }
+
+    private async Task ExportToPDF()
+    {
+        if (reportData?.Any() != true) return;
+
+        isExporting = true;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("generateAndOpenPDF", reportData, "Reporte_Solicitudes_Escalafon");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error generating PDF: {ex.Message}");
+        }
+        finally
+        {
+            isExporting = false;
+        }
+    }
+
+    private async Task ExportTeacherReport(ProyectoAgiles.Application.DTOs.SolicitudEscalafonDto solicitud)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("generateTeacherPDF", solicitud, $"Ficha_{solicitud.DocenteNombre.Replace(" ", "_")}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error exporting teacher report: {ex.Message}");
+        }
+    }
+
+    private void ViewDetails(ProyectoAgiles.Application.DTOs.SolicitudEscalafonDto solicitud)
+    {
+        // Navegar a página de detalles de la solicitud
+        Navigation.NavigateTo($"/admin/solicitud/{solicitud.Id}");
+    }
+
+    private void ToggleView()
+    {
+        isDetailedView = !isDetailedView;
+    }
+
+    private string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            "Pendiente" => "pending",
+            "EnRevision" => "review",
+            "Verificado" => "verified",
+            "AprobadoPresidente" => "approved",
+            "AprobadoConsejo" => "approved",
+            "RechazadoComision" => "rejected",
+            "RechazadoConsejo" => "rejected",
+            "Procesado" => "processed",
+            "Finalizado" => "finalized",
+            _ => "default"
+        };
+    }
+
+    private string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "Pendiente" => "Pendiente",
+            "EnRevision" => "En Revisión",
+            "Verificado" => "Verificado",
+            "AprobadoPresidente" => "Aprobado por Presidente",
+            "AprobadoConsejo" => "Aprobado por Consejo",
+            "RechazadoComision" => "Rechazado por Comisión",
+            "RechazadoConsejo" => "Rechazado por Consejo",
+            "Procesado" => "Procesado",
+            "Finalizado" => "Finalizado",
+            _ => status
+        };
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/admin");
+    }
+}

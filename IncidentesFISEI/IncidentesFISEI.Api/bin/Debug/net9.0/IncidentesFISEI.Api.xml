@@ -1,0 +1,357 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>IncidentesFISEI.Api</name>
+    </assembly>
+    <members>
+        <member name="T:IncidentesFISEI.Api.Controllers.AsignacionController">
+            <summary>
+            Controlador para asignación de incidentes según SPOC
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.AsignacionController.AutoAsignar(System.Int32)">
+            <summary>
+            Asignar incidente automáticamente al técnico con menor carga
+            </summary>
+            <param name="incidenteId">ID del incidente</param>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.AsignacionController.AsignarManualmente(System.Int32,System.Int32)">
+            <summary>
+            Asignar incidente manualmente a un técnico específico (Solo SPOC/Admin)
+            </summary>
+            <param name="incidenteId">ID del incidente</param>
+            <param name="tecnicoId">ID del técnico</param>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.AsignacionController.GetCargaTrabajo">
+            <summary>
+            Obtener carga de trabajo de todos los técnicos
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.AsignacionController.ConfigurarSPOC(System.Int32,System.Boolean)">
+            <summary>
+            Configurar usuario como SPOC (Solo Admin)
+            </summary>
+            <param name="usuarioId">ID del usuario</param>
+            <param name="isSPOC">True para asignar SPOC, False para quitar</param>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.AsignacionController.SetDisponibilidad(System.Boolean)">
+            <summary>
+            Marcar disponibilidad del SPOC
+            </summary>
+            <param name="isAvailable">True si está disponible, False si no</param>
+        </member>
+        <member name="T:IncidentesFISEI.Api.Controllers.AuthController">
+            <summary>
+            Controlador para autenticación y gestión de usuarios
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.AuthController.Login(IncidentesFISEI.Application.DTOs.LoginDto)">
+            <summary>
+            Iniciar sesión en el sistema
+            </summary>
+            <param name="loginDto">Credenciales de acceso</param>
+            <returns>Token JWT y datos del usuario</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.AuthController.Register(IncidentesFISEI.Application.DTOs.RegisterDto)">
+            <summary>
+            Registrar un nuevo usuario
+            </summary>
+            <param name="registerDto">Datos del nuevo usuario</param>
+            <returns>Confirmación de registro</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.AuthController.ChangePassword(IncidentesFISEI.Application.DTOs.ChangePasswordDto)">
+            <summary>
+            Cambiar contraseña
+            </summary>
+            <param name="changePasswordDto">Datos para cambio de contraseña</param>
+            <returns>Confirmación de cambio</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.AuthController.ValidateToken(System.String)">
+            <summary>
+            Validar token JWT
+            </summary>
+            <param name="token">Token a validar</param>
+            <returns>Validez del token</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.GetArticulosPublicados">
+            <summary>
+            Obtiene todos los artículos publicados
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.GetArticuloById(System.Int32)">
+            <summary>
+            Obtiene un artículo por ID con todos sus detalles
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.CreateArticulo(IncidentesFISEI.Application.DTOs.CreateArticuloDto)">
+            <summary>
+            Crea un nuevo artículo de conocimiento
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.UpdateArticulo(System.Int32,IncidentesFISEI.Application.DTOs.UpdateArticuloDto)">
+            <summary>
+            Actualiza un artículo existente (crea nueva versión)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.DeleteArticulo(System.Int32)">
+            <summary>
+            Elimina un artículo (soft delete)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.PublicarArticulo(System.Int32)">
+            <summary>
+            Publica un artículo (cambia estado a Publicado)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.ArchivarArticulo(System.Int32)">
+            <summary>
+            Archiva un artículo obsoleto
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.BuscarArticulos(IncidentesFISEI.Application.DTOs.BusquedaArticulosDto)">
+            <summary>
+            Búsqueda avanzada de artículos con filtros y paginación
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.GetArticulosPorCategoria(System.Int32)">
+            <summary>
+            Obtiene artículos por categoría
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.GetArticulosPorAutor(System.Int32)">
+            <summary>
+            Obtiene artículos por autor
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.GetAllEtiquetas">
+            <summary>
+            Obtiene todas las etiquetas disponibles
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.CreateEtiqueta(IncidentesFISEI.Application.DTOs.CreateEtiquetaDto)">
+            <summary>
+            Crea una nueva etiqueta
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.GetEtiquetasMasUsadas(System.Int32)">
+            <summary>
+            Obtiene las etiquetas más utilizadas
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.AddComentario(System.Int32,IncidentesFISEI.Application.DTOs.CreateComentarioArticuloDto)">
+            <summary>
+            Agrega un comentario a un artículo
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.DeleteComentario(System.Int32)">
+            <summary>
+            Elimina un comentario (solo el autor puede eliminarlo)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.VotarArticulo(System.Int32,IncidentesFISEI.Application.DTOs.VotarArticuloDto)">
+            <summary>
+            Vota un artículo (positivo o negativo)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.SolicitarValidacion(System.Int32,IncidentesFISEI.Application.DTOs.SolicitarValidacionDto)">
+            <summary>
+            Solicita validación de un artículo por un experto
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.ValidarArticulo(System.Int32,IncidentesFISEI.Application.DTOs.ValidarArticuloDto)">
+            <summary>
+            Valida un artículo (aprueba o rechaza)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.GetValidacionesPendientes(System.Nullable{System.Int32})">
+            <summary>
+            Obtiene las validaciones pendientes (opcionalmente filtradas por validador)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.GetEstadisticas">
+            <summary>
+            Obtiene estadísticas generales del sistema de conocimiento
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConocimientoController.GetArticulosMasPopulares(System.Int32)">
+            <summary>
+            Obtiene los artículos más populares
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.EscalacionController.EscalarIncidente(System.Int32,IncidentesFISEI.Api.Controllers.EscalarIncidenteRequest)">
+            <summary>
+            Escala un incidente al siguiente nivel de soporte
+            </summary>
+            <param name="incidenteId">ID del incidente a escalar</param>
+            <param name="request">Datos de la escalación</param>
+            <returns>Resultado de la operación</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.EscalacionController.EscalarANivelEspecifico(System.Int32,IncidentesFISEI.Api.Controllers.EscalarANivelRequest)">
+            <summary>
+            Escala un incidente a un nivel específico
+            </summary>
+            <param name="incidenteId">ID del incidente</param>
+            <param name="request">Nivel destino y razón</param>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.EscalacionController.VerificarEscalacionAutomatica(System.Int32)">
+            <summary>
+            Verifica si un incidente debe ser escalado automáticamente
+            </summary>
+            <param name="incidenteId">ID del incidente</param>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.EscalacionController.ObtenerTecnicoDisponible(IncidentesFISEI.Domain.Enums.NivelSoporte)">
+            <summary>
+            Obtiene el técnico disponible de un nivel específico con menor carga
+            </summary>
+            <param name="nivel">Nivel de soporte deseado</param>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.EscalacionController.ObtenerEstadisticas">
+            <summary>
+            Obtiene estadísticas generales de escalación
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.EscalacionController.ProcesarEscalacionesAutomaticas">
+            <summary>
+            Procesa escalaciones automáticas para todos los incidentes que lo requieran
+            (Normalmente ejecutado por un background service)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.EscalacionController.ObtenerHistorialEscalaciones(System.Int32)">
+            <summary>
+            Obtiene el historial de escalaciones de un incidente
+            </summary>
+            <param name="incidenteId">ID del incidente</param>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.MetricasController.ObtenerKPIsPrincipales(System.Nullable{System.DateTime},System.Nullable{System.DateTime})">
+            <summary>
+            Obtiene los KPIs principales del dashboard
+            </summary>
+            <param name="desde">Fecha de inicio (opcional)</param>
+            <param name="hasta">Fecha de fin (opcional)</param>
+            <returns>KPIs principales: totales, tiempos, SLA, FCR, tendencias</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.MetricasController.ObtenerEstadisticasPorCategoria(System.Nullable{System.DateTime},System.Nullable{System.DateTime})">
+            <summary>
+            Obtiene estadísticas agrupadas por categoría de incidentes
+            </summary>
+            <param name="desde">Fecha de inicio (opcional)</param>
+            <param name="hasta">Fecha de fin (opcional)</param>
+            <returns>Estadísticas por categoría: totales, tiempos, SLA, porcentaje del total</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.MetricasController.ObtenerEstadisticasPorTecnico(System.Nullable{System.DateTime},System.Nullable{System.DateTime})">
+            <summary>
+            Obtiene estadísticas de rendimiento por técnico
+            </summary>
+            <param name="desde">Fecha de inicio (opcional)</param>
+            <param name="hasta">Fecha de fin (opcional)</param>
+            <returns>Estadísticas por técnico: asignados, resueltos, tiempos, tasa de resolución, SLA</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.MetricasController.ObtenerTendencias(System.Int32)">
+            <summary>
+            Obtiene tendencias de incidentes en el tiempo
+            </summary>
+            <param name="ultimosDias">Número de días a analizar (por defecto 30)</param>
+            <returns>Tendencias diarias y mensuales: incidentes creados, resueltos, tiempos promedio</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.MetricasController.ObtenerReporteDisponibilidad(System.Nullable{System.DateTime},System.Nullable{System.DateTime})">
+            <summary>
+            Obtiene reporte de disponibilidad de servicios DITIC
+            </summary>
+            <param name="desde">Fecha de inicio (opcional)</param>
+            <param name="hasta">Fecha de fin (opcional)</param>
+            <returns>Reporte de disponibilidad: objetivo vs real, incidentes críticos, tiempo de inactividad</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.MetricasController.ObtenerTopIncidentesFrecuentes(System.Int32,System.Nullable{System.DateTime},System.Nullable{System.DateTime})">
+            <summary>
+            Obtiene los incidentes más frecuentes para análisis preventivo
+            </summary>
+            <param name="top">Número de incidentes a retornar (por defecto 10)</param>
+            <param name="desde">Fecha de inicio (opcional, por defecto últimos 90 días)</param>
+            <param name="hasta">Fecha de fin (opcional)</param>
+            <returns>Top incidentes frecuentes: título, categoría, ocurrencias, tiempo promedio, solución KB</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.MetricasController.ObtenerResumenCompleto(System.Nullable{System.DateTime},System.Nullable{System.DateTime})">
+            <summary>
+            Obtiene un resumen completo de métricas para exportación
+            </summary>
+            <param name="desde">Fecha de inicio (opcional)</param>
+            <param name="hasta">Fecha de fin (opcional)</param>
+            <returns>Objeto combinado con KPIs, categorías y técnicos</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.NotificacionesController.GetMisNotificaciones(System.Int32,System.Int32,System.Boolean)">
+            <summary>
+            Obtiene las notificaciones del usuario autenticado con paginación
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.NotificacionesController.GetContadorNoLeidas">
+            <summary>
+            Obtiene el contador de notificaciones no leídas del usuario autenticado
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.NotificacionesController.MarcarComoLeida(System.Int32)">
+            <summary>
+            Marca una notificación como leída
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.NotificacionesController.MarcarTodasComoLeidas">
+            <summary>
+            Marca todas las notificaciones del usuario como leídas
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.NotificacionesController.EliminarNotificacion(System.Int32)">
+            <summary>
+            Elimina una notificación (soft delete)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.NotificacionesController.CrearNotificacion(IncidentesFISEI.Application.DTOs.CreateNotificacionDto)">
+            <summary>
+            Crea una notificación manualmente (solo para Supervisores y Administradores)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.NotificacionesController.GetEstadisticas">
+            <summary>
+            Obtiene estadísticas de notificaciones del usuario autenticado
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ServicioDITICController.GetServiciosActivos">
+            <summary>
+            Obtiene todos los servicios DITIC activos
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ServicioDITICController.GetServicioById(System.Int32)">
+            <summary>
+            Obtiene un servicio específico por ID
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ServicioDITICController.GetServicioPorCodigo(System.String)">
+            <summary>
+            Obtiene un servicio por su código
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ServicioDITICController.GetServiciosPorTipo(System.Int32)">
+            <summary>
+            Obtiene servicios por tipo
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ServicioDITICController.GetServiciosEsenciales">
+            <summary>
+            Obtiene solo servicios esenciales
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ServicioDITICController.CreateServicio(IncidentesFISEI.Application.DTOs.CreateServicioDITICDto)">
+            <summary>
+            Crea un nuevo servicio DITIC
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ServicioDITICController.UpdateServicio(System.Int32,IncidentesFISEI.Application.DTOs.UpdateServicioDITICDto)">
+            <summary>
+            Actualiza un servicio existente
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ServicioDITICController.DeleteServicio(System.Int32)">
+            <summary>
+            Desactiva un servicio (soft delete)
+            </summary>
+        </member>
+    </members>
+</doc>

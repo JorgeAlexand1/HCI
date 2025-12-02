@@ -1,0 +1,271 @@
+@page "/login"
+@using Microsoft.AspNetCore.Components.Web
+@using proyectoAgiles.Services
+@layout proyectoAgiles.Layout.AuthLayout
+@inject AuthService AuthService
+@inject UserSessionService UserSession
+@inject NavigationManager NavigationManager
+
+<PageTitle>Iniciar Sesión - UTA</PageTitle>
+
+<div class="auth-page">
+    <!-- Fondo decorativo -->
+    <div class="auth-background">
+        <div class="bg-shape shape-1"></div>
+        <div class="bg-shape shape-2"></div>
+        <div class="bg-shape shape-3"></div>
+        <div class="bg-shape shape-4"></div>
+    </div>
+
+    <!-- Botón de volver al inicio -->
+    <a href="/" class="back-to-home-btn">
+        <i class="fas fa-arrow-left"></i>
+        Volver al inicio
+    </a>
+
+    <!-- Mensaje de cuenta bloqueada -->
+    @if (isAccountLocked)
+    {
+        <div class="success-overlay">
+            <div class="success-container">
+                <div class="success-content">
+                    <div class="success-icon locked-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <h2 class="success-title">Cuenta Temporalmente Bloqueada</h2>
+                    <p class="success-message">
+                        Tu cuenta está temporalmente bloqueada por múltiples intentos fallidos de inicio de sesión.
+                    </p>
+                    <div class="unlock-instructions">
+                        <p><strong>Para desbloquear tu cuenta:</strong></p>
+                        <ul>
+                            <li>Utiliza la opción "¿Olvidaste tu contraseña?" para restablecer tu contraseña</li>
+                            <li>O contacta al administrador del sistema</li>
+                        </ul>
+                        <p class="unlock-note">Tu cuenta se desbloqueará automáticamente después del restablecimiento de contraseña.</p>
+                    </div>
+                    <div class="success-actions">
+                        <a href="/forgot-password" class="btn btn-primary btn-lg">
+                            <i class="fas fa-key"></i>
+                            Restablecer mi Contraseña
+                        </a>
+                        <button type="button" class="btn btn-secondary btn-lg" @onclick="ClearAccountLockedMessage">
+                            <i class="fas fa-arrow-left"></i>
+                            Intentar de Nuevo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    
+    <div class="auth-container">
+        <div class="auth-card">
+            <!-- Logo UTA -->
+            <div class="auth-logo">
+                <img src="images/uta-logo.png" alt="Universidad Técnica de Ambato" class="logo-uta">
+                <h2 class="auth-title">Iniciar Sesión</h2>
+                <p class="auth-subtitle">Universidad Técnica de Ambato</p>
+            </div>
+
+            @if (!string.IsNullOrEmpty(errorMessage) && !isAccountLocked)
+            {
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-circle"></i>
+                    @errorMessage
+                </div>
+            }
+
+            <!-- Formulario de Login -->
+            <EditForm Model="loginRequest" OnValidSubmit="HandleLogin" class="auth-form">
+                <div class="form-group">
+                    <label for="email" class="form-label">
+                        <i class="fas fa-envelope"></i>
+                        Correo Electrónico
+                    </label>
+                    <InputText id="email" class="form-control" placeholder="Ingresa tu correo electrónico" 
+                               @bind-Value="loginRequest.Email" @oninput="HandleEmailInput" />
+                    @if (!string.IsNullOrEmpty(emailValidationMessage))
+                    {
+                        <div class="validation-message text-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            @emailValidationMessage
+                        </div>
+                    }
+                </div>
+
+                <div class="form-group">
+                    <label for="password" class="form-label">
+                        <i class="fas fa-lock"></i>
+                        Contraseña
+                    </label>
+                    <InputText type="password" id="password" class="form-control" placeholder="Ingresa tu contraseña" 
+                               @bind-Value="loginRequest.Password" @oninput="HandlePasswordInput" />
+                    @if (!string.IsNullOrEmpty(passwordValidationMessage))
+                    {
+                        <div class="validation-message text-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            @passwordValidationMessage
+                        </div>
+                    }
+                </div>
+                
+                <div class="form-options">
+                    <a href="/forgot-password" class="forgot-password">¿Olvidaste tu contraseña?</a>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-login" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm mr-2" role="status" aria-hidden="true"></span>
+                        <span>Procesando...</span>
+                    }
+                    else
+                    {
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Iniciar Sesión</span>
+                    }
+                </button>            </EditForm>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginRequest loginRequest = new();
+    private bool isLoading = false;
+    private string errorMessage = string.Empty;
+    private bool isAccountLocked = false;
+    private string emailValidationMessage = string.Empty;
+    private string passwordValidationMessage = string.Empty;
+
+    private void HandleEmailInput(ChangeEventArgs e)
+    {
+        var email = e.Value?.ToString() ?? string.Empty;
+        loginRequest.Email = email;
+        ValidateEmail(email);
+    }
+
+    private void HandlePasswordInput(ChangeEventArgs e)
+    {
+        var password = e.Value?.ToString() ?? string.Empty;
+        loginRequest.Password = password;
+        ValidatePassword(password);
+    }
+
+    private void ValidateEmail(string email)
+    {
+        if (string.IsNullOrEmpty(email))
+        {
+            emailValidationMessage = "El email es requerido";
+        }
+        else if (!IsValidEmailFormat(email))
+        {
+            emailValidationMessage = "El formato del email no es válido";
+        }
+        else
+        {
+            emailValidationMessage = string.Empty;
+        }
+    }
+
+    private void ValidatePassword(string password)
+    {
+        if (string.IsNullOrEmpty(password))
+        {
+            passwordValidationMessage = "La contraseña es requerida";
+        }
+        else
+        {
+            passwordValidationMessage = string.Empty;
+        }
+    }
+
+    private bool IsValidEmailFormat(string email)
+    {
+        if (string.IsNullOrEmpty(email)) return false;
+        
+        try
+        {
+            var emailAttribute = new System.ComponentModel.DataAnnotations.EmailAddressAttribute();
+            return emailAttribute.IsValid(email);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private async Task HandleLogin()
+    {
+        try
+        {
+            Console.WriteLine("🔍 HandleLogin iniciado");
+            Console.WriteLine($"Email: {loginRequest.Email}");
+            Console.WriteLine($"Password length: {loginRequest.Password?.Length ?? 0}");
+            
+            // Validar campos antes de enviar
+            ValidateEmail(loginRequest.Email);
+            ValidatePassword(loginRequest.Password ?? string.Empty);
+            
+            // No proceder si hay errores de validación
+            if (!string.IsNullOrEmpty(emailValidationMessage) || !string.IsNullOrEmpty(passwordValidationMessage))
+            {
+                Console.WriteLine("❌ Errores de validación encontrados");
+                Console.WriteLine($"Email error: {emailValidationMessage}");
+                Console.WriteLine($"Password error: {passwordValidationMessage}");
+                return;
+            }
+
+            Console.WriteLine("✅ Validación pasada, enviando solicitud...");
+            isLoading = true;
+            errorMessage = string.Empty;
+            isAccountLocked = false;
+            StateHasChanged(); // Forzar actualización de UI
+            
+            var response = await AuthService.Login(loginRequest);
+            
+            Console.WriteLine($"🔄 Respuesta recibida: Success={response.Success}");
+            
+            if (response.Success)
+            {
+                Console.WriteLine("✅ Login exitoso");
+                Console.WriteLine($"Usuario: {response.User?.FirstName} {response.User?.LastName}");
+                Console.WriteLine($"UserType: {response.User?.UserType}");
+                
+                // Guardar información de usuario en la sesión
+                await UserSession.SetUserAsync(response.User!);
+                
+                // Redirigir según el tipo de usuario
+                var dashboardRoute = UserSession.GetDashboardRoute();
+                Console.WriteLine($"🔀 Redirigiendo a: {dashboardRoute}");
+                NavigationManager.NavigateTo(dashboardRoute);
+            }
+            else
+            {
+                Console.WriteLine($"❌ Login fallido: {response.Message}");
+                errorMessage = response.Message ?? "Error al iniciar sesión. Verifica tus credenciales.";
+                
+                // Usar la propiedad IsAccountLocked del response en lugar de detectar por texto
+                isAccountLocked = response.IsAccountLocked;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"💥 Excepción en HandleLogin: {ex.Message}");
+            errorMessage = ex.Message ?? "Error desconocido al procesar la solicitud.";
+            isAccountLocked = false;
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ClearAccountLockedMessage()
+    {
+        isAccountLocked = false;
+        errorMessage = string.Empty;
+        StateHasChanged();
+    }
+}

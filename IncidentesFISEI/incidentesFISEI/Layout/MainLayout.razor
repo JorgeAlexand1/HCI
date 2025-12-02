@@ -1,0 +1,26 @@
+﻿@using incidentesFISEI.Services
+@inherits LayoutComponentBase
+@inject NavigationManager Navigation
+<div class="page">
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container-fluid">
+            <div class="navbar-brand">
+                <h5 class="mb-0 brand-title">IncidentesFISEI</h5>
+                <small class="brand-subtitle">Sistema de Gestión de Incidentes ITIL v3</small>
+            </div>
+            
+            <div class="ms-auto d-flex align-items-center">
+                <a href="/login" class="btn btn-primary me-2">
+                    <i class="fas fa-sign-in-alt me-1"></i>
+                    Iniciar Sesión
+                </a>
+            </div>
+        </div>
+    </nav>
+    
+    <main class="main-content">
+        <div class="container-fluid p-0">
+            @Body
+        </div>
+    </main>
+</div>
