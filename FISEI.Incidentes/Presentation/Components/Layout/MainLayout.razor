@@ -1,4 +1,5 @@
 ﻿@inherits LayoutComponentBase
+@using FISEI.Incidentes.Presentation.Components.Shared
 
 <div class="page">
     <div class="sidebar">
@@ -6,12 +7,14 @@
     </div>
 
     <main>
-        <div class="top-row px-4">
+        <div class="top-row px-4 d-flex justify-content-between align-items-center">
             <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+            <NotificationDropdown @ref="notificationDropdown" />
         </div>
 
         <article class="content px-4">
                     <TokenLoader />
+                    <NotificationListener OnNotificationReceived="HandleNotification" />
                     @Body
         </article>
     </main>
@@ -22,3 +25,35 @@
     <a href="" class="reload">Reload</a>
     <a class="dismiss">🗙</a>
 </div>
+
+@code {
+    private NotificationDropdown? notificationDropdown;
+    
+    private void HandleNotification(NotificationListener.NotificationData notification)
+    {
+        // Actualizar el dropdown cuando llega una notificación
+        notificationDropdown?.HandleNotification();
+        StateHasChanged();
+    }
+}
+
+<style>
+    .top-row {
+        background: linear-gradient(90deg, var(--primary) 0%, var(--accent) 100%) !important;
+        border-bottom: none;
+    }
+
+    .top-row a {
+        color: rgba(255, 255, 255, 0.95);
+        font-weight: 500;
+        transition: all 0.2s ease;
+        padding: 0.5rem 1rem;
+        border-radius: 0.5rem;
+    }
+
+    .top-row a:hover {
+        color: #ffffff;
+        background-color: rgba(255, 255, 255, 0.15);
+        text-decoration: none;
+    }
+</style>

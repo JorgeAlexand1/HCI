@@ -1,15 +1,19 @@
 ﻿@page "/home"
+@rendermode InteractiveServer
 @using FISEI.Incidentes.Core.Interfaces.IRepositories
 @using FISEI.Incidentes.Core.Entities
 @using FISEI.Incidentes.Application.Services
+@using Microsoft.AspNetCore.Components.Authorization
 @inject IIncidenteRepository IncidenteRepository
 @inject SlaService SlaService
-@attribute [Microsoft.AspNetCore.Authorization.Authorize]
-@attribute [Microsoft.AspNetCore.Authorization.Authorize]
+@inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
 
 <PageTitle>Dashboard - FISEI Incidentes</PageTitle>
 
-<h1 class="mb-4">📊 Dashboard de Incidentes</h1>
+<AuthorizeView>
+    <Authorized>
+        <h1 class="mb-4">📊 Dashboard de Incidentes</h1>
 
 @if (isLoading)
 {
@@ -315,5 +319,15 @@ else
         };
     }
 }
+
+    </Authorized>
+    <NotAuthorized>
+        <div class="alert alert-warning">
+            <h4>Acceso no autorizado</h4>
+            <p>Debes iniciar sesión para acceder a esta página.</p>
+            <a href="/login" class="btn btn-primary">Iniciar Sesión</a>
+        </div>
+    </NotAuthorized>
+</AuthorizeView>
 
 @code { }

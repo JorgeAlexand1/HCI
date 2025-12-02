@@ -1,0 +1,388 @@
+@page "/admin/usuarios"
+@rendermode InteractiveServer
+@inject HttpClient Http
+@inject IJSRuntime JS
+
+<PageTitle>Gestión de Usuarios</PageTitle>
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h3>
+                <i class="bi bi-people-fill"></i> Gestión de Usuarios y Roles
+            </h3>
+        </div>
+    </div>
+
+    @if (loading)
+    {
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Cargando...</span>
+            </div>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(errorMessage))
+    {
+        <div class="alert alert-danger">@errorMessage</div>
+    }
+    else
+    {
+        @if (!string.IsNullOrEmpty(successMessage))
+        {
+            <div class="alert alert-success alert-dismissible fade show">
+                @successMessage
+                <button type="button" class="btn-close" @onclick="@(() => successMessage = null)"></button>
+            </div>
+        }
+
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Usuarios Registrados (@usuarios.Count)</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>Correo</th>
+                                <th>Rol</th>
+                                <th>Email Verificado</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var usuario in usuarios)
+                            {
+                                <tr class="@(!usuario.Activo ? "table-secondary" : "")">
+                                    <td>@usuario.IdUsuario</td>
+                                    <td>@usuario.Nombre</td>
+                                    <td>@usuario.Correo</td>
+                                    <td>
+                                        @if (usuario.IdRol.HasValue)
+                                        {
+                                            <span class="badge bg-success">@usuario.NombreRol</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">Sin Rol</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (usuario.EmailVerificado)
+                                        {
+                                            <span class="badge bg-success">✓ Verificado</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">⏳ Pendiente</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (usuario.Activo)
+                                        {
+                                            <span class="badge bg-success">Activo</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-secondary">Inactivo</span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            @if (!usuario.EmailVerificado)
+                                            {
+                                                <button class="btn btn-outline-success" @onclick="() => VerificarEmailManualmente(usuario)" title="Verificar email manualmente">
+                                                    <i class="bi bi-envelope-check"></i>
+                                                </button>
+                                            }
+                                            <button class="btn btn-outline-primary" @onclick="() => AbrirModalAsignarRol(usuario)" title="Asignar rol">
+                                                <i class="bi bi-person-badge"></i>
+                                            </button>
+                                            <button class="btn btn-outline-secondary" @onclick="() => ToggleActivo(usuario)" title="@(usuario.Activo ? "Desactivar" : "Activar")">
+                                                @if (usuario.Activo)
+                                                {
+                                                    <i class="bi bi-pause"></i>
+                                                }
+                                                else
+                                                {
+                                                    <i class="bi bi-play"></i>
+                                                }
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal para asignar rol -->
+        @if (usuarioSeleccionado != null)
+        {
+            <div class="modal d-block" tabindex="-1" style="background-color: rgba(0,0,0,0.5);">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Asignar Rol - @usuarioSeleccionado.Nombre</h5>
+                            <button type="button" class="btn-close" @onclick="CerrarModal"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Seleccionar Rol:</label>
+                                <select class="form-select" @bind="rolSeleccionadoId">
+                                    <option value="0">-- Seleccione un rol --</option>
+                                    @foreach (var rol in roles)
+                                    {
+                                        <option value="@rol.IdRol">@rol.Nombre - @rol.Descripcion</option>
+                                    }
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <p class="text-muted small">
+                                    <strong>Roles disponibles:</strong>
+                                </p>
+                                <ul class="small">
+                                    <li><strong>SPOC:</strong> Administrador principal (asigna roles, gestiona sistema)</li>
+                                    <li><strong>ServiceDesk:</strong> Personal del service desk</li>
+                                    <li><strong>SupportN1:</strong> Técnicos Nivel 1 (tickets básicos)</li>
+                                    <li><strong>SupportN2:</strong> Técnicos Nivel 2 (escalamiento)</li>
+                                    <li><strong>SupportN3:</strong> Expertos/Proveedores (nivel avanzado)</li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="CerrarModal">Cancelar</button>
+                            @if (usuarioSeleccionado.IdRol.HasValue)
+                            {
+                                <button type="button" class="btn btn-warning" @onclick="RemoverRol" disabled="@procesando">
+                                    @if (procesando) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                    Remover Rol
+                                </button>
+                            }
+                            <button type="button" class="btn btn-primary" @onclick="AsignarRol" disabled="@(rolSeleccionadoId == 0 || procesando)">
+                                @if (procesando) { <span class="spinner-border spinner-border-sm me-1"></span> }
+                                Asignar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    private bool loading = true;
+    private string? errorMessage;
+    private string? successMessage;
+    private bool procesando = false;
+    
+    private List<UsuarioDTO> usuarios = new();
+    private List<RolDTO> roles = new();
+    private UsuarioDTO? usuarioSeleccionado;
+    private int rolSeleccionadoId = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarToken();
+        await CargarDatos();
+    }
+
+    private async Task CargarToken()
+    {
+        try
+        {
+            var token = await JS.InvokeAsync<string>("authStore.getToken");
+            if (!string.IsNullOrEmpty(token))
+            {
+                Http.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+            }
+        }
+        catch { }
+    }
+
+    private async Task CargarDatos()
+    {
+        loading = true;
+        errorMessage = null;
+        
+        try
+        {
+            // Cargar usuarios
+            var responseUsuarios = await Http.GetAsync("api/usuarios");
+            if (responseUsuarios.IsSuccessStatusCode)
+            {
+                usuarios = await responseUsuarios.Content.ReadFromJsonAsync<List<UsuarioDTO>>() ?? new();
+            }
+            else
+            {
+                errorMessage = "No tienes permisos para ver los usuarios. Debes ser SPOC.";
+                return;
+            }
+
+            // Cargar roles
+            var responseRoles = await Http.GetAsync("api/usuarios/roles");
+            if (responseRoles.IsSuccessStatusCode)
+            {
+                roles = await responseRoles.Content.ReadFromJsonAsync<List<RolDTO>>() ?? new();
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al cargar datos: {ex.Message}";
+        }
+        finally
+        {
+            loading = false;
+        }
+    }
+
+    private void AbrirModalAsignarRol(UsuarioDTO usuario)
+    {
+        usuarioSeleccionado = usuario;
+        rolSeleccionadoId = usuario.IdRol ?? 0;
+    }
+
+    private void CerrarModal()
+    {
+        usuarioSeleccionado = null;
+        rolSeleccionadoId = 0;
+    }
+
+    private async Task AsignarRol()
+    {
+        if (usuarioSeleccionado == null || rolSeleccionadoId == 0) return;
+
+        procesando = true;
+        try
+        {
+            var payload = new { IdUsuario = usuarioSeleccionado.IdUsuario, IdRol = rolSeleccionadoId };
+            var response = await Http.PostAsJsonAsync("api/usuarios/asignar-rol", payload);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = $"Rol asignado exitosamente a {usuarioSeleccionado.Nombre}";
+                CerrarModal();
+                await CargarDatos();
+            }
+            else
+            {
+                errorMessage = "Error al asignar rol";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            procesando = false;
+        }
+    }
+
+    private async Task RemoverRol()
+    {
+        if (usuarioSeleccionado == null) return;
+
+        procesando = true;
+        try
+        {
+            var response = await Http.PostAsync($"api/usuarios/{usuarioSeleccionado.IdUsuario}/remover-rol", null);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = $"Rol removido de {usuarioSeleccionado.Nombre}";
+                CerrarModal();
+                await CargarDatos();
+            }
+            else
+            {
+                errorMessage = "Error al remover rol";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            procesando = false;
+        }
+    }
+
+    private async Task ToggleActivo(UsuarioDTO usuario)
+    {
+        try
+        {
+            var response = await Http.PostAsync($"api/usuarios/{usuario.IdUsuario}/toggle-activo", null);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = $"Usuario {usuario.Nombre} {(usuario.Activo ? "desactivado" : "activado")}";
+                await CargarDatos();
+            }
+            else
+            {
+                errorMessage = "Error al cambiar estado";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    private async Task VerificarEmailManualmente(UsuarioDTO usuario)
+    {
+        if (usuario.EmailVerificado)
+        {
+            successMessage = "El correo ya está verificado";
+            return;
+        }
+
+        try
+        {
+            var response = await Http.PostAsync($"api/admin/verify-user-email/{usuario.IdUsuario}", null);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                successMessage = $"✅ Correo de {usuario.Nombre} verificado manualmente";
+                await CargarDatos();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                errorMessage = $"Error al verificar email: {error}";
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+    }
+
+    public class UsuarioDTO
+    {
+        public int IdUsuario { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public string Correo { get; set; } = string.Empty;
+        public bool Activo { get; set; }
+        public bool EmailVerificado { get; set; }
+        public int? IdRol { get; set; }
+        public string? NombreRol { get; set; }
+        public string? DescripcionRol { get; set; }
+    }
+
+    public class RolDTO
+    {
+        public int IdRol { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public string? Descripcion { get; set; }
+    }
+}

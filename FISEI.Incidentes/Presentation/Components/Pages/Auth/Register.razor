@@ -1,0 +1,180 @@
+@page "/register"
+@layout Presentation.Components.Layout.EmptyLayout
+@rendermode InteractiveServer
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@using System.ComponentModel.DataAnnotations
+
+<PageTitle>Registrarse - FISEI Incidentes</PageTitle>
+
+<div class="row justify-content-center mt-5">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Crear Nueva Cuenta</h5>
+            </div>
+            <div class="card-body">
+                @if (!string.IsNullOrEmpty(successMessage))
+                {
+                    <div class="alert alert-success">
+                        <h5 class="alert-heading">✅ ¡Registro exitoso!</h5>
+                        <p class="mb-2">@successMessage</p>
+                        <hr />
+                        <h6>Próximos pasos:</h6>
+                        <ol class="mb-2">
+                            <li><strong>Verifica tu correo:</strong> Revisa tu bandeja de entrada (y spam) para encontrar el email de verificación.</li>
+                            <li><strong>Haz clic en el enlace:</strong> El enlace te llevará a confirmar tu dirección de correo.</li>
+                            <li><strong>Espera la asignación de rol:</strong> Un administrador debe asignarte un rol antes de que puedas usar el sistema.</li>
+                        </ol>
+                        <p class="text-muted small mb-0">
+                            <strong>Nota:</strong> Si no recibes el correo en unos minutos, verifica tu carpeta de spam o solicita un reenvío desde la página de login.
+                        </p>
+                        <div class="mt-3">
+                            <a href="/login" class="btn btn-primary">Ir al Login</a>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    @if (!string.IsNullOrEmpty(errorMessage))
+                    {
+                        <div class="alert alert-danger">@errorMessage</div>
+                    }
+
+                    <EditForm Model="@registerModel" OnValidSubmit="OnSubmit">
+                        <DataAnnotationsValidator />
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Nombre Completo</label>
+                            <InputText class="form-control" @bind-Value="registerModel.Nombre" placeholder="Ej: María García" />
+                            <ValidationMessage For="@(() => registerModel.Nombre)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Correo Electrónico</label>
+                            <InputText class="form-control" @bind-Value="registerModel.Correo" type="email" placeholder="usuario@uta.edu.ec" />
+                            <small class="form-text text-muted">
+                                Correos permitidos: @@uta.edu.ec, @@outlook.com, @@hotmail.com, @@live.com
+                            </small>
+                            <ValidationMessage For="@(() => registerModel.Correo)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Contraseña</label>
+                            <InputText class="form-control" @bind-Value="registerModel.Contrasena" type="password" placeholder="Mínimo 6 caracteres" />
+                            <ValidationMessage For="@(() => registerModel.Contrasena)" />
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Confirmar Contraseña</label>
+                            <InputText class="form-control" @bind-Value="registerModel.ConfirmarContrasena" type="password" />
+                            <ValidationMessage For="@(() => registerModel.ConfirmarContrasena)" />
+                        </div>
+
+                        <div class="alert alert-info">
+                            <small>
+                                <strong>Importante:</strong> Después de registrarte:
+                                <ol class="mb-0 mt-2">
+                                    <li>Recibirás un correo de verificación</li>
+                                    <li>Un administrador debe asignarte un rol</li>
+                                    <li>Luego podrás iniciar sesión</li>
+                                </ol>
+                            </small>
+                        </div>
+
+                        <button class="btn btn-primary w-100" type="submit" disabled="@isSubmitting">
+                            @if (isSubmitting) 
+                            { 
+                                <span class="spinner-border spinner-border-sm me-2"></span> 
+                            }
+                            Registrarse
+                        </button>
+                    </EditForm>
+
+                    <div class="mt-3 text-center">
+                        <span>¿Ya tienes una cuenta?</span>
+                        <a href="/login" class="ms-2">Iniciar Sesión</a>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private string? errorMessage;
+    private string? successMessage;
+    private bool isSubmitting = false;
+    private RegisterModel registerModel = new();
+
+    public class RegisterModel
+    {
+        [Required(ErrorMessage = "El nombre es requerido")]
+        [StringLength(100, ErrorMessage = "El nombre no puede exceder 100 caracteres")]
+        public string Nombre { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "El correo es requerido")]
+        [EmailAddress(ErrorMessage = "Formato de correo inválido")]
+        [StringLength(100, ErrorMessage = "El correo no puede exceder 100 caracteres")]
+        public string Correo { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "La contraseña es requerida")]
+        [StringLength(100, MinimumLength = 6, ErrorMessage = "La contraseña debe tener entre 6 y 100 caracteres")]
+        public string Contrasena { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Debe confirmar la contraseña")]
+        [Compare(nameof(Contrasena), ErrorMessage = "Las contraseñas no coinciden")]
+        public string ConfirmarContrasena { get; set; } = string.Empty;
+    }
+
+    private async Task OnSubmit()
+    {
+        errorMessage = null;
+        successMessage = null;
+        isSubmitting = true;
+
+        try
+        {
+            var response = await Http.PostAsJsonAsync("api/auth/register", registerModel);
+            
+            if (!response.IsSuccessStatusCode)
+            {
+                try
+                {
+                    var errorResponse = await response.Content.ReadFromJsonAsync<ErrorResponse>();
+                    errorMessage = errorResponse?.message ?? "Error al registrar. Por favor intenta nuevamente.";
+                }
+                catch
+                {
+                    errorMessage = "Error al registrar. Por favor intenta nuevamente.";
+                }
+                return;
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<RegisterResponse>();
+            successMessage = result?.message ?? "Registro exitoso. Por favor verifica tu correo electrónico.";
+            
+            // Limpiar el formulario
+            registerModel = new();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isSubmitting = false;
+        }
+    }
+
+    public class RegisterResponse
+    {
+        public string? message { get; set; }
+        public int idUsuario { get; set; }
+    }
+
+    public class ErrorResponse
+    {
+        public string? message { get; set; }
+    }
+}

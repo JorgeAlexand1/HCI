@@ -8,7 +8,10 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
 using FISEI.Incidentes.Application.Services;        
-using Microsoft.OpenApi.Models;  // ✅ CAMBIAR ESTA LÍNEA
+using Microsoft.OpenApi.Models;
+using FISEI.Incidentes.Infrastructure.Security;
+using Microsoft.AspNetCore.Components.Authorization;
+using FISEI.Incidentes.Presentation.Hubs;
 
 namespace FISEI.Incidentes
 {
@@ -65,6 +68,7 @@ namespace FISEI.Incidentes
             builder.Services.AddScoped<IAsignacionRepository, AsignacionRepository>();
             builder.Services.AddScoped<INotificacionRepository, NotificacionRepository>();
             builder.Services.AddScoped<IConocimientoRepository, ConocimientoRepository>();
+            builder.Services.AddScoped<IRolRepository, RolRepository>();
 
             // ---------------------------------------------------------
             // 🎯 Registrar Servicios de Aplicación (Business Logic)
@@ -75,17 +79,37 @@ namespace FISEI.Incidentes
             builder.Services.AddScoped<IConocimientoService, ConocimientoService>();
             builder.Services.AddScoped<FISEI.Incidentes.Infrastructure.Services.EmailService>();
             builder.Services.AddScoped<SlaService>();
+            
+            // ---------------------------------------------------------
+            // 📡 SignalR para notificaciones en tiempo real
+            // ---------------------------------------------------------
+            builder.Services.AddSignalR();
+            
+            // ---------------------------------------------------------
+            // 🔐 Autenticación para Blazor Server
+            // ---------------------------------------------------------
+            builder.Services.AddScoped<FISEI.Incidentes.Infrastructure.Services.TokenProvider>();
+            builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
+            builder.Services.AddCascadingAuthenticationState();
+            builder.Services.AddTransient<FISEI.Incidentes.Infrastructure.Services.AuthHeaderHandler>();
+            
             // ---------------------------------------------------------
             // 2️⃣ Agregar servicios para Blazor y controladores API
             // ---------------------------------------------------------
             builder.Services.AddRazorComponents()
                 .AddInteractiveServerComponents();
             
-            // Register HttpClient for Blazor components
-            builder.Services.AddHttpClient();
-            builder.Services.AddScoped<HttpClient>(sp => new HttpClient
+            // Register HttpClient for Blazor components with AuthHeaderHandler
+            builder.Services.AddScoped(sp =>
             {
-                BaseAddress = new Uri(builder.Configuration["AppBaseUrl"] ?? "http://localhost:5023/")
+                var handler = sp.GetRequiredService<FISEI.Incidentes.Infrastructure.Services.AuthHeaderHandler>();
+                handler.InnerHandler = new HttpClientHandler();
+                
+                var httpClient = new HttpClient(handler)
+                {
+                    BaseAddress = new Uri(builder.Configuration["AppBaseUrl"] ?? "http://localhost:5023/")
+                };
+                return httpClient;
             });
 
             builder.Services.AddControllers()
@@ -116,7 +140,9 @@ namespace FISEI.Incidentes
             // ---------------------------------------------------------
             // 4️⃣ Configurar el pipeline HTTP
             // ---------------------------------------------------------
-            // (Registro de seeder ya realizado antes del build)
+            
+            // Habilitar archivos estáticos (CSS, JS, imágenes)
+            app.UseStaticFiles();
 
             if (app.Environment.IsDevelopment())
             {
@@ -133,13 +159,12 @@ namespace FISEI.Incidentes
             }
 
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
-            app.UseRouting();
             app.UseAuthentication();
             app.UseAuthorization();
             app.UseAntiforgery();
 
             app.MapControllers(); // ✅ Para habilitar los endpoints de la API
+            app.MapHub<NotificationHub>("/notificationHub"); // ✅ SignalR Hub
 
             app.MapRazorComponents<App>()
                 .AddInteractiveServerRenderMode();

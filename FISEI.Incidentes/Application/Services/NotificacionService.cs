@@ -2,24 +2,28 @@ using FISEI.Incidentes.Core.Entities;
 using FISEI.Incidentes.Core.Interfaces.IRepositories;
 using FISEI.Incidentes.Core.Interfaces.IServices;
 using FISEI.Incidentes.Infrastructure.Data.Repositories;
+using Microsoft.AspNetCore.SignalR;
+using FISEI.Incidentes.Presentation.Hubs;
 
 namespace FISEI.Incidentes.Application.Services
 {
     /// <summary>
-    /// Servicio de notificaciones en tiempo real
+    /// Servicio de notificaciones en tiempo real con SignalR
     /// </summary>
     public class NotificacionService : INotificacionService
     {
         private readonly INotificacionRepository _notificacionRepository;
         private readonly IIncidenteRepository _incidenteRepository;
-        // TODO: Agregar IHubContext<NotificationHub> para SignalR
+        private readonly IHubContext<NotificationHub> _hubContext;
 
         public NotificacionService(
             INotificacionRepository notificacionRepository,
-            IIncidenteRepository incidenteRepository)
+            IIncidenteRepository incidenteRepository,
+            IHubContext<NotificationHub> hubContext)
         {
             _notificacionRepository = notificacionRepository;
             _incidenteRepository = incidenteRepository;
+            _hubContext = hubContext;
         }
 
         public async Task EnviarNotificacionAsync(int idUsuario, string mensaje, string tipo)
@@ -34,8 +38,15 @@ namespace FISEI.Incidentes.Application.Services
 
             await _notificacionRepository.AddAsync(notificacion);
 
-            // TODO: Enviar notificación en tiempo real con SignalR
-            // await _hubContext.Clients.User(idUsuario.ToString()).SendAsync("ReceiveNotification", mensaje, tipo);
+            // Enviar notificaciÃ³n push en tiempo real con SignalR
+            await _hubContext.Clients.Group($"user_{idUsuario}")
+                .SendAsync("ReceiveNotification", new
+                {
+                    id = notificacion.IdNotificacion,
+                    mensaje = mensaje,
+                    tipo = tipo,
+                    fechaEnvio = notificacion.FechaEnvio
+                });
         }
 
         public async Task NotificarNuevoIncidenteAsync(int idIncidente)
@@ -44,14 +55,12 @@ namespace FISEI.Incidentes.Application.Services
             if (incidente == null)
                 return;
 
-            // Notificar al usuario que creó el incidente
+            // Notificar al usuario que creÃ³ el incidente
             await EnviarNotificacionAsync(
                 incidente.IdUsuario,
                 $"Tu incidente #{idIncidente} - '{incidente.Titulo}' ha sido registrado exitosamente",
                 "info"
             );
-
-            // TODO: Notificar al SPOC
         }
 
         public async Task NotificarAsignacionAsync(int idTecnico, int idIncidente)
@@ -73,7 +82,7 @@ namespace FISEI.Incidentes.Application.Services
             if (incidente == null)
                 return;
 
-            // Notificar al usuario que reportó
+            // Notificar al usuario que reportï¿½
             await EnviarNotificacionAsync(
                 incidente.IdUsuario,
                 $"Tu incidente #{idIncidente} ha sido escalado de N{nivelAnterior} a N{nivelNuevo}",

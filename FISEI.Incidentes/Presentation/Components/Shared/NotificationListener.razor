@@ -1,0 +1,91 @@
+@using Microsoft.AspNetCore.SignalR.Client
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@implements IAsyncDisposable
+
+@code {
+    private HubConnection? hubConnection;
+    private bool isInitialized = false;
+    
+    [Parameter]
+    public EventCallback<NotificationData> OnNotificationReceived { get; set; }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !isInitialized)
+        {
+            isInitialized = true;
+            
+            try
+            {
+                // Obtener el token de autenticación
+                var token = await JSRuntime.InvokeAsync<string>("sessionStorage.getItem", "authToken");
+                
+                if (!string.IsNullOrEmpty(token))
+                {
+                    hubConnection = new HubConnectionBuilder()
+                        .WithUrl(Navigation.ToAbsoluteUri("/notificationHub"), options =>
+                        {
+                            options.AccessTokenProvider = () => Task.FromResult(token)!;
+                        })
+                        .WithAutomaticReconnect()
+                        .Build();
+
+                    hubConnection.On<object>("ReceiveNotification", async (notification) =>
+                    {
+                        var notificationJson = System.Text.Json.JsonSerializer.Serialize(notification);
+                        var notificationData = System.Text.Json.JsonSerializer.Deserialize<NotificationData>(notificationJson);
+                        
+                        if (notificationData != null)
+                        {
+                            // Mostrar notificación en el navegador
+                            await ShowBrowserNotification(notificationData);
+                            
+                            // Disparar evento para actualizar UI
+                            await OnNotificationReceived.InvokeAsync(notificationData);
+                        }
+                    });
+
+                    await hubConnection.StartAsync();
+                    Console.WriteLine("SignalR conectado exitosamente");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error conectando SignalR: {ex.Message}");
+            }
+        }
+        
+        await base.OnAfterRenderAsync(firstRender);
+    }
+
+    private async Task ShowBrowserNotification(NotificationData notification)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("showNotification", 
+                notification.Mensaje, 
+                notification.Tipo);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error mostrando notificación: {ex.Message}");
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (hubConnection is not null)
+        {
+            await hubConnection.DisposeAsync();
+        }
+    }
+
+    public class NotificationData
+    {
+        public int Id { get; set; }
+        public string Mensaje { get; set; } = string.Empty;
+        public string Tipo { get; set; } = string.Empty;
+        public DateTime FechaEnvio { get; set; }
+    }
+}

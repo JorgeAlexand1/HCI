@@ -13,13 +13,16 @@ namespace FISEI.Incidentes.Infrastructure.Data.Repositories
         public override async Task<IEnumerable<Usuario>> GetAllAsync()
         {
             return await _dbSet
+                .Include(u => u.Rol)
                 .Where(u => u.Activo)
                 .ToListAsync();
         }
 
         public override async Task<Usuario?> GetByIdAsync(int id)
         {
-            return await _dbSet.FirstOrDefaultAsync(u => u.IdUsuario == id);
+            return await _dbSet
+                .Include(u => u.Rol)
+                .FirstOrDefaultAsync(u => u.IdUsuario == id);
         }
 
         public async Task<Usuario?> GetByCorreoAsync(string correo)

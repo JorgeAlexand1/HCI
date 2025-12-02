@@ -1,18 +1,38 @@
 @page "/"
-
+@rendermode InteractiveServer
+@using Microsoft.AspNetCore.Components.Authorization
 @inject NavigationManager Navigation
+@inject AuthenticationStateProvider AuthStateProvider
 
 @if (!_redirected)
 {
-    <p>Redirigiendo al login…</p>
+    <div class="text-center mt-5">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-2">Redirigiendo...</p>
+    </div>
 }
 
 @code {
     private bool _redirected;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        if (user.Identity?.IsAuthenticated == true)
+        {
+            // Usuario autenticado, redirigir al dashboard
+            Navigation.NavigateTo("/home");
+        }
+        else
+        {
+            // Usuario no autenticado, redirigir al login
+            Navigation.NavigateTo("/login");
+        }
+        
         _redirected = true;
-        Navigation.NavigateTo("/login", forceLoad: true);
     }
 }

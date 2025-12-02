@@ -1,7 +1,19 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
 <Router AppAssembly="typeof(Program).Assembly">
     <Found Context="routeData">
-        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(FISEI.Incidentes.Presentation.Components.Layout.MainLayout)" />
+        <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(FISEI.Incidentes.Presentation.Components.Layout.MainLayout)">
+            <NotAuthorized>
+                @if (context.User.Identity?.IsAuthenticated == false)
+                {
+                    <p>Debes iniciar sesión para acceder a esta página.</p>
+                    <a href="/login" class="btn btn-primary">Iniciar Sesión</a>
+                }
+                else
+                {
+                    <p>No tienes permiso para acceder a esta página.</p>
+                }
+            </NotAuthorized>
+        </AuthorizeRouteView>
         <FocusOnNavigate RouteData="routeData" Selector="h1" />
     </Found>
     <NotFound>

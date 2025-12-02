@@ -65,7 +65,24 @@ namespace FISEI.Incidentes.Infrastructure.Data
                     Correo = "demo@fisei.local",
                     Contrasena = Infrastructure.Security.PasswordHasher.HashPassword("Demo#2025"),
                     Activo = true,
-                    IdRol = rolN1.IdRol
+                    IdRol = rolN1.IdRol,
+                    EmailVerificado = true
+                });
+                await _db.SaveChangesAsync();
+            }
+
+            // Usuario administrador SPOC si no existe
+            if (!await _db.Usuarios.AnyAsync(u => u.Correo == "admin@uta.edu.ec"))
+            {
+                var rolSPOC = await _db.Set<Rol>().FirstAsync(r => r.Nombre == "SPOC");
+                _db.Usuarios.Add(new Usuario
+                {
+                    Nombre = "Administrador FISEI",
+                    Correo = "admin@uta.edu.ec",
+                    Contrasena = Infrastructure.Security.PasswordHasher.HashPassword("Admin123!"),
+                    Activo = true,
+                    IdRol = rolSPOC.IdRol,
+                    EmailVerificado = true
                 });
                 await _db.SaveChangesAsync();
             }

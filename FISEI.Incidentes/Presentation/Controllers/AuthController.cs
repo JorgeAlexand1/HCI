@@ -9,6 +9,7 @@ using FISEI.Incidentes.Core.Entities;
 using Microsoft.EntityFrameworkCore;
 using FISEI.Incidentes.Infrastructure.Security;
 using FISEI.Incidentes.Infrastructure.Services;
+using FISEI.Incidentes.Core.DTOs;
 
 namespace FISEI.Incidentes.Presentation.Controllers
 {
@@ -28,7 +29,6 @@ namespace FISEI.Incidentes.Presentation.Controllers
             _emailService = emailService;
         }
 
-        public record RegisterRequest(string Email, string Password, string NombreMostrar, string RolSistema);
         public record LoginRequest(string Email, string Password);
         public record RequestResetPassword(string Email);
         public record ConfirmResetPassword(string Email, string Token, string NewPassword);
@@ -54,24 +54,30 @@ namespace FISEI.Incidentes.Presentation.Controllers
             catch { return false; }
         }
 
+        /// <summary>
+        /// Registro de nuevos usuarios (sin rol asignado inicialmente)
+        /// El administrador deberá asignar el rol posteriormente
+        /// </summary>
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterRequest req)
+        public async Task<IActionResult> Register([FromBody] RegisterDTO req)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
 
-            if (!IsAllowedEmail(req.Email))
+            if (!IsAllowedEmail(req.Correo))
                 return BadRequest(new { message = "Correo no permitido. Use @uta.edu.ec o Outlook (@outlook.com, @hotmail.com, @live.com)." });
 
-            var existing = await _context.Usuarios.FirstOrDefaultAsync(u => u.Correo == req.Email);
-            if (existing != null) return Conflict(new { message = "Email ya registrado" });
+            var existing = await _context.Usuarios.FirstOrDefaultAsync(u => u.Correo == req.Correo);
+            if (existing != null) return Conflict(new { message = "El correo ya está registrado" });
 
             var usuario = new Usuario
             {
-                Nombre = req.NombreMostrar,
-                Correo = req.Email,
-                Contrasena = PasswordHasher.HashPassword(req.Password),
-                Activo = true
+                Nombre = req.Nombre,
+                Correo = req.Correo,
+                Contrasena = PasswordHasher.HashPassword(req.Contrasena),
+                Activo = true,
+                IdRol = null // Sin rol asignado inicialmente
             };
+            
             // Generar token de verificación de correo
             usuario.EmailVerificationToken = Guid.NewGuid().ToString("N");
             _context.Usuarios.Add(usuario);
@@ -80,33 +86,51 @@ namespace FISEI.Incidentes.Presentation.Controllers
             var baseUrl = _config["AppBaseUrl"] ?? "http://localhost:5023";
             var verifyLink = $"{baseUrl}/verify-email?email={Uri.EscapeDataString(usuario.Correo)}&token={usuario.EmailVerificationToken}";
             await _emailService.SendAsync(usuario.Correo, "Verifica tu correo - FISEI Incidentes",
-                $"<p>Hola {usuario.Nombre},</p><p>Por favor verifica tu correo haciendo clic en el siguiente enlace:</p><p><a href='{verifyLink}'>Verificar correo</a></p>");
+                $"<p>Hola {usuario.Nombre},</p><p>Por favor verifica tu correo haciendo clic en el siguiente enlace:</p><p><a href='{verifyLink}'>Verificar correo</a></p><p><strong>Nota:</strong> Un administrador debe asignarte un rol antes de que puedas usar el sistema.</p>");
 
-            return Ok(new { message = "Registro exitoso", idUsuario = usuario.IdUsuario });
+            return Ok(new { 
+                message = "Registro exitoso. Por favor verifica tu correo. Un administrador asignará tu rol posteriormente.", 
+                idUsuario = usuario.IdUsuario 
+            });
         }
-
+        /// <summary>
+        /// Login de usuarios (requiere correo verificado y rol asignado)
+        /// </summary>
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginRequest req)
         {
             var usuario = await _context.Usuarios
                 .Include(u => u.Rol)
                 .FirstOrDefaultAsync(u => u.Correo == req.Email && u.Activo);
-            if (usuario == null) return Unauthorized(new { code = "INVALID_CREDENTIALS", message = "Credenciales inválidas" });
+            
+            if (usuario == null) 
+                return Unauthorized(new { code = "INVALID_CREDENTIALS", message = "Credenciales inválidas" });
 
-            if (usuario.EmailVerificado == false)
-                return Unauthorized(new { code = "EMAIL_NOT_VERIFIED", message = "Correo no verificado" });
+            if (!usuario.EmailVerificado)
+                return Unauthorized(new { code = "EMAIL_NOT_VERIFIED", message = "Correo no verificado. Por favor revisa tu bandeja de entrada." });
+
+            // Validar que tenga un rol asignado
+            if (usuario.IdRol == null || usuario.Rol == null)
+                return Unauthorized(new { code = "NO_ROLE_ASSIGNED", message = "No tienes un rol asignado. Contacta al administrador." });
 
             // Verificación con hash PBKDF2
             if (!PasswordHasher.Verify(req.Password, usuario.Contrasena))
-                return Unauthorized(new { message = "Credenciales inválidas" });
+                return Unauthorized(new { code = "INVALID_CREDENTIALS", message = "Credenciales inválidas" });
 
-            var roles = new List<string>();
-            if (usuario.Rol?.Nombre != null)
-            {
-                roles.Add(usuario.Rol.Nombre);
-            }
+            var roles = new List<string> { usuario.Rol.Nombre };
+            
             var token = GenerateJwtTokenFromUsuario(usuario, roles);
-            return Ok(new { token, roles });
+            
+            return Ok(new { 
+                token, 
+                roles,
+                usuario = new {
+                    idUsuario = usuario.IdUsuario,
+                    nombre = usuario.Nombre,
+                    correo = usuario.Correo,
+                    rol = usuario.Rol.Nombre
+                }
+            });
         }
 
     [HttpPost("resend-verification")]
