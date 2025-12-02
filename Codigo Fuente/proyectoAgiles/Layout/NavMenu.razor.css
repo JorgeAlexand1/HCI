@@ -1,0 +1,317 @@
+.navbar-toggler {
+    background-color: rgba(255, 255, 255, 0.1);
+}
+
+.top-row {
+    min-height: 3.5rem;
+    background-color: rgba(0,0,0,0.4);
+}
+
+.navbar-brand {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.2;
+    font-weight: 600;
+    text-decoration: none !important;
+}
+
+.brand-text {
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: white;
+}
+
+.brand-subtitle {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 400;
+    margin-top: -2px;
+}
+
+.bi {
+    display: inline-block;
+    position: relative;
+    width: 1.25rem;
+    height: 1.25rem;
+    margin-right: 0.75rem;
+    top: -1px;
+    background-size: cover;
+}
+
+.bi-house-door-fill-nav-menu {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-house-door-fill' viewBox='0 0 16 16'%3E%3Cpath d='M6.5 14.5v-3.505c0-.245.25-.495.5-.495h2c.25 0 .5.25.5.5v3.5a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5v-7a.5.5 0 0 0-.146-.354L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293L8.354 1.146a.5.5 0 0 0-.708 0l-6 6A.5.5 0 0 0 1.5 7.5v7a.5.5 0 0 0 .5.5h4a.5.5 0 0 0 .5-.5Z'/%3E%3C/svg%3E");
+}
+
+.bi-plus-square-fill-nav-menu {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-plus-square-fill' viewBox='0 0 16 16'%3E%3Cpath d='M2 0a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2H2zm6.5 4.5v3h3a.5.5 0 0 1 0 1h-3v3a.5.5 0 0 1-1 0v-3h-3a.5.5 0 0 1 0-1h3v-3a.5.5 0 0 1 1 0z'/%3E%3C/svg%3E");
+}
+
+.bi-list-nested-nav-menu {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' class='bi bi-list-nested' viewBox='0 0 16 16'%3E%3Cpath fill-rule='evenodd' d='M4.5 11.5A.5.5 0 0 1 5 11h10a.5.5 0 0 1 0 1H5a.5.5 0 0 1-.5-.5zm-2-4A.5.5 0 0 1 3 7h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm-2-4A.5.5 0 0 1 1 3h10a.5.5 0 0 1 0 1H1a.5.5 0 0 1-.5-.5z'/%3E%3C/svg%3E");
+}
+
+.nav-item {
+    font-size: 0.9rem;
+    padding-bottom: 0.5rem;
+}
+
+    .nav-item:first-of-type {
+        padding-top: 1rem;
+    }
+
+    .nav-item:last-of-type {
+        padding-bottom: 1rem;
+    }
+
+    .nav-item ::deep a {
+        color: #d7d7d7;
+        border-radius: 4px;
+        height: 3rem;
+        display: flex;
+        align-items: center;
+        line-height: 3rem;
+    }
+
+.nav-item ::deep a.active {
+    background-color: rgba(255,255,255,0.37);
+    color: white;
+}
+
+.nav-item ::deep a:hover {
+    background-color: rgba(255,255,255,0.1);
+    color: white;
+}
+
+/* Estilos para botones de autenticación */
+.auth-buttons {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.auth-buttons .btn {
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.auth-buttons .btn-outline-light {
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    color: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.auth-buttons .btn-outline-light:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.auth-buttons .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+}
+
+.auth-buttons .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Estilos para botones móviles */
+.mobile-auth-buttons {
+    padding: 1rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 1rem;
+}
+
+.mobile-auth-buttons .btn {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+.mobile-auth-buttons .btn-outline-primary {
+    border: 1px solid #667eea;
+    color: #667eea;
+    background: transparent;
+}
+
+.mobile-auth-buttons .btn-outline-primary:hover {
+    background: #667eea;
+    color: white;
+}
+
+.mobile-auth-buttons .btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+}
+
+.mobile-auth-buttons .btn-primary:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+/* Estilos para información del usuario autenticado */
+.auth-user-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.user-greeting {
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.9rem;
+    font-weight: 500;
+    margin: 0;
+}
+
+.auth-user-info .btn {
+    font-size: 0.875rem;
+    padding: 0.375rem 0.75rem;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+/* Estilos específicos para el botón Cerrar Sesión - Desktop */
+.auth-user-info .btn-outline-light {
+    border: 1px solid rgba(114, 47, 55, 0.8) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    background: linear-gradient(135deg, rgba(114, 47, 55, 0.2) 0%, rgba(90, 37, 43, 0.2) 100%) !important;
+    backdrop-filter: blur(10px);
+}
+
+.auth-user-info .btn-outline-light:hover {
+    background: linear-gradient(135deg, #722f37 0%, #5a252b 100%) !important;
+    border-color: #722f37 !important;
+    color: white !important;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(114, 47, 55, 0.4) !important;
+}
+
+.auth-user-info .btn-outline-light:focus {
+    background: linear-gradient(135deg, #722f37 0%, #5a252b 100%) !important;
+    border-color: #722f37 !important;
+    color: white !important;
+    box-shadow: 0 0 0 0.2rem rgba(114, 47, 55, 0.25) !important;
+}
+
+.auth-user-info .btn-outline-light:active {
+    background: linear-gradient(135deg, #5a252b 0%, #722f37 100%) !important;
+    border-color: #5a252b !important;
+    color: white !important;
+}
+
+/* Estilos con máxima especificidad para el botón Cerrar Sesión */
+.top-row .auth-user-info button.btn.btn-outline-light {
+    border: 1px solid rgba(114, 47, 55, 0.8) !important;
+    color: rgba(255, 255, 255, 0.9) !important;
+    background: linear-gradient(135deg, rgba(114, 47, 55, 0.2) 0%, rgba(90, 37, 43, 0.2) 100%) !important;
+    backdrop-filter: blur(10px) !important;
+    box-shadow: none !important;
+}
+
+.top-row .auth-user-info button.btn.btn-outline-light:hover {
+    background: linear-gradient(135deg, #722f37 0%, #5a252b 100%) !important;
+    border-color: #722f37 !important;
+    color: white !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 12px rgba(114, 47, 55, 0.4) !important;
+}
+
+.top-row .auth-user-info button.btn.btn-outline-light:focus,
+.top-row .auth-user-info button.btn.btn-outline-light:focus-visible {
+    background: linear-gradient(135deg, #722f37 0%, #5a252b 100%) !important;
+    border-color: #722f37 !important;
+    color: white !important;
+    box-shadow: 0 0 0 0.2rem rgba(114, 47, 55, 0.25) !important;
+}
+
+.top-row .auth-user-info button.btn.btn-outline-light:active {
+    background: linear-gradient(135deg, #5a252b 0%, #722f37 100%) !important;
+    border-color: #5a252b !important;
+    color: white !important;
+    box-shadow: 0 2px 8px rgba(114, 47, 55, 0.3) !important;
+}
+
+/* Estilos para información del usuario en móvil */
+.mobile-user-info {
+    padding: 1rem 0;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: 1rem;
+    text-align: center;
+}
+
+.mobile-user-info .user-greeting {
+    color: #722f37 !important;
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+.mobile-user-info .btn {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    text-decoration: none;
+    transition: all 0.3s ease;
+    font-weight: 500;
+}
+
+/* Estilos específicos para el botón Cerrar Sesión - Móvil */
+.mobile-user-info .btn-outline-primary {
+    border: 1px solid #722f37 !important;
+    color: #722f37 !important;
+    background: transparent !important;
+}
+
+.mobile-user-info .btn-outline-primary:hover {
+    background: linear-gradient(135deg, #722f37 0%, #5a252b 100%) !important;
+    color: white !important;
+    box-shadow: 0 4px 12px rgba(114, 47, 55, 0.4) !important;
+}
+
+.mobile-user-info .btn-outline-primary:focus {
+    background: linear-gradient(135deg, #722f37 0%, #5a252b 100%) !important;
+    color: white !important;
+    box-shadow: 0 0 0 0.2rem rgba(114, 47, 55, 0.25) !important;
+}
+
+.mobile-user-info .btn-outline-primary:active {
+    background: linear-gradient(135deg, #5a252b 0%, #722f37 100%) !important;
+    color: white !important;
+}
+
+@media (max-width: 767px) {
+    .auth-buttons {
+        display: none;
+    }
+}
+
+@media (min-width: 641px) {
+    .navbar-toggler {
+        display: none;
+    }
+
+    .collapse {
+        /* Never collapse the sidebar for wide screens */
+        display: block;
+    }
+
+    .nav-scrollable {
+        /* Allow sidebar to scroll for tall menus */
+        height: calc(100vh - 3.5rem);
+        overflow-y: auto;
+    }
+}

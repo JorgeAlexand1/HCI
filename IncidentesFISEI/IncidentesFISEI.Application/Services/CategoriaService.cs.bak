@@ -1,0 +1,75 @@
+using AutoMapper;
+using IncidentesFISEI.Application.DTOs;
+using IncidentesFISEI.Application.Interfaces;
+using IncidentesFISEI.Domain.Entities;
+using IncidentesFISEI.Domain.Interfaces;
+
+namespace IncidentesFISEI.Application.Services;
+
+public class CategoriaService : ICategoriaService
+{
+    private readonly ICategoriaIncidenteRepository _categoriaRepository;
+    private readonly IMapper _mapper;
+
+    public CategoriaService(ICategoriaIncidenteRepository categoriaRepository, IMapper mapper)
+    {
+        _categoriaRepository = categoriaRepository;
+        _mapper = mapper;
+    }
+
+    public async Task<IEnumerable<CategoriaIncidenteDto>> GetAllCategoriasAsync()
+    {
+        var categorias = await _categoriaRepository.GetAllAsync();
+        return _mapper.Map<IEnumerable<CategoriaIncidenteDto>>(categorias);
+    }
+
+    public async Task<CategoriaIncidenteDto> GetCategoriaByIdAsync(int id)
+    {
+        var categoria = await _categoriaRepository.GetByIdAsync(id);
+        return _mapper.Map<CategoriaIncidenteDto>(categoria);
+    }
+
+    public async Task<CategoriaIncidenteDto> CreateCategoriaAsync(CreateCategoriaIncidenteDto createCategoriaDto)
+    {
+        var categoria = new CategoriaIncidente
+        {
+            Nombre = createCategoriaDto.Nombre,
+            Descripcion = createCategoriaDto.Descripcion,
+            Activa = true
+        };
+
+        var categoriaCreada = await _categoriaRepository.AddAsync(categoria);
+        return _mapper.Map<CategoriaIncidenteDto>(categoriaCreada);
+    }
+
+    public async Task<CategoriaIncidenteDto> UpdateCategoriaAsync(int id, UpdateCategoriaIncidenteDto updateCategoriaDto)
+    {
+        var categoria = await _categoriaRepository.GetByIdAsync(id);
+        if (categoria == null)
+            return null;
+
+        categoria.Nombre = updateCategoriaDto.Nombre;
+        categoria.Descripcion = updateCategoriaDto.Descripcion;
+        categoria.Activa = updateCategoriaDto.Activa;
+
+        await _categoriaRepository.UpdateAsync(categoria);
+        return _mapper.Map<CategoriaIncidenteDto>(categoria);
+    }
+
+    public async Task<bool> DeleteCategoriaAsync(int id)
+    {
+        var categoria = await _categoriaRepository.GetByIdAsync(id);
+        if (categoria == null)
+            return false;
+
+        await _categoriaRepository.DeleteAsync(id);
+        return true;
+    }
+
+    public async Task<IEnumerable<CategoriaIncidenteDto>> GetCategoriasActivasAsync()
+    {
+        var categorias = await _categoriaRepository.GetAllAsync();
+        var categoriasActivas = categorias.Where(c => c.Activa);
+        return _mapper.Map<IEnumerable<CategoriaIncidenteDto>>(categoriasActivas);
+    }
+}

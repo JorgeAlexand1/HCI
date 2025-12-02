@@ -1,0 +1,77 @@
+using AutoMapper;
+using IncidentesFISEI.Application.DTOs;
+using IncidentesFISEI.Application.Interfaces;
+using IncidentesFISEI.Domain.Entities;
+using IncidentesFISEI.Domain.Interfaces;
+
+namespace IncidentesFISEI.Application.Services;
+
+public class ComentarioService : IComentarioService
+{
+    private readonly IComentarioRepository _comentarioRepository;
+    private readonly IIncidenteRepository _incidenteRepository;
+    private readonly IMapper _mapper;
+
+    public ComentarioService(
+        IComentarioRepository comentarioRepository,
+        IIncidenteRepository incidenteRepository,
+        IMapper mapper)
+    {
+        _comentarioRepository = comentarioRepository;
+        _incidenteRepository = incidenteRepository;
+        _mapper = mapper;
+    }
+
+    public async Task<IEnumerable<ComentarioDto>> GetComentariosByIncidenteIdAsync(int incidenteId)
+    {
+        var comentarios = await _comentarioRepository.GetComentariosByIncidenteIdAsync(incidenteId);
+        return _mapper.Map<IEnumerable<ComentarioDto>>(comentarios);
+    }
+
+    public async Task<ComentarioDto> GetComentarioByIdAsync(int id)
+    {
+        var comentario = await _comentarioRepository.GetByIdAsync(id);
+        return _mapper.Map<ComentarioDto>(comentario);
+    }
+
+    public async Task<ComentarioDto> CreateComentarioAsync(CreateComentarioDto createComentarioDto)
+    {
+        // Verificar que el incidente existe
+        var incidente = await _incidenteRepository.GetByIdAsync(createComentarioDto.IncidenteId);
+        if (incidente == null)
+            throw new ArgumentException("El incidente especificado no existe");
+
+        var comentario = new ComentarioIncidente
+        {
+            IncidenteId = createComentarioDto.IncidenteId,
+            AutorId = createComentarioDto.UsuarioId,
+            Contenido = createComentarioDto.Contenido,
+            EsInterno = createComentarioDto.EsInterno
+        };
+
+        var comentarioCreado = await _comentarioRepository.AddAsync(comentario);
+        return _mapper.Map<ComentarioDto>(comentarioCreado);
+    }
+
+    public async Task<ComentarioDto> UpdateComentarioAsync(int id, UpdateComentarioDto updateComentarioDto)
+    {
+        var comentario = await _comentarioRepository.GetByIdAsync(id);
+        if (comentario == null)
+            return null;
+
+        comentario.Contenido = updateComentarioDto.Contenido;
+
+        await _comentarioRepository.UpdateAsync(comentario);
+        return _mapper.Map<ComentarioDto>(comentario);
+    }
+
+    public async Task<bool> DeleteComentarioAsync(int id)
+    {
+        var comentario = await _comentarioRepository.GetByIdAsync(id);
+        if (comentario == null)
+            return false;
+
+        await _comentarioRepository.DeleteAsync(id);
+        return true;
+    }
+}

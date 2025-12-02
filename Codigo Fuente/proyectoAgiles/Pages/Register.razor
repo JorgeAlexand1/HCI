@@ -1,0 +1,1029 @@
+@page "/register"
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@using System.ComponentModel.DataAnnotations
+@using System.Linq
+@using static proyectoAgiles.Services.AuthService
+@implements IDisposable
+@inject proyectoAgiles.Services.AuthService AuthService
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject proyectoAgiles.Services.UserSessionService UserSession
+
+<div class="auth-page">    <!-- Fondo decorativo -->
+    <div class="auth-background">
+        <div class="bg-shape shape-1"></div>
+        <div class="bg-shape shape-2"></div>
+        <div class="bg-shape shape-3"></div>
+        <div class="bg-shape shape-4"></div>
+    </div>
+
+    <!-- Botón de volver al inicio -->
+    <a href="/" class="back-to-home-btn">
+        <i class="fas fa-arrow-left"></i>
+        Volver al Inicio
+    </a>    <!-- Mensaje de éxito global -->
+    @if (!string.IsNullOrEmpty(successMessage))
+    {
+        <div class="success-overlay">
+            <div class="success-container">
+                <div class="success-content">
+                    <div class="success-icon">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h2 class="success-title">¡Registro Exitoso!</h2>                    <p class="success-message">Tu cuenta ha sido creada correctamente.</p>
+                    <div class="success-actions">
+                        <a href="/login" class="btn btn-success btn-lg">
+                            <i class="fas fa-sign-in-alt"></i>
+                            Iniciar Sesión
+                        </a>
+                        <p class="next-step-text">¡Ya puedes acceder con tus credenciales!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+
+    <div class="auth-container">
+        <div class="auth-card">
+            <!-- Logo y títulos -->
+            <div class="auth-logo">
+                <img src="images/uta-logo.png" alt="Universidad Técnica de Ambato" class="logo-uta">
+                <h1 class="auth-title">Crear Cuenta</h1>
+                <p class="auth-subtitle">Universidad Técnica de Ambato</p>
+            </div>            <!-- Formulario de Registro -->
+            <EditForm Model="@registerRequest" OnValidSubmit="@HandleRegistration" class="auth-form">
+                <div class="form-group">
+                    <label for="name" class="form-label">
+                        <i class="fas fa-user"></i>
+                        Nombre Completo
+                    </label>
+                    <InputText id="name" @bind-Value="registerRequest.Name" @oninput="HandleNameInput" class="form-control" placeholder="Ingresa tu nombre completo" />
+                    @if (!string.IsNullOrEmpty(nameValidationMessage))
+                    {
+                        <div class="validation-message text-danger">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            @nameValidationMessage
+                        </div>
+                    }
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label">
+                        <i class="fas fa-envelope"></i>
+                        Correo Electrónico
+                    </label>                    <InputText id="email" @bind-Value="registerRequest.Email" @oninput="HandleEmailInput" class="form-control" placeholder="Ingresa tu correo electrónico" />                    
+                    @if (!string.IsNullOrEmpty(emailValidationMessage))
+                    {
+                        <div class="validation-message @(emailExists || emailHasFormatError ? "text-danger" : "text-success")">
+                            <i class="fas @(emailExists || emailHasFormatError ? "fa-exclamation-triangle" : "fa-check-circle")"></i>
+                            @emailValidationMessage
+                        </div>
+                    }
+                </div><div class="form-row">                    <div class="form-group">                        <label for="password" class="form-label">
+                            <i class="fas fa-lock"></i>
+                            Contraseña
+                        </label>
+                        <InputText id="password" @bind-Value="registerRequest.Password" @oninput="HandlePasswordInput" type="password" class="form-control" placeholder="Crea una contraseña segura" />
+                        @if (!string.IsNullOrEmpty(passwordStrengthMessage))
+                        {
+                            <div class="validation-message text-danger">
+                                <i class="fas @(isPasswordWeak ? "fa-exclamation-triangle" : "fa-info-circle")"></i>
+                                @passwordStrengthMessage
+                            </div>
+                        }
+                    </div><div class="form-group">
+                        <label for="confirmPassword" class="form-label">
+                            <i class="fas fa-lock"></i>
+                            Confirmar Contraseña
+                        </label>
+                        <InputText id="confirmPassword" @bind-Value="registerRequest.ConfirmPassword" @oninput="HandleConfirmPasswordInput" type="password" class="form-control" placeholder="Confirma tu contraseña" />
+                        @if (!string.IsNullOrEmpty(passwordValidationMessage))
+                        {
+                            <div class="validation-message text-danger">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                @passwordValidationMessage
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="cedula" class="form-label">
+                        <i class="fas fa-id-card"></i>
+                        Cédula
+                    </label>                    <InputText id="cedula" @bind-Value="registerRequest.Cedula" @oninput="HandleCedulaInput" class="form-control" placeholder="Ingresa tu número de cédula" />                    @if (!string.IsNullOrEmpty(cedulaValidationMessage))
+                    {
+                        <div class="validation-message @((cedulaExists || cedulaHasFormatError) ? "text-danger" : "text-success")">
+                            <i class="fas @((cedulaExists || cedulaHasFormatError) ? "fa-exclamation-triangle" : "fa-check-circle")"></i>
+                            @cedulaValidationMessage
+                        </div>
+                    }
+                </div>                <!-- Zona de selección de archivos mejorada -->
+                <div class="form-group">
+                    <label class="form-label">
+                        <i class="fas fa-file-upload"></i>
+                        Documento de Identidad
+                    </label>
+                    <div class="file-drop-zone @(isDragOver ? "drag-over" : "") @(dragCounter > 0 ? "dragging" : "")" 
+                         id="dropZone"
+                         @onclick="TriggerFileSelect"
+                         @ondrop="HandleFileDrop" 
+                         @ondragover="HandleDragOver" 
+                         @ondragenter="HandleDragEnter" 
+                         @ondragleave="HandleDragLeave"
+                         @ondragover:preventDefault="true" 
+                         @ondrop:preventDefault="true">
+                        
+                        @if (selectedFile is null)
+                        {
+                            <div class="drop-zone-content">
+                                <div class="upload-icon-container">
+                                    <i class="fas fa-cloud-upload-alt upload-icon"></i>
+                                    <div class="upload-animation-circle"></div>
+                                </div>
+                                <div class="drop-zone-text">
+                                    <p class="main-text">Arrastra y suelta tu documento aquí</p>
+                                    <p class="or-text">o</p>
+                                    <button type="button" class="btn-select-file" @onclick="TriggerFileSelect" @onclick:stopPropagation="true">
+                                        <i class="fas fa-file-search"></i>
+                                        Seleccionar archivo
+                                    </button>
+                                    <small class="formats-text">Formatos soportados: PDF, JPG, PNG, GIF, BMP (Máx. 10MB)</small>
+                                </div>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="file-preview-container">
+                                <div class="file-preview-header">
+                                    <div class="file-info-preview">
+                                        <div class="file-icon-container">
+                                            @if (isImageFile)
+                                            {
+                                                <i class="fas fa-image file-icon image-icon"></i>
+                                            }
+                                            else if (isPdfFile)
+                                            {
+                                                <i class="fas fa-file-pdf file-icon pdf-icon"></i>
+                                            }
+                                            else
+                                            {
+                                                <i class="fas fa-file file-icon default-icon"></i>
+                                            }
+                                        </div>
+                                        <div class="file-details">
+                                            <span class="file-name" title="@selectedFile?.Name">@selectedFile?.Name</span>
+                                            <span class="file-size">@FormatFileSize(selectedFile?.Size ?? 0)</span>
+                                            <div class="file-progress">
+                                                <div class="progress-bar"></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button type="button" class="btn-remove-file" @onclick="ClearFile" @onclick:stopPropagation="true" title="Eliminar archivo">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                
+                                @if (isImageFile && !string.IsNullOrEmpty(imagePreview))
+                                {
+                                    <div class="image-preview">
+                                        <img src="@imagePreview" alt="Vista previa" class="preview-image" />
+                                    </div>
+                                }
+                                else if (isPdfFile)
+                                {
+                                    <div class="pdf-preview">
+                                        <div class="pdf-preview-info">
+                                            <i class="fas fa-file-pdf"></i>
+                                            <span>Documento PDF cargado correctamente</span>
+                                        </div>
+                                    </div>
+                                }
+
+                                <div class="file-actions">
+                                    <button type="button" class="btn-change-file" @onclick="TriggerFileSelect" @onclick:stopPropagation="true">
+                                        <i class="fas fa-exchange-alt"></i>
+                                        Cambiar archivo
+                                    </button>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Overlay para drag over -->
+                        <div class="drag-overlay @(isDragOver ? "visible" : "")">
+                            <div class="drag-overlay-content">
+                                <i class="fas fa-download"></i>
+                                <p>Suelta el archivo aquí</p>
+                            </div>                        </div>                    </div>
+                      <!-- Input file oculto necesario para el botón seleccionar -->
+                    <InputFile @ref="fileInput" OnChange="HandleFileSelected" class="file-input-hidden" style="display: none;" accept=".pdf,.jpg,.jpeg,.png,.gif,.bmp" multiple="false" />
+                    
+                    @if (!string.IsNullOrEmpty(fileErrorMessage))
+                    {
+                        <div class="file-error-message">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            @fileErrorMessage
+                        </div>
+                    }
+                </div>
+
+                @if (!string.IsNullOrEmpty(errorMessage))
+                {                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        @errorMessage
+                    </div>                }
+
+                <button type="submit" class="btn-register" disabled="@(isLoading || !string.IsNullOrEmpty(successMessage))">
+                    @if (isLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        <span>Registrando...</span>
+                    }
+                    else if (!string.IsNullOrEmpty(successMessage))
+                    {
+                        <i class="fas fa-check"></i>
+                        <span>Registro Completado</span>
+                    }
+                    else
+                    {
+                        <i class="fas fa-user-plus"></i>
+                        <span>Crear Cuenta</span>
+                    }
+                </button>
+            </EditForm>
+
+            <!-- Enlaces adicionales -->
+            <div class="auth-links">
+                <p>¿Ya tienes una cuenta? <a href="/login" class="login-link">Inicia Sesión</a></p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private RegisterRequest registerRequest = new();
+    private InputFile? fileInput;
+    private IBrowserFile? selectedFile;
+    private bool isLoading = false;
+    private bool isDragOver = false;
+    private int dragCounter = 0;
+    private bool isImageFile = false;
+    private bool isPdfFile = false;
+    private string imagePreview = string.Empty;
+    private string errorMessage = string.Empty;
+    private string fileErrorMessage = string.Empty;
+    private string successMessage = string.Empty;
+    private string cedulaValidationMessage = string.Empty;
+    private bool cedulaExists = false;
+    private bool cedulaHasFormatError = false;
+    private string emailValidationMessage = string.Empty;      private bool emailExists = false;
+    private bool emailHasFormatError = false;
+    private string nameValidationMessage = string.Empty;
+    private string passwordValidationMessage = string.Empty;
+    private string passwordStrengthMessage = string.Empty;
+    private bool isPasswordWeak = false;
+    private bool passwordsMatch = false; // Mantener para evitar errores
+    private System.Threading.Timer? cedulaValidationTimer;
+    private System.Threading.Timer? emailValidationTimer;    protected override async Task OnInitializedAsync()
+    {
+        // Solo permitir acceso a administradores autenticados
+        await UserSession.InitializeAsync();
+        
+        if (!UserSession.IsAuthenticated || UserSession.CurrentUser?.UserType != 1) // 1 = Admin
+        {
+            Navigation.NavigateTo("/");
+            return;
+        }
+    }
+
+    private void HandleCedulaInput(ChangeEventArgs e)
+    {
+        var cedula = e.Value?.ToString() ?? string.Empty;
+        
+        // Actualizar el valor del modelo
+        registerRequest.Cedula = cedula;
+        
+        // Validación inmediata de formato
+        ValidateCedulaFormat(cedula);
+        
+        // Cancelar timer anterior si existe
+        cedulaValidationTimer?.Dispose();
+        
+        // Solo validar existencia si la cédula tiene formato válido (10 dígitos)
+        if (cedula.Length == 10 && cedula.All(char.IsDigit))
+        {
+            // Crear un timer para validar existencia después de 500ms sin cambios
+            cedulaValidationTimer = new System.Threading.Timer(async _ =>
+            {
+                await InvokeAsync(async () =>
+                {
+                    await ValidateCedulaExistence(cedula);
+                    StateHasChanged();
+                });
+            }, null, 500, System.Threading.Timeout.Infinite);
+        }
+        else
+        {
+            cedulaExists = false;
+        }
+    }    private void ValidateCedulaFormat(string cedula)
+    {
+        if (string.IsNullOrEmpty(cedula))
+        {
+            cedulaValidationMessage = string.Empty;
+            cedulaExists = false;
+            cedulaHasFormatError = false;
+        }
+        else if (!cedula.All(char.IsDigit))
+        {
+            cedulaValidationMessage = "La cédula debe contener solo números";
+            cedulaExists = false;
+            cedulaHasFormatError = true;
+        }
+        else if (cedula.Length < 10)
+        {
+            cedulaValidationMessage = $"La cédula debe tener 10 dígitos (faltan {10 - cedula.Length})";
+            cedulaExists = false;
+            cedulaHasFormatError = true;
+        }
+        else if (cedula.Length > 10)
+        {
+            cedulaValidationMessage = $"La cédula debe tener 10 dígitos (sobran {cedula.Length - 10})";
+            cedulaExists = false;
+            cedulaHasFormatError = true;
+        }
+        else
+        {
+            // Formato correcto, el mensaje se actualizará con la validación de existencia
+            cedulaValidationMessage = string.Empty;
+            cedulaHasFormatError = false;
+        }
+    }
+
+    private void HandleEmailInput(ChangeEventArgs e)
+    {
+        var email = e.Value?.ToString() ?? string.Empty;
+        
+        // Cancelar timer anterior si existe
+        emailValidationTimer?.Dispose();
+        
+        // Solo validar si el email tiene un formato básico válido
+        if (IsValidEmailFormat(email))
+        {
+            // Crear un timer para validar después de 500ms sin cambios
+            emailValidationTimer = new System.Threading.Timer(async _ =>
+            {
+                await InvokeAsync(async () =>
+                {
+                    await ValidateEmail(email);
+                    StateHasChanged();
+                });
+            }, null, 500, System.Threading.Timeout.Infinite);
+        }        else if (!string.IsNullOrEmpty(email))
+        {
+            emailValidationMessage = "Formato de email inválido";
+            emailExists = false;
+            emailHasFormatError = true;
+        }
+        else
+        {
+            emailValidationMessage = string.Empty;
+            emailExists = false;
+            emailHasFormatError = false;
+        }
+        
+        // Actualizar el valor del modelo
+        registerRequest.Email = email;
+    }    private bool IsValidEmailFormat(string email)
+    {
+        if (string.IsNullOrEmpty(email)) return false;
+        
+        try
+        {
+            var emailAttribute = new System.ComponentModel.DataAnnotations.EmailAddressAttribute();
+            return emailAttribute.IsValid(email);
+        }
+        catch
+        {
+            return false;
+        }
+    }    private void HandlePasswordInput(ChangeEventArgs e)
+    {
+        var password = e.Value?.ToString() ?? string.Empty;
+        registerRequest.Password = password;
+        ValidatePasswordStrength(password);
+        ValidatePasswords();
+    }
+
+    private void HandleConfirmPasswordInput(ChangeEventArgs e)
+    {
+        var confirmPassword = e.Value?.ToString() ?? string.Empty;
+        registerRequest.ConfirmPassword = confirmPassword;
+        ValidatePasswords();
+    }    private void ValidatePasswordStrength(string password)
+    {
+        if (string.IsNullOrEmpty(password))
+        {
+            passwordStrengthMessage = string.Empty;
+            isPasswordWeak = false;
+            return;
+        }
+
+        if (password.Length < 6)
+        {
+            passwordStrengthMessage = "La contraseña debe tener al menos 6 caracteres";
+            isPasswordWeak = true;
+        }
+        else if (password.Length >= 6 && password.Length < 8)
+        {
+            passwordStrengthMessage = "Contraseña aceptable (recomendado: 8+ caracteres)";
+            isPasswordWeak = false;
+        }
+        else
+        {
+            passwordStrengthMessage = string.Empty;
+            isPasswordWeak = false;
+        }
+    }
+
+    private void ValidatePasswords()
+    {
+        var password = registerRequest.Password ?? string.Empty;
+        var confirmPassword = registerRequest.ConfirmPassword ?? string.Empty;
+
+        // Solo mostrar mensaje de validación si ambos campos tienen contenido
+        if (!string.IsNullOrEmpty(password) && !string.IsNullOrEmpty(confirmPassword))
+        {
+            if (password == confirmPassword)
+            {
+                passwordValidationMessage = string.Empty; // Ocultar mensaje cuando coinciden
+                passwordsMatch = true;
+            }
+            else
+            {
+                passwordValidationMessage = "Las contraseñas no coinciden";
+                passwordsMatch = false;
+            }
+        }
+        else
+        {
+            passwordValidationMessage = string.Empty;
+            passwordsMatch = false;
+        }
+    }    private async Task ValidateCedulaExistence(string cedula)
+    {
+        if (string.IsNullOrEmpty(cedula) || cedula.Length != 10 || !cedula.All(char.IsDigit))
+        {
+            return;
+        }
+        
+        try
+        {
+            var exists = await AuthService.CheckCedulaExists(cedula);
+            cedulaExists = exists;
+            
+            if (exists)
+            {
+                cedulaValidationMessage = "Esta cédula ya está registrada";
+            }
+            else
+            {
+                cedulaValidationMessage = "Cédula disponible";
+            }
+        }
+        catch (Exception)
+        {
+            cedulaValidationMessage = "Error al validar la cédula";
+            cedulaExists = false;
+        }
+    }    private async Task ValidateEmail(string email)
+    {
+        if (string.IsNullOrEmpty(email))
+        {
+            emailValidationMessage = string.Empty;
+            emailHasFormatError = false;
+            return;
+        }
+        
+        try
+        {
+            var exists = await AuthService.CheckEmailExists(email);
+            emailExists = exists;
+            emailHasFormatError = false;
+            
+            if (exists)
+            {
+                emailValidationMessage = "Este email ya está registrado";
+            }
+            else
+            {
+                emailValidationMessage = "Email disponible";
+            }
+        }
+        catch (Exception)
+        {
+            emailValidationMessage = "Error al validar el email";
+            emailExists = false;
+        }
+    }    private async Task HandleRegistration()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = string.Empty;
+            successMessage = string.Empty;            // Validar todos los campos antes de proceder
+            ValidateName(registerRequest.Name);
+            await ValidateEmail(registerRequest.Email);
+            await ValidateCedulaExistence(registerRequest.Cedula);
+            ValidatePasswords();
+            ValidatePasswordStrength(registerRequest.Password);
+
+            // Verificar si hay errores de validación
+            if (!string.IsNullOrEmpty(nameValidationMessage) || 
+                !string.IsNullOrEmpty(emailValidationMessage) || 
+                !string.IsNullOrEmpty(cedulaValidationMessage) || 
+                !string.IsNullOrEmpty(passwordValidationMessage) || 
+                !string.IsNullOrEmpty(passwordStrengthMessage))
+            {
+                errorMessage = "Por favor corrige los errores de validación antes de continuar";
+                return;
+            }
+
+            // Verificar si la cédula existe antes de proceder
+            if (cedulaExists)
+            {
+                errorMessage = "No se puede registrar con una cédula que ya está en uso";
+                return;
+            }
+
+            // Verificar si el email existe antes de proceder
+            if (emailExists)
+            {
+                errorMessage = "No se puede registrar con un email que ya está en uso";
+                return;
+            }
+
+            // Verificar que se haya subido un documento
+            if (selectedFile is null)
+            {
+                errorMessage = "Debe subir un documento de identidad para completar el registro";
+                return;
+            }
+
+            // Verificar la cédula una vez más antes del registro
+            if (!string.IsNullOrEmpty(registerRequest.Cedula))
+            {
+                var cedulaAlreadyExists = await AuthService.CheckCedulaExists(registerRequest.Cedula);
+                if (cedulaAlreadyExists)
+                {
+                    errorMessage = "La cédula ya está registrada en el sistema";
+                    return;
+                }
+            }
+
+            // Verificar el email una vez más antes del registro
+            if (!string.IsNullOrEmpty(registerRequest.Email))
+            {
+                var emailAlreadyExists = await AuthService.CheckEmailExists(registerRequest.Email);
+                if (emailAlreadyExists)
+                {
+                    errorMessage = "El email ya está registrado en el sistema";
+                    return;
+                }
+            }
+
+            // Procesar el archivo si existe
+            if (selectedFile is not null)
+            {
+                using var stream = selectedFile.OpenReadStream(10 * 1024 * 1024); // Max 10MB
+                using var memoryStream = new MemoryStream();
+                await stream.CopyToAsync(memoryStream);
+                registerRequest.DocumentFile = memoryStream.ToArray();
+                registerRequest.DocumentFileName = selectedFile.Name;
+                registerRequest.DocumentContentType = selectedFile.ContentType;
+            }
+
+            var result = await AuthService.RegisterAsync(registerRequest);
+              if (result.IsSuccess)
+            {
+                successMessage = "¡Registro exitoso! Tu cuenta ha sido creada correctamente.";
+                errorMessage = string.Empty; // Limpiar cualquier error anterior
+                
+                // No redirigir automáticamente, dejar que el usuario elija
+                // Navigation.NavigateTo("/login");
+            }
+            else
+            {
+                errorMessage = result.ErrorMessage ?? "Error durante el registro";
+                successMessage = string.Empty; // Limpiar mensaje de éxito
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleFileSelected(InputFileChangeEventArgs e)
+    {
+        if (e.File != null)
+        {
+            await ProcessFile(e.File);
+        }
+    }    private async Task ProcessFile(IBrowserFile file)
+    {
+        try
+        {
+            fileErrorMessage = string.Empty;
+            
+            // Validar tamaño del archivo (10MB máximo)
+            if (file.Size > 10 * 1024 * 1024)
+            {
+                fileErrorMessage = "El archivo es demasiado grande. Tamaño máximo: 10MB";
+                _ = ClearFileErrorMessage(); // Auto-limpiar después de 5 segundos
+                StateHasChanged();
+                return;
+            }
+
+            // Validar que el archivo no esté vacío
+            if (file.Size == 0)
+            {
+                fileErrorMessage = "El archivo está vacío. Por favor selecciona un archivo válido.";
+                _ = ClearFileErrorMessage();
+                StateHasChanged();
+                return;
+            }
+
+            // Validar tipo de archivo
+            var allowedTypes = new[] { "application/pdf", "image/jpeg", "image/jpg", "image/png", "image/gif", "image/bmp" };
+            var allowedExtensions = new[] { ".pdf", ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
+            
+            var fileExtension = Path.GetExtension(file.Name).ToLower();
+            var isValidType = allowedTypes.Contains(file.ContentType.ToLower()) || allowedExtensions.Contains(fileExtension);
+            
+            if (!isValidType)
+            {
+                fileErrorMessage = "Tipo de archivo no válido. Solo se permiten: PDF, JPG, PNG, GIF, BMP";
+                _ = ClearFileErrorMessage();
+                StateHasChanged();
+                return;
+            }
+
+            selectedFile = file;
+            isImageFile = file.ContentType.StartsWith("image/") || new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp" }.Contains(fileExtension);
+            isPdfFile = file.ContentType == "application/pdf" || fileExtension == ".pdf";
+
+            // Generar vista previa para imágenes
+            if (isImageFile)
+            {
+                await GenerateImagePreview(file);
+            }
+
+            // Limpiar errores previos
+            errorMessage = string.Empty;
+            fileErrorMessage = string.Empty;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            fileErrorMessage = $"Error al procesar el archivo: {ex.Message}";
+            _ = ClearFileErrorMessage();
+            StateHasChanged();
+        }
+    }
+
+    private async Task GenerateImagePreview(IBrowserFile file)
+    {
+        try
+        {
+            using var stream = file.OpenReadStream(10 * 1024 * 1024);
+            using var memoryStream = new MemoryStream();
+            await stream.CopyToAsync(memoryStream);
+            var base64 = Convert.ToBase64String(memoryStream.ToArray());
+            imagePreview = $"data:{file.ContentType};base64,{base64}";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error al generar vista previa: {ex.Message}";
+        }
+    }    private void TriggerFileSelect()
+    {
+        _ = JSRuntime.InvokeVoidAsync("triggerFileInput", fileInput?.Element);
+    }    private void ClearFile()
+    {
+        selectedFile = null;
+        imagePreview = string.Empty;
+        isImageFile = false;
+        isPdfFile = false;
+        fileErrorMessage = string.Empty;
+        errorMessage = string.Empty;
+        StateHasChanged();
+    }
+
+    private async Task ClearFileErrorMessage()
+    {
+        await Task.Delay(5000); // Esperar 5 segundos
+        if (!string.IsNullOrEmpty(fileErrorMessage))
+        {
+            fileErrorMessage = string.Empty;
+            StateHasChanged();
+        }
+    }private async Task HandleFileDrop(DragEventArgs e)
+    {
+        isDragOver = false;
+        dragCounter = 0;
+        StateHasChanged();
+        
+        // El JavaScript ya maneja la lógica del drop, aquí solo limpiamos el estado
+        await Task.CompletedTask;
+    }
+
+    private void HandleDragOver(DragEventArgs e)
+    {
+        if (!isDragOver)
+        {
+            isDragOver = true;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleDragEnter(DragEventArgs e)
+    {
+        dragCounter++;
+        isDragOver = true;
+        StateHasChanged();
+    }
+
+    private void HandleDragLeave(DragEventArgs e)
+    {
+        dragCounter--;
+        if (dragCounter <= 0)
+        {
+            isDragOver = false;
+            dragCounter = 0;
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public async Task ProcessDroppedFiles()
+    {
+        // Este método será llamado desde JavaScript
+        // Por ahora, solo actualiza el estado visual
+        StateHasChanged();
+        await Task.CompletedTask;
+    }
+
+    private string FormatFileSize(long bytes)
+    {
+        if (bytes < 1024) return $"{bytes} B";
+        if (bytes < 1024 * 1024) return $"{bytes / 1024:F1} KB";        return $"{bytes / (1024 * 1024):F1} MB";
+    }    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await JSRuntime.InvokeVoidAsync("eval", @"
+                window.triggerFileInput = (element) => {
+                    if (element) {
+                        element.click();
+                    }
+                };
+
+                window.initializeFileDrop = (dotNetRef) => {
+                    const dropZone = document.getElementById('dropZone');
+                    if (!dropZone) return;
+
+                    let dragCounter = 0;
+
+                    // Prevenir comportamiento por defecto del navegador
+                    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                        dropZone.addEventListener(eventName, preventDefaults, false);
+                        document.body.addEventListener(eventName, preventDefaults, false);
+                    });
+
+                    function preventDefaults(e) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }
+
+                    // Manejar eventos de drag
+                    dropZone.addEventListener('dragenter', (e) => {
+                        e.preventDefault();
+                        dragCounter++;
+                        dropZone.classList.add('drag-over');
+                        dropZone.classList.add('dragging');
+                        const overlay = dropZone.querySelector('.drag-overlay');
+                        if (overlay) overlay.classList.add('visible');
+                    }, false);
+
+                    dropZone.addEventListener('dragleave', (e) => {
+                        e.preventDefault();
+                        dragCounter--;
+                        if (dragCounter <= 0) {
+                            dragCounter = 0;
+                            dropZone.classList.remove('drag-over');
+                            dropZone.classList.remove('dragging');
+                            const overlay = dropZone.querySelector('.drag-overlay');
+                            if (overlay) overlay.classList.remove('visible');
+                        }
+                    }, false);
+
+                    dropZone.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                        dropZone.classList.add('drag-over');
+                    }, false);                    // Manejar el drop de archivos
+                    dropZone.addEventListener('drop', handleDrop, false);
+
+                    function handleDrop(e) {
+                        e.preventDefault();
+                        dragCounter = 0;
+                        dropZone.classList.remove('drag-over');
+                        dropZone.classList.remove('dragging');
+                        const overlay = dropZone.querySelector('.drag-overlay');
+                        if (overlay) overlay.classList.remove('visible');
+
+                        const dt = e.dataTransfer;
+                        const files = dt.files;
+                        
+                        if (files.length > 0) {
+                            const file = files[0];
+                            
+                            // Usar la función de validación del archivo externo si está disponible
+                            let validation;
+                            if (window.validateDroppedFile) {
+                                validation = window.validateDroppedFile(file);
+                            } else {
+                                // Validación fallback
+                                const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/bmp'];
+                                const allowedExtensions = ['.pdf', '.jpg', '.jpeg', '.png', '.gif', '.bmp'];
+                                const fileExtension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+                                const isValidType = allowedTypes.includes(file.type.toLowerCase()) || allowedExtensions.includes(fileExtension);
+                                
+                                if (!isValidType) {
+                                    validation = { valid: false, message: 'Tipo de archivo no válido. Solo se permiten: PDF, JPG, PNG, GIF, BMP' };
+                                } else if (file.size > 10 * 1024 * 1024) {
+                                    validation = { valid: false, message: 'El archivo es demasiado grande. Tamaño máximo: 10MB' };
+                                } else if (file.size === 0) {
+                                    validation = { valid: false, message: 'El archivo está vacío. Por favor selecciona un archivo válido.' };
+                                } else {
+                                    validation = { valid: true, message: 'Archivo válido' };
+                                }
+                            }
+                            
+                            if (!validation.valid) {
+                                if (window.showFileError) {
+                                    window.showFileError(validation.message);
+                                } else {
+                                    showErrorMessage(validation.message);
+                                }
+                                return;
+                            }
+                            
+                            // Intentar transferir usando la función externa, luego fallback
+                            let success = false;
+                            if (window.transferFileToInput) {
+                                success = window.transferFileToInput(file);
+                            }
+                            
+                            if (!success) {
+                                // Fallback: método original
+                                const fileInput = document.querySelector('.file-input-hidden');
+                                if (fileInput) {
+                                    try {
+                                        const dataTransfer = new DataTransfer();
+                                        dataTransfer.items.add(file);
+                                        fileInput.files = dataTransfer.files;
+                                        
+                                        const event = new Event('change', { bubbles: true });
+                                        fileInput.dispatchEvent(event);
+                                        success = true;
+                                    } catch (error) {
+                                        console.error('Error al procesar el archivo:', error);
+                                    }
+                                }
+                            }
+                            
+                            if (success) {
+                                // Mostrar feedback de éxito
+                                if (window.showFileDropFeedback) {
+                                    window.showFileDropFeedback('success', 'Archivo cargado correctamente');
+                                } else {
+                                    showSuccessMessage('Archivo cargado correctamente');
+                                }
+                                
+                                // Ocultar mensajes de error previos
+                                if (window.hideFileError) {
+                                    window.hideFileError();
+                                }
+                            } else {
+                                const errorMsg = 'Error al procesar el archivo. Inténtalo de nuevo.';
+                                if (window.showFileError) {
+                                    window.showFileError(errorMsg);
+                                } else {
+                                    showErrorMessage(errorMsg);
+                                }
+                            }
+                        }
+                    }
+
+                    function showErrorMessage(message) {
+                        // Buscar o crear contenedor de mensajes
+                        let errorContainer = document.querySelector('.file-error-message');
+                        if (!errorContainer) {
+                            errorContainer = document.createElement('div');
+                            errorContainer.className = 'file-error-message';
+                            dropZone.parentNode.appendChild(errorContainer);
+                        }
+                        
+                        errorContainer.innerHTML = `<i class='fas fa-exclamation-triangle'></i> ${message}`;
+                        errorContainer.style.display = 'flex';
+                        
+                        // Auto-ocultar después de 5 segundos
+                        setTimeout(() => {
+                            if (errorContainer) {
+                                errorContainer.style.display = 'none';
+                            }
+                        }, 5000);
+                    }
+
+                    function showSuccessMessage(message) {
+                        // Remover mensajes de error existentes
+                        const errorContainer = document.querySelector('.file-error-message');
+                        if (errorContainer) {
+                            errorContainer.style.display = 'none';
+                        }
+                        
+                        // Mostrar feedback visual temporal
+                        dropZone.style.borderColor = '#28a745';
+                        dropZone.style.background = 'linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%)';
+                        
+                        setTimeout(() => {
+                            dropZone.style.borderColor = '';
+                            dropZone.style.background = '';
+                        }, 2000);
+                    }
+
+                    // Soporte para dispositivos táctiles
+                    if ('ontouchstart' in window) {
+                        dropZone.addEventListener('touchstart', () => {
+                            dropZone.classList.add('touch-active');
+                        });
+                        
+                        dropZone.addEventListener('touchend', () => {
+                            dropZone.classList.remove('touch-active');
+                        });
+                    }
+                };
+
+                // Inicializar el drag and drop
+                window.initializeFileDrop();
+                
+                // También inicializar cuando el DOM esté completamente cargado
+                if (document.readyState === 'loading') {
+                    document.addEventListener('DOMContentLoaded', () => {
+                        setTimeout(() => window.initializeFileDrop(), 100);
+                    });
+                } else {
+                    setTimeout(() => window.initializeFileDrop(), 100);
+                }
+            ");
+        }
+    }    public void Dispose()
+    {
+        cedulaValidationTimer?.Dispose();
+        emailValidationTimer?.Dispose();
+    }
+
+    private void HandleNameInput(ChangeEventArgs e)
+    {
+        var name = e.Value?.ToString() ?? string.Empty;
+        registerRequest.Name = name;
+        ValidateName(name);
+    }
+
+    private void ValidateName(string name)
+    {
+        if (string.IsNullOrWhiteSpace(name))
+        {
+            nameValidationMessage = "El nombre es requerido";
+        }
+        else if (name.Length < 2)
+        {
+            nameValidationMessage = "El nombre debe tener al menos 2 caracteres";
+        }
+        else if (name.Length > 100)
+        {
+            nameValidationMessage = "El nombre no puede tener más de 100 caracteres";
+        }
+        else
+        {
+            nameValidationMessage = string.Empty;
+        }
+    }
+}

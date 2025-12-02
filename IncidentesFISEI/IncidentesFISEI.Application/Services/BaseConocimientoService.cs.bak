@@ -1,0 +1,93 @@
+using AutoMapper;
+using IncidentesFISEI.Application.DTOs;
+using IncidentesFISEI.Application.Interfaces;
+using IncidentesFISEI.Domain.Entities;
+using IncidentesFISEI.Domain.Interfaces;
+using IncidentesFISEI.Domain.Enums;
+
+namespace IncidentesFISEI.Application.Services;
+
+public class BaseConocimientoService : IBaseConocimientoService
+{
+    private readonly IArticuloConocimientoRepository _articuloRepository;
+    private readonly IMapper _mapper;
+
+    public BaseConocimientoService(IArticuloConocimientoRepository articuloRepository, IMapper mapper)
+    {
+        _articuloRepository = articuloRepository;
+        _mapper = mapper;
+    }
+
+    public async Task<IEnumerable<ArticuloConocimientoDto>> GetAllArticulosAsync()
+    {
+        var articulos = await _articuloRepository.GetAllAsync();
+        return _mapper.Map<IEnumerable<ArticuloConocimientoDto>>(articulos);
+    }
+
+    public async Task<ArticuloConocimientoDto> GetArticuloByIdAsync(int id)
+    {
+        var articulo = await _articuloRepository.GetByIdAsync(id);
+        return _mapper.Map<ArticuloConocimientoDto>(articulo);
+    }
+
+    public async Task<IEnumerable<ArticuloConocimientoDto>> SearchArticulosAsync(string searchTerm)
+    {
+        var articulos = await _articuloRepository.SearchAsync(searchTerm);
+        return _mapper.Map<IEnumerable<ArticuloConocimientoDto>>(articulos);
+    }
+
+    public async Task<IEnumerable<ArticuloConocimientoDto>> GetArticulosByTipoAsync(TipoArticulo tipo)
+    {
+        var articulos = await _articuloRepository.GetArticulosByTipoAsync(tipo);
+        return _mapper.Map<IEnumerable<ArticuloConocimientoDto>>(articulos);
+    }
+
+    public async Task<ArticuloConocimientoDto> CreateArticuloAsync(CreateArticuloConocimientoDto createArticuloDto)
+    {
+        var articulo = new ArticuloConocimiento
+        {
+            Titulo = createArticuloDto.Titulo,
+            Contenido = createArticuloDto.Contenido,
+            Tipo = createArticuloDto.Tipo,
+            AutorId = createArticuloDto.AutorId,
+            EsPublico = createArticuloDto.EsPublico,
+            Tags = createArticuloDto.Tags
+        };
+
+        var articuloCreado = await _articuloRepository.AddAsync(articulo);
+        return _mapper.Map<ArticuloConocimientoDto>(articuloCreado);
+    }
+
+    public async Task<ArticuloConocimientoDto> UpdateArticuloAsync(int id, UpdateArticuloConocimientoDto updateArticuloDto)
+    {
+        var articulo = await _articuloRepository.GetByIdAsync(id);
+        if (articulo == null)
+            return null;
+
+        articulo.Titulo = updateArticuloDto.Titulo;
+        articulo.Contenido = updateArticuloDto.Contenido;
+        articulo.Tipo = updateArticuloDto.Tipo;
+        articulo.EsPublico = updateArticuloDto.EsPublico;
+        articulo.Tags = updateArticuloDto.Tags;
+
+        await _articuloRepository.UpdateAsync(articulo);
+        return _mapper.Map<ArticuloConocimientoDto>(articulo);
+    }
+
+    public async Task<bool> DeleteArticuloAsync(int id)
+    {
+        var articulo = await _articuloRepository.GetByIdAsync(id);
+        if (articulo == null)
+            return false;
+
+        await _articuloRepository.DeleteAsync(id);
+        return true;
+    }
+
+    public async Task<IEnumerable<ArticuloConocimientoDto>> GetArticulosPublicosAsync()
+    {
+        var articulos = await _articuloRepository.GetAllAsync();
+        var articulosPublicos = articulos.Where(a => a.EsPublico);
+        return _mapper.Map<IEnumerable<ArticuloConocimientoDto>>(articulosPublicos);
+    }
+}

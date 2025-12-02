@@ -1,0 +1,419 @@
+@page "/admin/time-management"
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components
+@using Microsoft.JSInterop
+@using System.Net.Http.Json
+@layout proyectoAgiles.Layout.MainLayout
+@inject NavigationManager Navigation
+@inject proyectoAgiles.Services.UserSessionService UserSession
+@inject HttpClient HttpClient
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Gestión de Tiempos - Escalafón Docente</PageTitle>
+
+<div class="time-management-page">
+    <!-- Botón Volver Flotante -->
+    <div class="back-button-container">
+        <button class="btn btn-outline-secondary" @onclick="GoBack">
+            <i class="fas fa-arrow-left"></i> Volver
+        </button>
+    </div>
+
+    <div class="page-container">
+        <!-- Título de la Página -->
+        <div class="page-header">
+            <div class="header-content">
+                <h1 class="page-title">Gestión de Tiempos de Escalafón</h1>
+                <p class="page-subtitle">Configurar períodos de tiempo para solicitudes de escalafón docente</p>
+            </div>
+        </div>
+
+        <!-- Resumen de Configuración Actual -->
+        <div class="current-config-card">
+            <div class="config-header">
+                <h3><i class="fas fa-info-circle"></i> Configuración Actual</h3>
+            </div>
+            <div class="config-content">
+                @if (currentTimeConfig != null)
+                {
+                    <div class="config-details">
+                        <div class="config-item">
+                            <span class="config-label">Estado:</span>
+                            <span class="config-value @(currentTimeConfig.IsActive ? "active" : "inactive")">
+                                @(currentTimeConfig.IsActive ? "ACTIVO" : "INACTIVO")
+                            </span>
+                        </div>
+                        <div class="config-item">
+                            <span class="config-label">Período Actual:</span>
+                            <span class="config-value">
+                                @currentTimeConfig.StartDate.ToString("dd/MM/yyyy") - @currentTimeConfig.EndDate.ToString("dd/MM/yyyy")
+                            </span>
+                        </div>
+                        <div class="config-item">
+                            <span class="config-label">Días Restantes:</span>
+                            <span class="config-value">
+                                @((currentTimeConfig.EndDate - DateTime.Now).Days) días
+                            </span>
+                        </div>
+                        <div class="config-item">
+                            <span class="config-label">Descripción:</span>
+                            <span class="config-value">@currentTimeConfig.Description</span>
+                        </div>
+                    </div>
+                }
+                else
+                {
+                    <div class="no-config">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>No hay configuración de tiempo activa. Configure un nuevo período para habilitar las solicitudes de escalafón.</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Formulario de Nueva Configuración -->
+        <div class="new-config-card">
+            <div class="config-header">
+                <h3><i class="fas fa-plus-circle"></i> Configurar Nuevo Período</h3>
+            </div>
+            <div class="config-content">
+                <form @onsubmit="SaveTimeConfiguration" @onsubmit:preventDefault="true">
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label for="startDate">Fecha de Inicio:</label>
+                            <input type="date" class="form-control" id="startDate" @bind="newConfig.StartDate" required />
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label for="endDate">Fecha de Fin:</label>
+                            <input type="date" class="form-control" id="endDate" @bind="newConfig.EndDate" required />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Descripción del Período:</label>
+                        <textarea class="form-control" id="description" rows="3" @bind="newConfig.Description" 
+                                  placeholder="Ej: Período de solicitudes de escalafón - Semestre 2024-1"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <div class="activation-control">
+                            <div class="control-header">
+                                <h6 class="control-title">Estado de Activación</h6>
+                                <div class="modern-toggle">
+                                    <input type="checkbox" id="isActive" @bind="newConfig.IsActive" class="toggle-checkbox">
+                                    <label for="isActive" class="toggle-switch">
+                                        <span class="toggle-track"></span>
+                                        <span class="toggle-thumb"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="control-description">
+                                <div class="status-indicator @(newConfig.IsActive ? "active" : "inactive")">
+                                    <i class="fas @(newConfig.IsActive ? "fa-check-circle" : "fa-pause-circle")"></i>
+                                    <span>@(newConfig.IsActive ? "Se activará inmediatamente al guardar" : "Permanecerá inactivo hasta activación manual")</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Guardar Configuración
+                        </button>
+                        <button type="button" class="btn btn-secondary" @onclick="ResetForm">
+                            <i class="fas fa-undo"></i> Limpiar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Historial de Configuraciones -->
+        <div class="history-card">
+            <div class="config-header">
+                <h3><i class="fas fa-history"></i> Historial de Configuraciones</h3>
+                <button class="btn btn-info btn-sm" @onclick="LoadHistory">
+                    <i class="fas fa-refresh"></i> Actualizar
+                </button>
+            </div>
+            <div class="config-content">
+                @if (configHistory.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Período</th>
+                                    <th>Descripción</th>
+                                    <th>Estado</th>
+                                    <th>Creado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var config in configHistory)
+                                {
+                                    <tr>
+                                        <td>
+                                            @config.StartDate.ToString("dd/MM/yyyy") - @config.EndDate.ToString("dd/MM/yyyy")
+                                        </td>
+                                        <td>@config.Description</td>
+                                        <td>
+                                            <span class="badge @(config.IsActive ? "badge-success" : "badge-secondary")">
+                                                @(config.IsActive ? "Activo" : "Inactivo")
+                                            </span>
+                                        </td>
+                                        <td>@config.CreatedDate.ToString("dd/MM/yyyy HH:mm")</td>
+                                        <td>
+                                            @if (!config.IsActive)
+                                            {
+                                                <button class="btn btn-sm btn-success" @onclick="() => ActivateConfig(config.Id)">
+                                                    <i class="fas fa-play"></i> Activar
+                                                </button>
+                                            }
+                                            else
+                                            {
+                                                <button class="btn btn-sm btn-warning" @onclick="() => DeactivateConfig(config.Id)">
+                                                    <i class="fas fa-pause"></i> Desactivar
+                                                </button>
+                                            }
+                                            <button class="btn btn-sm btn-danger" @onclick="() => DeleteConfig(config.Id)">
+                                                <i class="fas fa-trash"></i> Eliminar
+                                            </button>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="no-history">
+                        <i class="fas fa-inbox"></i>
+                        <p>No hay configuraciones guardadas.</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private TimeConfiguration? currentTimeConfig;
+    private TimeConfiguration newConfig = new TimeConfiguration();
+    private List<TimeConfiguration> configHistory = new List<TimeConfiguration>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserSession.InitializeAsync();
+        
+        if (UserSession.CurrentUser == null || UserSession.CurrentUser.UserType != 1)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+        
+        await LoadCurrentConfiguration();
+        await LoadHistory();
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/admin");
+    }
+
+    private async Task LoadCurrentConfiguration()
+    {
+        try
+        {
+            var response = await HttpClient.GetAsync("/api/TimeConfiguration/current");
+            if (response.IsSuccessStatusCode)
+            {
+                currentTimeConfig = await response.Content.ReadFromJsonAsync<TimeConfiguration>();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Error loading current config: {ex.Message}");
+        }
+    }
+
+    private async Task LoadHistory()
+    {
+        try
+        {
+            var response = await HttpClient.GetAsync("/api/TimeConfiguration/history");
+            if (response.IsSuccessStatusCode)
+            {
+                configHistory = await response.Content.ReadFromJsonAsync<List<TimeConfiguration>>() ?? new List<TimeConfiguration>();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Error loading history: {ex.Message}");
+        }
+    }
+
+    private async Task SaveTimeConfiguration()
+    {
+        try
+        {
+            if (newConfig.StartDate >= newConfig.EndDate)
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                    "Error de Validación", 
+                    "La fecha de inicio debe ser anterior a la fecha de fin.");
+                return;
+            }
+
+            if (newConfig.StartDate < DateTime.Now.Date)
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                    "Error de Validación", 
+                    "La fecha de inicio no puede ser anterior a la fecha actual.");
+                return;
+            }
+
+            var response = await HttpClient.PostAsJsonAsync("/api/TimeConfiguration", newConfig);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.success", 
+                    "Configuración Guardada", 
+                    "La configuración de tiempo ha sido guardada exitosamente.");
+                
+                await LoadCurrentConfiguration();
+                await LoadHistory();
+                ResetForm();
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                    "Error al Guardar", 
+                    $"No se pudo guardar la configuración: {errorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                "Error", 
+                $"Error al guardar la configuración: {ex.Message}");
+        }
+    }
+
+    private void ResetForm()
+    {
+        newConfig = new TimeConfiguration
+        {
+            StartDate = DateTime.Now.Date,
+            EndDate = DateTime.Now.Date.AddDays(30),
+            IsActive = true
+        };
+    }
+
+    private async Task ActivateConfig(int configId)
+    {
+        try
+        {
+            var response = await HttpClient.PostAsync($"/api/TimeConfiguration/{configId}/activate", null);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.success", 
+                    "Configuración Activada", 
+                    "La configuración ha sido activada exitosamente.");
+                
+                await LoadCurrentConfiguration();
+                await LoadHistory();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                    "Error", 
+                    "No se pudo activar la configuración.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                "Error", 
+                $"Error al activar la configuración: {ex.Message}");
+        }
+    }
+
+    private async Task DeactivateConfig(int configId)
+    {
+        try
+        {
+            var response = await HttpClient.PostAsync($"/api/TimeConfiguration/{configId}/deactivate", null);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.success", 
+                    "Configuración Desactivada", 
+                    "La configuración ha sido desactivada exitosamente.");
+                
+                await LoadCurrentConfiguration();
+                await LoadHistory();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                    "Error", 
+                    "No se pudo desactivar la configuración.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                "Error", 
+                $"Error al desactivar la configuración: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteConfig(int configId)
+    {
+        try
+        {
+            var confirmed = await JSRuntime.InvokeAsync<bool>("confirm", 
+                "¿Está seguro que desea eliminar esta configuración? Esta acción no se puede deshacer.");
+            
+            if (confirmed)
+            {
+                var response = await HttpClient.DeleteAsync($"/api/TimeConfiguration/{configId}");
+                
+                if (response.IsSuccessStatusCode)
+                {
+                    await JSRuntime.InvokeVoidAsync("toastNotifications.success", 
+                        "Configuración Eliminada", 
+                        "La configuración ha sido eliminada exitosamente.");
+                    
+                    await LoadCurrentConfiguration();
+                    await LoadHistory();
+                }
+                else
+                {
+                    await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                        "Error", 
+                        "No se pudo eliminar la configuración.");
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                "Error", 
+                $"Error al eliminar la configuración: {ex.Message}");
+        }
+    }
+
+    public class TimeConfiguration
+    {
+        public int Id { get; set; }
+        public DateTime StartDate { get; set; } = DateTime.Now.Date;
+        public DateTime EndDate { get; set; } = DateTime.Now.Date.AddDays(30);
+        public string Description { get; set; } = "";
+        public bool IsActive { get; set; } = true;
+        public DateTime CreatedDate { get; set; } = DateTime.Now;
+        public string CreatedBy { get; set; } = "";
+    }
+}

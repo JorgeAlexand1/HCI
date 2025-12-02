@@ -1,0 +1,281 @@
+@page "/login"
+@using incidentesFISEI.Services
+@using System.Net.Http.Json
+@using System.Text.Json
+@using System.ComponentModel.DataAnnotations
+@inject HttpClient Http
+@inject NavigationManager Navigation
+@inject IJSRuntime JSRuntime
+@inject UserSessionService UserSession
+
+<PageTitle>Iniciar Sesión - IncidentesFISEI</PageTitle>
+
+<div class="login-container">
+    <div class="login-card">
+        <div class="login-header">
+            <div class="login-logo">
+                <i class="fas fa-shield-alt"></i>
+            </div>
+            <h2 class="login-title">Bienvenido a IncidentesFISEI</h2>
+            <p class="login-subtitle">Sistema de Gestión de Incidentes ITIL v3</p>
+        </div>
+
+        <EditForm Model="loginModel" OnValidSubmit="HandleLogin" class="login-form">
+            <DataAnnotationsValidator />
+            
+            @if (!string.IsNullOrEmpty(errorMessage))
+            {
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>@errorMessage
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(successMessage))
+            {
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle me-2"></i>@successMessage
+                </div>
+            }
+
+            <div class="form-group">
+                <label for="email" class="form-label">
+                    <i class="fas fa-envelope me-2"></i>Correo Electrónico
+                </label>
+                <InputText id="email" @bind-Value="loginModel.Email" class="form-control" placeholder="usuario@fisei.uta.edu.ec" />
+                <ValidationMessage For="@(() => loginModel.Email)" class="validation-message" />
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">
+                    <i class="fas fa-lock me-2"></i>Contraseña
+                </label>
+                <div class="password-input-group">
+                    <InputText type="@(showPassword ? "text" : "password")" id="password" @bind-Value="loginModel.Password" class="form-control" placeholder="••••••••" />
+                    <button type="button" class="password-toggle" @onclick="TogglePasswordVisibility">
+                        <i class="fas @(showPassword ? "fa-eye-slash" : "fa-eye")"></i>
+                    </button>
+                </div>
+                <ValidationMessage For="@(() => loginModel.Password)" class="validation-message" />
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary btn-login" disabled="@isLoading">
+                    @if (isLoading)
+                    {
+                        <span class="spinner-border spinner-border-sm me-2"></span>
+                        <span>Iniciando sesión...</span>
+                    }
+                    else
+                    {
+                        <i class="fas fa-sign-in-alt me-2"></i>
+                        <span>Iniciar Sesión</span>
+                    }
+                </button>
+            </div>
+        </EditForm>
+
+        @if (UserSession.IsAuthenticated)
+        {
+            <div class="alert alert-info">
+                <h5><i class="fas fa-user-check me-2"></i>Ya tienes una sesión activa</h5>
+                <p>Estás logueado como: <strong>@UserSession.CurrentUser?.FirstName</strong></p>
+                <p>Rol: <strong>@UserSession.GetUserRole()</strong></p>
+                <button class="btn btn-warning me-2" @onclick="HandleLogout">
+                    <i class="fas fa-sign-out-alt me-2"></i>Cerrar Sesión
+                </button>
+                <a href="/" class="btn btn-primary">
+                    <i class="fas fa-home me-2"></i>Ir al Inicio
+                </a>
+            </div>
+        }
+
+        <div class="login-footer">
+            <div class="credentials-info">
+                <h5><i class="fas fa-info-circle me-2"></i>Usuarios de Prueba:</h5>
+                <div class="credentials-grid">
+                    <div class="credential-item">
+                        <strong>Administrador:</strong>
+                        <small>admin@fisei.uta.edu.ec / Admin123!</small>
+                    </div>
+                    <div class="credential-item">
+                        <strong>Supervisor:</strong>
+                        <small>supervisor@fisei.uta.edu.ec / Supervisor123!</small>
+                    </div>
+                    <div class="credential-item">
+                        <strong>Técnico:</strong>
+                        <small>tecnico1@fisei.uta.edu.ec / Tecnico123!</small>
+                    </div>
+                    <div class="credential-item">
+                        <strong>Docente:</strong>
+                        <small>docente1@fisei.uta.edu.ec / Docente123!</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    private LoginModel loginModel = new();
+    private bool isLoading = false;
+    private bool showPassword = false;
+    private string errorMessage = "";
+    private string successMessage = "";
+
+    public class LoginModel
+    {
+        [Required(ErrorMessage = "El email es requerido")]
+        [EmailAddress(ErrorMessage = "Ingrese un email válido")]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "La contraseña es requerida")]
+        public string Password { get; set; } = "";
+    }
+
+    public class LoginDto
+    {
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+    }
+
+    public class ApiResponse<T>
+    {
+        public bool Success { get; set; }
+        public T? Data { get; set; }
+        public string Message { get; set; } = "";
+        public string[]? Errors { get; set; }
+    }
+
+    public class AuthResponseDto
+    {
+        public string Token { get; set; } = "";
+        public UsuarioDto Usuario { get; set; } = new();
+    }
+
+    public class UsuarioDto
+    {
+        public int Id { get; set; }
+        public string NombreCompleto { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Rol { get; set; } = "";
+        public bool Activo { get; set; }
+        public DateTime FechaCreacion { get; set; }
+        public DateTime? FechaUltimoAcceso { get; set; }
+    }
+
+    private void TogglePasswordVisibility()
+    {
+        showPassword = !showPassword;
+    }
+
+    private async Task HandleLogin()
+    {
+        try
+        {
+            isLoading = true;
+            errorMessage = "";
+            successMessage = "";
+
+            var loginDto = new LoginDto
+            {
+                Email = loginModel.Email,
+                Password = loginModel.Password
+            };
+
+            // Configurar la URL base para la API
+            var apiBaseUrl = "https://localhost:7001"; // Puerto típico de la API
+            var loginUrl = $"{apiBaseUrl}/api/auth/login";
+
+            var response = await Http.PostAsJsonAsync(loginUrl, loginDto);
+            var responseContent = await response.Content.ReadAsStringAsync();
+
+            if (response.IsSuccessStatusCode)
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                var apiResponse = JsonSerializer.Deserialize<ApiResponse<AuthResponseDto>>(responseContent, options);
+
+                if (apiResponse?.Success == true && apiResponse.Data != null)
+                {
+                    // Guardar el token en localStorage
+                    await JSRuntime.InvokeVoidAsync("localStorage.setItem", "authToken", apiResponse.Data.Token);
+                    
+                    // Actualizar el estado de la sesión
+                    var user = new incidentesFISEI.Services.Usuario 
+                    { 
+                        FirstName = apiResponse.Data.Usuario.NombreCompleto.Split(' ')[0],
+                        LastName = apiResponse.Data.Usuario.NombreCompleto.Contains(' ') ? apiResponse.Data.Usuario.NombreCompleto.Substring(apiResponse.Data.Usuario.NombreCompleto.IndexOf(' ') + 1) : "",
+                        Email = apiResponse.Data.Usuario.Email,
+                        TipoUsuario = apiResponse.Data.Usuario.Rol.ToLower() == "administrador" ? incidentesFISEI.Services.TipoUsuario.Administrador : 
+                                     apiResponse.Data.Usuario.Rol.ToLower() == "tecnico" ? incidentesFISEI.Services.TipoUsuario.Tecnico : 
+                                     incidentesFISEI.Services.TipoUsuario.UsuarioFinal
+                    };
+                    await UserSession.SetUserSessionAsync(user, apiResponse.Data.Token);
+
+                    successMessage = $"¡Bienvenido {apiResponse.Data.Usuario.NombreCompleto}!";
+                    
+                    // Esperar un momento para mostrar el mensaje
+                    await Task.Delay(1500);
+
+                    // No redirigir automáticamente, mostrar mensaje de éxito
+                    successMessage = $"¡Bienvenido {apiResponse.Data.Usuario.NombreCompleto}! Login exitoso.";
+                }
+                else
+                {
+                    errorMessage = apiResponse?.Message ?? "Error en la respuesta del servidor";
+                }
+            }
+            else
+            {
+                var options = new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                };
+
+                try
+                {
+                    var errorResponse = JsonSerializer.Deserialize<ApiResponse<object>>(responseContent, options);
+                    errorMessage = errorResponse?.Message ?? "Error de autenticación";
+                }
+                catch
+                {
+                    errorMessage = response.StatusCode switch
+                    {
+                        System.Net.HttpStatusCode.Unauthorized => "Credenciales incorrectas",
+                        System.Net.HttpStatusCode.NotFound => "Servicio no disponible",
+                        _ => "Error del servidor. Intente nuevamente."
+                    };
+                }
+            }
+        }
+        catch (HttpRequestException)
+        {
+            errorMessage = "No se puede conectar con el servidor. Verifique que la API esté ejecutándose.";
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error inesperado: {ex.Message}";
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task HandleLogout()
+    {
+        await UserSession.LogoutAsync();
+        errorMessage = "";
+        successMessage = "Sesión cerrada exitosamente. Puedes iniciar sesión nuevamente.";
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        // Permitir acceso al login sin redirecciones automáticas
+        await UserSession.InitializeAsync();
+    }
+}

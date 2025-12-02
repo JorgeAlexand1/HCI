@@ -1,0 +1,160 @@
+using Microsoft.AspNetCore.Mvc;
+using IncidentesFISEI.Application.Interfaces;
+using IncidentesFISEI.Application.DTOs;
+using Swashbuckle.AspNetCore.Annotations;
+
+namespace IncidentesFISEI.Api.Controllers;
+
+/// <summary>
+/// Controlador para autenticación y autorización
+/// </summary>
+[ApiController]
+[Route("api/[controller]")]
+public class AuthController : ControllerBase
+{
+    private readonly IAuthService _authService;
+    private readonly ILogger<AuthController> _logger;
+
+    public AuthController(IAuthService authService, ILogger<AuthController> logger)
+    {
+        _authService = authService;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Iniciar sesión en el sistema
+    /// </summary>
+    /// <param name="loginDto">Credenciales de acceso</param>
+    /// <returns>Token JWT y datos del usuario</returns>
+    [HttpPost("login")]
+    [SwaggerOperation(Summary = "Iniciar sesión", Description = "Autentica un usuario y devuelve un token JWT")]
+    [SwaggerResponse(200, "Login exitoso", typeof(AuthResponseDto))]
+    [SwaggerResponse(400, "Credenciales inválidas")]
+    [SwaggerResponse(401, "Usuario o contraseña incorrectos")]
+    public async Task<ActionResult<AuthResponseDto>> Login([FromBody] LoginDto loginDto)
+    {
+        try
+        {
+            var result = await _authService.LoginAsync(loginDto);
+            
+            if (result.Success)
+            {
+                _logger.LogInformation("Login exitoso para usuario: {Username}", loginDto.Username);
+                return Ok(result);
+            }
+
+            _logger.LogWarning("Intento de login fallido para usuario: {Username}", loginDto.Username);
+            return Unauthorized(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error en login para usuario: {Username}", loginDto.Username);
+            return StatusCode(500, new AuthResponseDto(false, null, null, "Error interno del servidor"));
+        }
+    }
+
+    /// <summary>
+    /// Registrar un nuevo usuario
+    /// </summary>
+    /// <param name="registerDto">Datos del usuario a registrar</param>
+    /// <returns>Resultado del registro</returns>
+    [HttpPost("register")]
+    [SwaggerOperation(Summary = "Registrar usuario", Description = "Registra un nuevo usuario en el sistema")]
+    [SwaggerResponse(200, "Registro exitoso", typeof(AuthResponseDto))]
+    [SwaggerResponse(400, "Datos inválidos o usuario ya existe")]
+    public async Task<ActionResult<AuthResponseDto>> Register([FromBody] RegisterDto registerDto)
+    {
+        try
+        {
+            var result = await _authService.RegisterAsync(registerDto);
+            
+            if (result.Success)
+            {
+                _logger.LogInformation("Registro exitoso para usuario: {Username}", registerDto.Username);
+                return Ok(result);
+            }
+
+            return BadRequest(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error en registro para usuario: {Username}", registerDto.Username);
+            return StatusCode(500, new AuthResponseDto(false, null, null, "Error interno del servidor"));
+        }
+    }
+
+    /// <summary>
+    /// Cambiar contraseña del usuario autenticado
+    /// </summary>
+    /// <param name="changePasswordDto">Datos para el cambio de contraseña</param>
+    /// <returns>Resultado del cambio</returns>
+    [HttpPost("change-password")]
+    [SwaggerOperation(Summary = "Cambiar contraseña", Description = "Permite al usuario autenticado cambiar su contraseña")]
+    [SwaggerResponse(200, "Contraseña cambiada exitosamente")]
+    [SwaggerResponse(400, "Datos inválidos")]
+    [SwaggerResponse(401, "No autorizado")]
+    public async Task<ActionResult<ApiResponse<bool>>> ChangePassword([FromBody] ChangePasswordDto changePasswordDto)
+    {
+        try
+        {
+            // Aquí obtendrías el userId del token JWT
+            var userId = GetCurrentUserId();
+            var result = await _authService.ChangePasswordAsync(userId, changePasswordDto.CurrentPassword, changePasswordDto.NewPassword);
+            
+            if (result)
+            {
+                _logger.LogInformation("Contraseña cambiada exitosamente para usuario: {UserId}", userId);
+                return Ok(new ApiResponse<bool>(true, true, "Contraseña cambiada exitosamente"));
+            }
+
+            return BadRequest(new ApiResponse<bool>(false, false, "Error al cambiar la contraseña"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al cambiar contraseña");
+            return StatusCode(500, new ApiResponse<bool>(false, false, "Error interno del servidor"));
+        }
+    }
+
+    /// <summary>
+    /// Solicitar restablecimiento de contraseña
+    /// </summary>
+    /// <param name="resetPasswordDto">Email del usuario</param>
+    /// <returns>Resultado de la solicitud</returns>
+    [HttpPost("reset-password")]
+    [SwaggerOperation(Summary = "Restablecer contraseña", Description = "Envía un email para restablecer la contraseña")]
+    [SwaggerResponse(200, "Email enviado exitosamente")]
+    [SwaggerResponse(404, "Usuario no encontrado")]
+    public async Task<ActionResult<ApiResponse<bool>>> ResetPassword([FromBody] ResetPasswordDto resetPasswordDto)
+    {
+        try
+        {
+            var result = await _authService.ResetPasswordAsync(resetPasswordDto.Email);
+            
+            if (result)
+            {
+                _logger.LogInformation("Solicitud de reset de contraseña enviada a: {Email}", resetPasswordDto.Email);
+                return Ok(new ApiResponse<bool>(true, true, "Se ha enviado un email con las instrucciones"));
+            }
+
+            return NotFound(new ApiResponse<bool>(false, false, "Usuario no encontrado"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al solicitar reset de contraseña");
+            return StatusCode(500, new ApiResponse<bool>(false, false, "Error interno del servidor"));
+        }
+    }
+
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+        if (int.TryParse(userIdClaim, out int userId))
+            return userId;
+        
+        throw new UnauthorizedAccessException("Usuario no autenticado");
+    }
+}
+
+public record ChangePasswordDto(string CurrentPassword, string NewPassword);
+public record ResetPasswordDto(string Email);

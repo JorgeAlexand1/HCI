@@ -1,0 +1,1876 @@
+@page "/admin/solicitud/{SolicitudId:int}"
+@using Microsoft.AspNetCore.Components.Web
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Components
+@layout proyectoAgiles.Layout.MainLayout
+@inject HttpClient HttpClient
+@inject NavigationManager Navigation
+@inject proyectoAgiles.Services.AuthService AuthService
+
+<PageTitle>Detalles de Solicitud - UTA</PageTitle>
+
+<style>
+    /* Página principal para usar toda la pantalla */
+    .solicitud-details-page {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        min-height: 100vh !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow-x: auto !important;
+    }
+
+    .page-header {
+        background: linear-gradient(135deg, #722f37 0%, #8b3a42 100%);
+        color: white;
+        padding: 2rem 0;
+        margin-bottom: 2rem;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .header-content {
+        max-width: 100%;
+        margin: 0 auto;
+        padding: 0 2rem;
+        position: relative;
+        z-index: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 100px;
+    }
+
+    .back-button-container {
+        flex-shrink: 0;
+    }
+
+    .header-info {
+        flex: 1;
+        text-align: center;
+    }
+
+    .btn-outline-light {
+        border-color: rgba(255, 255, 255, 0.8);
+        color: white;
+        font-weight: 600;
+        padding: 0.75rem 1.5rem;
+        border-radius: 50px;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .btn-outline-light:hover {
+        background: rgba(255, 255, 255, 0.2);
+        border-color: white;
+        color: white;
+        transform: translateY(-2px);
+    }
+
+    .solicitud-header {
+        text-align: center;
+    }
+
+    .page-title {
+        font-size: 2.5rem;
+        font-weight: 800;
+        margin: 0 0 0.5rem 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+    }
+
+    .solicitud-id {
+        font-size: 1.1rem;
+        opacity: 0.9;
+        margin: 0;
+    }
+
+    .card {
+        border: none;
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.08);
+        margin-bottom: 2rem;
+        overflow: hidden;
+        transition: all 0.4s ease;
+        background: white;
+        position: relative;
+        width: 100% !important;
+    }
+
+    .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+    }
+
+    .card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, #722f37, #8b3a42, #722f37);
+        background-size: 200% 100%;
+        animation: gradientShift 3s ease-in-out infinite;
+    }
+
+    @@keyframes gradientShift {
+        0%, 100% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+    }
+
+    .card-header {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-bottom: 1px solid #e9ecef;
+        padding: 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: relative;
+    }
+
+    .card-header h3 {
+        color: #722f37;
+        font-weight: 700;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 1.25rem;
+    }
+
+    .card-body {
+        padding: 2rem 1.5rem;
+        position: relative;
+    }
+
+    .info-card .card-header {
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    }
+
+    .info-card .card-header h3 {
+        color: #1976d2;
+    }
+
+    .profile-section {
+        display: flex;
+        align-items: center;
+        margin-bottom: 2rem;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 15px;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .profile-avatar {
+        margin-right: 1.5rem;
+    }
+
+    .avatar-circle {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #722f37 0%, #8b3a42 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 2rem;
+        box-shadow: 0 4px 15px rgba(114, 47, 55, 0.3);
+    }
+
+    .profile-info h4 {
+        margin: 0 0 0.5rem 0;
+        color: #722f37;
+        font-weight: 700;
+        font-size: 1.5rem;
+    }
+
+    .profile-info p {
+        margin: 0.25rem 0;
+        font-size: 0.95rem;
+        color: #6c757d;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .profile-info p i {
+        width: 16px;
+        color: #722f37;
+    }
+
+    .info-card-item {
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 15px;
+        padding: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+        height: 100%;
+        margin-bottom: 1rem;
+    }
+
+    .info-card-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .info-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .info-card-item.academic .info-icon {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    }
+
+    .info-card-item.career .info-icon {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+
+    .info-card-item.experience .info-icon {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    }
+
+    .info-content {
+        flex: 1;
+    }
+
+    .info-label {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6c757d;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .info-value {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .status-badge {
+        padding: 0.5rem 0.75rem;
+        border-radius: 25px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .status-badge.pending {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+
+    .status-badge.review {
+        background: linear-gradient(135deg, #d1ecf1 0%, #bee5eb 100%);
+        color: #0c5460;
+        border: 1px solid #bee5eb;
+    }
+
+    .status-badge.verified {
+        background: linear-gradient(135deg, #cce7ff 0%, #b3d9ff 100%);
+        color: #004085;
+        border: 1px solid #b3d9ff;
+    }
+
+    .status-badge.approved {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .status-badge.rejected {
+        background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .status-badge.default {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        color: #6c757d;
+        border: 1px solid #e9ecef;
+    }
+
+    /* Estilos para la información de solicitud */
+    .solicitud-card .card-header {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    }
+
+    .solicitud-card .card-header h3 {
+        color: #856404;
+    }
+
+    .card-actions {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .solicitud-date {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #6c757d;
+        font-weight: 500;
+    }
+
+    .levels-progression {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2rem;
+        margin-bottom: 2rem;
+        padding: 2rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 15px;
+        border: 1px solid #e9ecef;
+    }
+
+    .level-item {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        text-align: center;
+    }
+
+    .level-icon {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+    }
+
+    .level-item.current .level-icon {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+    }
+
+    .level-item.requested .level-icon {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+
+    .level-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .level-label {
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6c757d;
+        font-weight: 600;
+    }
+
+    .level-value {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: #212529;
+    }
+
+    .progression-arrow {
+        font-size: 2rem;
+        color: #722f37;
+        animation: pulse 2s ease-in-out infinite;
+    }
+
+    .progression-arrow i {
+        animation: bounce 2s ease-in-out infinite;
+    }
+
+    /* Fechas y procesado */
+    .date-item, .processed-by {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 10px;
+        border: 1px solid #e9ecef;
+        margin-bottom: 1rem;
+    }
+
+    .date-icon, .processed-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1rem;
+    }
+
+    .date-item.approved .date-icon {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+
+    .date-item.rejected .date-icon {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    }
+
+    .processed-icon {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    }
+
+    .date-content, .processed-content {
+        display: flex;
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    .date-label, .processed-label {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6c757d;
+        font-weight: 600;
+    }
+
+    .date-value, .processed-value {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #212529;
+    }
+
+    /* Documentos */
+    .documents-count {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        color: #6c757d;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .documents-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+        width: 100% !important;
+    }
+
+    .document-card {
+        background: white;
+        border: 1px solid #e9ecef;
+        border-radius: 15px;
+        padding: 1.5rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        position: relative;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+        min-height: 280px;
+    }
+
+    .document-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 4px;
+        height: 100%;
+    }
+
+    .investigacion-card::before {
+        background: linear-gradient(to bottom, #6f42c1, #5a32a3);
+    }
+
+    .evaluacion-card::before {
+        background: linear-gradient(to bottom, #ffc107, #e0a800);
+    }
+
+    .capacitacion-card::before {
+        background: linear-gradient(to bottom, #17a2b8, #138496);
+    }
+
+    .document-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    .document-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+    }
+
+    .document-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+    }
+
+    .investigacion-card .document-icon {
+        background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+    }
+
+    .evaluacion-card .document-icon {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    }
+
+    .capacitacion-card .document-icon {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    }
+
+    .document-type {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .document-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #722f37;
+        margin-bottom: 1rem;
+        line-height: 1.3;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        hyphens: auto;
+    }
+
+    .document-details {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        flex: 1;
+    }
+
+    .detail-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f8f9fa;
+    }
+
+    .detail-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .detail-value {
+        font-weight: 600;
+        color: #212529;
+        text-align: right;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 150px;
+    }
+
+    /* Badges */
+    .badge {
+        padding: 0.5rem 0.75rem;
+        border-radius: 25px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .badge-research {
+        background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+        color: white;
+    }
+
+    .badge-training {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+        color: white;
+    }
+
+    .badge-success {
+        background: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    .badge-secondary {
+        background: linear-gradient(135deg, #e2e3e5 0%, #d6d8db 100%);
+        color: #383d41;
+        border: 1px solid #d6d8db;
+    }
+
+    .badge-warning {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+        color: #856404;
+        border: 1px solid #ffeaa7;
+    }
+
+    /* Evaluaciones específicas */
+    .score-section {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        margin: 1rem 0;
+        padding: 1rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 10px;
+        border: 1px solid #e9ecef;
+    }
+
+    .score-item {
+        text-align: center;
+    }
+
+    .score-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .score-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #722f37;
+    }
+
+    .score-divider {
+        font-size: 1.5rem;
+        color: #dee2e6;
+        font-weight: 300;
+    }
+
+    .percentage-bar {
+        margin-top: 1rem;
+    }
+
+    .percentage-label {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #722f37;
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .progress {
+        height: 8px;
+        border-radius: 10px;
+        background-color: #e9ecef;
+        overflow: hidden;
+    }
+
+    .progress-bar {
+        height: 100%;
+        background: linear-gradient(90deg, #28a745, #20c997);
+        border-radius: 10px;
+        transition: width 0.6s ease;
+    }
+
+    /* Capacitaciones específicas */
+    .hours-badge {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+        color: white;
+        padding: 0.25rem 0.75rem;
+        border-radius: 15px;
+        font-weight: 600;
+        font-size: 0.85rem;
+    }
+
+    .date-range {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.5rem;
+        margin-top: 1rem;
+        padding: 0.75rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 8px;
+    }
+
+    .date-range .date-item {
+        background: none;
+        border: none;
+        padding: 0;
+        margin: 0;
+        text-align: center;
+    }
+
+    .date-range .date-label {
+        font-size: 0.8rem;
+        color: #6c757d;
+        margin-bottom: 0.25rem;
+    }
+
+    .date-range .date-value {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #212529;
+    }
+
+    .date-separator {
+        color: #dee2e6;
+        font-weight: 300;
+    }
+
+    /* Verificación de requisitos */
+    .verification-card .card-header {
+        background: linear-gradient(135deg, #e8f5e8 0%, #d4edda 100%);
+    }
+
+    .verification-card .card-header h3 {
+        color: #28a745;
+    }
+
+    .verification-status {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+    }
+
+    .verification-status.passed {
+        color: #28a745;
+    }
+
+    .verification-status.failed {
+        color: #dc3545;
+    }
+
+    .verification-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .verification-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 15px;
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+        height: 100%;
+        min-height: 120px;
+    }
+
+    .verification-item:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    .verification-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+
+    .verification-icon.research {
+        background: linear-gradient(135deg, #6f42c1 0%, #5a32a3 100%);
+    }
+
+    .verification-icon.uta {
+        background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);
+    }
+
+    .verification-icon.training {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+    }
+
+    .verification-icon.pedagogical {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+    }
+
+    .verification-icon.evaluation {
+        background: linear-gradient(135deg, #722f37 0%, #8b3a42 100%);
+    }
+
+    .verification-icon.periods {
+        background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+    }
+
+    .verification-content {
+        flex: 1;
+        text-align: center;
+    }
+
+    .verification-label {
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #6c757d;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .verification-value {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: #722f37;
+        margin-bottom: 0.25rem;
+    }
+
+    .verification-detail {
+        font-size: 0.8rem;
+        color: #6c757d;
+        line-height: 1.2;
+    }
+
+    /* Observaciones */
+    .observations-card .card-header {
+        background: linear-gradient(135deg, #f3e5f5 0%, #e1bee7 100%);
+    }
+
+    .observations-card .card-header h3 {
+        color: #6a1b9a;
+    }
+
+    .observation-item {
+        margin-bottom: 1.5rem;
+        padding: 1.5rem;
+        background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        border-radius: 10px;
+        border-left: 4px solid #722f37;
+    }
+
+    .observation-item strong {
+        color: #722f37;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        display: block;
+    }
+
+    .observation-item p {
+        margin: 0;
+        line-height: 1.6;
+        color: #495057;
+    }
+
+    /* Contenedor principal para ocupar toda la pantalla */
+    .container-fluid {
+        max-width: 100% !important;
+        padding: 0 1rem !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Ajustar las filas para usar todo el ancho */
+    .container-fluid .row {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        width: 100% !important;
+    }
+
+    /* Ajustar las columnas para mejor distribución en pantalla completa */
+    .container-fluid .col-12,
+    .container-fluid .col-md-4,
+    .container-fluid .col-md-6,
+    .container-fluid .col-md-8,
+    .container-fluid .col-lg-6,
+    .container-fluid .col-lg-8 {
+        padding-left: 0.5rem !important;
+        padding-right: 0.5rem !important;
+    }
+
+    /* Forzar que Bootstrap no limite el ancho */
+    .container-fluid {
+        max-width: none !important;
+    }
+    
+    /* Asegurar que las filas y columnas usen todo el espacio */
+    .row {
+        --bs-gutter-x: 1rem;
+    }
+    
+    .col-12 {
+        width: 100% !important;
+    }
+
+    /* Media queries para diferentes tamaños de pantalla */
+    @@media (min-width: 1200px) {
+        .container-fluid {
+            padding: 0 2rem !important;
+        }
+        
+        .documents-grid {
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr)) !important;
+            gap: 1.5rem !important;
+        }
+    }
+
+    @@media (min-width: 1400px) {
+        .container-fluid {
+            padding: 0 3rem !important;
+        }
+        
+        .documents-grid {
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr)) !important;
+            gap: 2rem !important;
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .container-fluid {
+            padding: 0 0.5rem !important;
+        }
+    }
+
+    .header-info {
+        flex: 1;
+        text-align: center;
+    }
+
+    /* Responsive */
+    @@media (max-width: 1200px) {
+        .documents-grid {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        }
+        
+        .verification-grid {
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        }
+    }
+
+    @@media (max-width: 992px) {
+        .documents-grid {
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        }
+        
+        .verification-grid {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+        
+        .levels-progression {
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .progression-arrow {
+            transform: rotate(90deg);
+        }
+    }
+
+    @@media (max-width: 768px) {
+        .header-content {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+            padding: 0 1rem;
+        }
+        
+        .back-button-container {
+            align-self: flex-start;
+        }
+        
+        .header-info {
+            text-align: center;
+        }
+        
+        .page-title {
+            font-size: 2rem;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .card-header {
+            flex-direction: column;
+            gap: 1rem;
+            align-items: flex-start;
+        }
+
+        .card-body {
+            padding: 1.5rem 1rem;
+        }
+
+        .profile-section {
+            flex-direction: column;
+            text-align: center;
+            gap: 1rem;
+        }
+
+        .profile-avatar {
+            margin-right: 0;
+            margin-bottom: 1rem;
+        }
+
+        .documents-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .verification-grid {
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        }
+
+        .score-section {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .date-range {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .detail-row {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 0.25rem;
+        }
+
+        .detail-value {
+            text-align: left;
+        }
+    }
+
+    @@media (max-width: 576px) {
+        .page-title {
+            font-size: 1.8rem;
+        }
+
+        .card-header h3 {
+            font-size: 1.1rem;
+        }
+
+        .document-title {
+            font-size: 1rem;
+        }
+
+        .verification-value {
+            font-size: 1.3rem;
+        }
+
+        .score-value {
+            font-size: 1.3rem;
+        }
+        
+        .documents-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        .verification-grid {
+            grid-template-columns: 1fr;
+            gap: 1rem;
+        }
+        
+        .document-card {
+            padding: 1rem;
+        }
+        
+        .card-body {
+            padding: 1rem;
+        }
+        
+        .profile-section {
+            padding: 1rem;
+        }
+        
+        .levels-progression {
+            padding: 1rem;
+        }
+        
+        .verification-item {
+            padding: 1rem;
+        }
+    }
+
+    @@media (max-width: 480px) {
+        .documents-grid {
+            gap: 0.75rem;
+        }
+        
+        .verification-grid {
+            gap: 0.75rem;
+        }
+        
+        .card {
+            margin-bottom: 1rem;
+        }
+        
+        .document-card {
+            padding: 0.75rem;
+        }
+        
+        .document-title {
+            font-size: 0.95rem;
+            line-height: 1.2;
+        }
+        
+        .verification-item {
+            padding: 0.75rem;
+        }
+        
+        .verification-value {
+            font-size: 1.2rem;
+        }
+        
+        .info-card-item {
+            padding: 1rem;
+        }
+        
+        .info-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 1rem;
+        }
+        
+        .avatar-circle {
+            width: 60px;
+            height: 60px;
+            font-size: 1.5rem;
+        }
+        
+        .level-icon {
+            width: 50px;
+            height: 50px;
+            font-size: 1.2rem;
+        }
+    }
+</style>
+
+<div class="solicitud-details-page" style="width: 100vw; max-width: 100vw; overflow-x: auto;">
+    <!-- Header con información básica -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="back-button-container">
+                <button class="btn btn-outline-light" @onclick="GoBack">
+                    <i class="fas fa-arrow-left"></i>
+                    Volver a Reportes
+                </button>
+            </div>
+            <div class="header-info">
+                @if (solicitud != null)
+                {
+                    <div class="solicitud-header">
+                        <div class="solicitud-status">
+                            <span class="status-badge @GetStatusClass(solicitud.Status)">
+                                <i class="fas @GetStatusIcon(solicitud.Status)"></i>
+                                @GetStatusText(solicitud.Status)
+                            </span>
+                        </div>
+                        <h1 class="page-title">
+                            <i class="fas fa-file-alt"></i>
+                            Solicitud de Escalafón
+                        </h1>
+                        <p class="solicitud-id">ID: #@SolicitudId | Fecha: @solicitud.FechaSolicitud.ToString("dd/MM/yyyy")</p>
+                    </div>
+                }
+                else if (isLoading)
+                {
+                    <div class="loading-header">
+                        <div class="spinner-border text-light" role="status"></div>
+                        <h1>Cargando detalles...</h1>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="container-fluid">
+        @if (isLoading)
+        {
+            <div class="text-center p-5">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-3">Cargando detalles de la solicitud...</p>
+            </div>
+        }
+        else if (solicitud != null)
+        {
+            <!-- Información básica del docente -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card info-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-user-tie"></i> Información del Docente</h3>
+                            <div class="card-actions">
+                                <div class="header-status">
+                                    <span class="status-badge @GetStatusClass(solicitud.Status)">
+                                        <i class="fas @GetStatusIcon(solicitud.Status)"></i>
+                                        @GetStatusText(solicitud.Status)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="profile-section">
+                                <div class="profile-avatar">
+                                    <div class="avatar-circle">
+                                        <i class="fas fa-user-graduate"></i>
+                                    </div>
+                                </div>
+                                <div class="profile-info">
+                                    <h4>@solicitud.DocenteNombre</h4>
+                                    <p><i class="fas fa-id-card"></i> @solicitud.DocenteCedula</p>
+                                    <p><i class="fas fa-envelope"></i> @solicitud.DocenteEmail</p>
+                                    @if (!string.IsNullOrEmpty(solicitud.DocenteTelefono))
+                                    {
+                                        <p><i class="fas fa-phone"></i> @solicitud.DocenteTelefono</p>
+                                    }
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <div class="info-card-item academic">
+                                        <div class="info-icon">
+                                            <i class="fas fa-university"></i>
+                                        </div>
+                                        <div class="info-content">
+                                            <div class="info-label">Facultad</div>
+                                            <div class="info-value">@(solicitud.Facultad ?? "No especificada")</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="info-card-item career">
+                                        <div class="info-icon">
+                                            <i class="fas fa-graduation-cap"></i>
+                                        </div>
+                                        <div class="info-content">
+                                            <div class="info-label">Carrera</div>
+                                            <div class="info-value">@(solicitud.Carrera ?? "No especificada")</div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="info-card-item experience">
+                                        <div class="info-icon">
+                                            <i class="fas fa-clock"></i>
+                                        </div>
+                                        <div class="info-content">
+                                            <div class="info-label">Experiencia</div>
+                                            <div class="info-value">@solicitud.AnosExperiencia años</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de la solicitud -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="card solicitud-card">
+                        <div class="card-header">
+                            <h3><i class="fas fa-graduation-cap"></i> Información de la Solicitud</h3>
+                            <div class="card-actions">
+                                <span class="solicitud-date">
+                                    <i class="fas fa-calendar-alt"></i>
+                                    @solicitud.FechaSolicitud.ToString("dd/MM/yyyy")
+                                </span>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <div class="levels-progression">
+                                <div class="level-item current">
+                                    <div class="level-icon">
+                                        <i class="fas fa-level-down-alt"></i>
+                                    </div>
+                                    <div class="level-content">
+                                        <div class="level-label">Nivel Actual</div>
+                                        <div class="level-value">@solicitud.NivelActual</div>
+                                    </div>
+                                </div>
+                                
+                                <div class="progression-arrow">
+                                    <i class="fas fa-arrow-right"></i>
+                                </div>
+                                
+                                <div class="level-item requested">
+                                    <div class="level-icon">
+                                        <i class="fas fa-level-up-alt"></i>
+                                    </div>
+                                    <div class="level-content">
+                                        <div class="level-label">Nivel Solicitado</div>
+                                        <div class="level-value">@solicitud.NivelSolicitado</div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="row mt-4">
+                                <div class="col-md-6">
+                                    @if (solicitud.FechaAprobacion.HasValue)
+                                    {
+                                        <div class="date-item approved">
+                                            <div class="date-icon">
+                                                <i class="fas fa-check"></i>
+                                            </div>
+                                            <div class="date-content">
+                                                <div class="date-label">Fecha de Aprobación</div>
+                                                <div class="date-value">@solicitud.FechaAprobacion.Value.ToString("dd/MM/yyyy")</div>
+                                            </div>
+                                        </div>
+                                    }
+                                    @if (solicitud.FechaRechazo.HasValue)
+                                    {
+                                        <div class="date-item rejected">
+                                            <div class="date-icon">
+                                                <i class="fas fa-times"></i>
+                                            </div>
+                                            <div class="date-content">
+                                                <div class="date-label">Fecha de Rechazo</div>
+                                                <div class="date-value">@solicitud.FechaRechazo.Value.ToString("dd/MM/yyyy")</div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="col-md-6">
+                                    @if (!string.IsNullOrEmpty(solicitud.ProcesadoPor))
+                                    {
+                                        <div class="processed-by">
+                                            <div class="processed-icon">
+                                                <i class="fas fa-user-check"></i>
+                                            </div>
+                                            <div class="processed-content">
+                                                <div class="processed-label">Procesado por</div>
+                                                <div class="processed-value">@solicitud.ProcesadoPor</div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Documentos utilizados -->
+            @if (historialEscalafon != null && historialEscalafon.DocumentosDetalles != null)
+            {
+                <!-- Investigaciones -->
+                @if (historialEscalafon.DocumentosDetalles.Investigaciones?.Any() == true)
+                {
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card documents-card investigaciones">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-search"></i> Investigaciones Utilizadas</h3>
+                                    <div class="card-actions">
+                                        <span class="documents-count">
+                                            <i class="fas fa-file-alt"></i>
+                                            @historialEscalafon.DocumentosDetalles.Investigaciones.Count() documentos
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="documents-grid">
+                                        @foreach (var investigacion in historialEscalafon.DocumentosDetalles.Investigaciones)
+                                        {
+                                            <div class="document-card investigacion-card">
+                                                <div class="document-header">
+                                                    <div class="document-icon">
+                                                        <i class="fas fa-microscope"></i>
+                                                    </div>
+                                                    <div class="document-type">
+                                                        <span class="badge badge-research">@investigacion.Tipo</span>
+                                                    </div>
+                                                </div>
+                                                <div class="document-content">
+                                                    <h5 class="document-title">@investigacion.Titulo</h5>
+                                                    <div class="document-details">
+                                                        <div class="detail-row">
+                                                            <span class="detail-label">
+                                                                <i class="fas fa-building"></i>
+                                                                Revista/Editorial:
+                                                            </span>
+                                                            <span class="detail-value">@investigacion.RevistaOEditorial</span>
+                                                        </div>
+                                                        <div class="detail-row">
+                                                            <span class="detail-label">
+                                                                <i class="fas fa-calendar"></i>
+                                                                Fecha de Publicación:
+                                                            </span>
+                                                            <span class="detail-value">@investigacion.FechaPublicacion.ToString("dd/MM/yyyy")</span>
+                                                        </div>
+                                                        <div class="detail-row">
+                                                            <span class="detail-label">
+                                                                <i class="fas fa-university"></i>
+                                                                Filiación UTA:
+                                                            </span>
+                                                            @if (investigacion.TieneFiliacionUTA)
+                                                            {
+                                                                <span class="badge badge-success">
+                                                                    <i class="fas fa-check"></i> Sí
+                                                                </span>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="badge badge-secondary">
+                                                                    <i class="fas fa-times"></i> No
+                                                                </span>
+                                                            }
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Evaluaciones -->
+                @if (historialEscalafon.DocumentosDetalles.Evaluaciones?.Any() == true)
+                {
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card documents-card evaluaciones">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-star"></i> Evaluaciones Utilizadas</h3>
+                                    <div class="card-actions">
+                                        <span class="documents-count">
+                                            <i class="fas fa-chart-line"></i>
+                                            @historialEscalafon.DocumentosDetalles.Evaluaciones.Count() evaluaciones
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="documents-grid">
+                                        @foreach (var evaluacion in historialEscalafon.DocumentosDetalles.Evaluaciones)
+                                        {
+                                            <div class="document-card evaluacion-card">
+                                                <div class="document-header">
+                                                    <div class="document-icon">
+                                                        <i class="fas fa-chart-bar"></i>
+                                                    </div>
+                                                    <div class="document-type">
+                                                        <span class="badge @(evaluacion.Estado == "Aprobado" ? "badge-success" : "badge-warning")">
+                                                            @evaluacion.Estado
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="document-content">
+                                                    <h5 class="document-title">@evaluacion.PeriodoAcademico</h5>
+                                                    <div class="document-details">
+                                                        <div class="detail-row">
+                                                            <span class="detail-label">
+                                                                <i class="fas fa-calendar"></i>
+                                                                Período:
+                                                            </span>
+                                                            <span class="detail-value">@evaluacion.Anio - @evaluacion.Semestre</span>
+                                                        </div>
+                                                        <div class="score-section">
+                                                            <div class="score-item">
+                                                                <div class="score-label">Puntaje Obtenido</div>
+                                                                <div class="score-value">@evaluacion.PuntajeObtenido.ToString("F2")</div>
+                                                            </div>
+                                                            <div class="score-divider">/</div>
+                                                            <div class="score-item">
+                                                                <div class="score-label">Puntaje Máximo</div>
+                                                                <div class="score-value">@evaluacion.PuntajeMaximo.ToString("F2")</div>
+                                                            </div>
+                                                        </div>
+                                                        <div class="percentage-bar">
+                                                            <div class="percentage-label">@evaluacion.Porcentaje.ToString("F1")%</div>
+                                                            <div class="progress">
+                                                                <div class="progress-bar" style="width: @(evaluacion.Porcentaje)%"></div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Capacitaciones -->
+                @if (historialEscalafon.DocumentosDetalles.Capacitaciones?.Any() == true)
+                {
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card documents-card capacitaciones">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-certificate"></i> Capacitaciones Utilizadas</h3>
+                                    <div class="card-actions">
+                                        <span class="documents-count">
+                                            <i class="fas fa-graduation-cap"></i>
+                                            @historialEscalafon.DocumentosDetalles.Capacitaciones.Count() capacitaciones
+                                        </span>
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="documents-grid">
+                                        @foreach (var capacitacion in historialEscalafon.DocumentosDetalles.Capacitaciones)
+                                        {
+                                            <div class="document-card capacitacion-card">
+                                                <div class="document-header">
+                                                    <div class="document-icon">
+                                                        <i class="fas fa-book-open"></i>
+                                                    </div>
+                                                    <div class="document-type">
+                                                        <span class="badge badge-training">@capacitacion.Tipo</span>
+                                                        @if (capacitacion.EsPedagogica)
+                                                        {
+                                                            <span class="badge badge-success">
+                                                                <i class="fas fa-chalkboard-teacher"></i> Pedagógica
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                </div>
+                                                <div class="document-content">
+                                                    <h5 class="document-title">@capacitacion.NombreCurso</h5>
+                                                    <div class="document-details">
+                                                        <div class="detail-row">
+                                                            <span class="detail-label">
+                                                                <i class="fas fa-user-tie"></i>
+                                                                Facilitador:
+                                                            </span>
+                                                            <span class="detail-value">@capacitacion.Facilitador</span>
+                                                        </div>
+                                                        <div class="detail-row">
+                                                            <span class="detail-label">
+                                                                <i class="fas fa-clock"></i>
+                                                                Horas Académicas:
+                                                            </span>
+                                                            <span class="detail-value">
+                                                                <span class="hours-badge">@capacitacion.HorasAcademicas h</span>
+                                                            </span>
+                                                        </div>
+                                                        <div class="date-range">
+                                                            <div class="date-item">
+                                                                <span class="date-label">Inicio:</span>
+                                                                <span class="date-value">@capacitacion.FechaInicio.ToString("dd/MM/yyyy")</span>
+                                                            </div>
+                                                            <div class="date-separator">-</div>
+                                                            <div class="date-item">
+                                                                <span class="date-label">Fin:</span>
+                                                                <span class="date-value">@capacitacion.FechaFin.ToString("dd/MM/yyyy")</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Verificación de requisitos -->
+                @if (historialEscalafon.DocumentosDetalles.VerificacionRequisitos != null)
+                {
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <div class="card verification-card">
+                                <div class="card-header">
+                                    <h3><i class="fas fa-check-circle"></i> Verificación de Requisitos</h3>
+                                    <div class="card-actions">
+                                        @if (historialEscalafon.DocumentosDetalles.VerificacionRequisitos.CumpleTodosRequisitos)
+                                        {
+                                            <span class="verification-status passed">
+                                                <i class="fas fa-check-circle"></i>
+                                                Cumple todos los requisitos
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="verification-status failed">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                                No cumple todos los requisitos
+                                            </span>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="card-body">
+                                    <div class="verification-grid">
+                                        <div class="verification-item">
+                                            <div class="verification-icon research">
+                                                <i class="fas fa-microscope"></i>
+                                            </div>
+                                            <div class="verification-content">
+                                                <div class="verification-label">Investigaciones</div>
+                                                <div class="verification-value">@historialEscalafon.DocumentosDetalles.VerificacionRequisitos.TotalInvestigaciones</div>
+                                                <div class="verification-detail">Total registradas</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="verification-item">
+                                            <div class="verification-icon uta">
+                                                <i class="fas fa-university"></i>
+                                            </div>
+                                            <div class="verification-content">
+                                                <div class="verification-label">Con UTA</div>
+                                                <div class="verification-value">@historialEscalafon.DocumentosDetalles.VerificacionRequisitos.InvestigacionesConUTA</div>
+                                                <div class="verification-detail">Investigaciones con filiación</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="verification-item">
+                                            <div class="verification-icon training">
+                                                <i class="fas fa-graduation-cap"></i>
+                                            </div>
+                                            <div class="verification-content">
+                                                <div class="verification-label">Total Horas</div>
+                                                <div class="verification-value">@historialEscalafon.DocumentosDetalles.VerificacionRequisitos.TotalHorasCapacitacion</div>
+                                                <div class="verification-detail">Horas de capacitación</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="verification-item">
+                                            <div class="verification-icon pedagogical">
+                                                <i class="fas fa-chalkboard-teacher"></i>
+                                            </div>
+                                            <div class="verification-content">
+                                                <div class="verification-label">Pedagógicas</div>
+                                                <div class="verification-value">@historialEscalafon.DocumentosDetalles.VerificacionRequisitos.HorasPedagogicas</div>
+                                                <div class="verification-detail">Horas pedagógicas</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="verification-item">
+                                            <div class="verification-icon evaluation">
+                                                <i class="fas fa-chart-line"></i>
+                                            </div>
+                                            <div class="verification-content">
+                                                <div class="verification-label">Promedio</div>
+                                                <div class="verification-value">@historialEscalafon.DocumentosDetalles.VerificacionRequisitos.PromedioEvaluaciones.ToString("F2")</div>
+                                                <div class="verification-detail">Evaluaciones docentes</div>
+                                            </div>
+                                        </div>
+                                        
+                                        <div class="verification-item">
+                                            <div class="verification-icon periods">
+                                                <i class="fas fa-calendar-alt"></i>
+                                            </div>
+                                            <div class="verification-content">
+                                                <div class="verification-label">Períodos</div>
+                                                <div class="verification-value">@historialEscalafon.DocumentosDetalles.VerificacionRequisitos.PeriodosEvaluados</div>
+                                                <div class="verification-detail">Períodos evaluados</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+
+            <!-- Observaciones -->
+            @if (!string.IsNullOrEmpty(solicitud.Observaciones) || !string.IsNullOrEmpty(solicitud.MotivoRechazo))
+            {
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <div class="card observations-card">
+                            <div class="card-header">
+                                <h3><i class="fas fa-comment"></i> Observaciones</h3>
+                            </div>
+                            <div class="card-body">
+                                @if (!string.IsNullOrEmpty(solicitud.Observaciones))
+                                {
+                                    <div class="observation-item">
+                                        <strong>Observaciones Generales:</strong>
+                                        <p>@solicitud.Observaciones</p>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(solicitud.MotivoRechazo))
+                                {
+                                    <div class="observation-item">
+                                        <strong>Motivo de Rechazo:</strong>
+                                        <p class="text-danger">@solicitud.MotivoRechazo</p>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(solicitud.ObservacionesConsejo))
+                                {
+                                    <div class="observation-item">
+                                        <strong>Observaciones del Consejo:</strong>
+                                        <p>@solicitud.ObservacionesConsejo</p>
+                                    </div>
+                                }
+                                @if (!string.IsNullOrEmpty(solicitud.MotivoRechazoConsejo))
+                                {
+                                    <div class="observation-item">
+                                        <strong>Motivo de Rechazo del Consejo:</strong>
+                                        <p class="text-danger">@solicitud.MotivoRechazoConsejo</p>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="row">
+                <div class="col-12">
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <div class="empty-state">
+                                <i class="fas fa-exclamation-triangle fa-3x text-warning mb-3"></i>
+                                <h4>Solicitud no encontrada</h4>
+                                <p class="text-muted">
+                                    No se pudo encontrar la solicitud solicitada.
+                                    <br>Verifique que el ID sea correcto.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int SolicitudId { get; set; }
+
+    private ProyectoAgiles.Application.DTOs.SolicitudEscalafonDto? solicitud;
+    private ProyectoAgiles.Application.DTOs.HistorialEscalafonDto? historialEscalafon;
+    private bool isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadSolicitudDetails();
+    }
+
+    private async Task LoadSolicitudDetails()
+    {
+        isLoading = true;
+
+        try
+        {
+            // Cargar información de la solicitud
+            var solicitudResponse = await HttpClient.GetAsync($"/api/Reports/solicitud/{SolicitudId}");
+            if (solicitudResponse.IsSuccessStatusCode)
+            {
+                var apiResponse = await solicitudResponse.Content.ReadFromJsonAsync<ProyectoAgiles.Application.DTOs.ApiResponse<ProyectoAgiles.Application.DTOs.SolicitudEscalafonDto>>();
+                solicitud = apiResponse?.Data;
+            }
+
+            // Cargar historial y documentos
+            var historialResponse = await HttpClient.GetAsync($"/api/Reports/historial/{SolicitudId}");
+            if (historialResponse.IsSuccessStatusCode)
+            {
+                var historialApiResponse = await historialResponse.Content.ReadFromJsonAsync<ProyectoAgiles.Application.DTOs.ApiResponse<ProyectoAgiles.Application.DTOs.HistorialEscalafonDto>>();
+                historialEscalafon = historialApiResponse?.Data;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading solicitud details: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private string GetStatusIcon(string status)
+    {
+        return status switch
+        {
+            "Pendiente" => "fa-clock",
+            "EnRevision" => "fa-search",
+            "Verificado" => "fa-check-circle",
+            "AprobadoPresidente" => "fa-thumbs-up",
+            "AprobadoConsejo" => "fa-certificate",
+            "RechazadoComision" => "fa-times-circle",
+            "RechazadoConsejo" => "fa-ban",
+            "Procesado" => "fa-cog",
+            "Finalizado" => "fa-flag-checkered",
+            _ => "fa-info-circle"
+        };
+    }
+
+    private string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            "Pendiente" => "pending",
+            "EnRevision" => "review",
+            "Verificado" => "verified",
+            "AprobadoPresidente" => "approved",
+            "AprobadoConsejo" => "approved",
+            "RechazadoComision" => "rejected",
+            "RechazadoConsejo" => "rejected",
+            "Procesado" => "processed",
+            "Finalizado" => "finalized",
+            _ => "default"
+        };
+    }
+
+    private string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "Pendiente" => "Pendiente",
+            "EnRevision" => "En Revisión",
+            "Verificado" => "Verificado",
+            "AprobadoPresidente" => "Aprobado por Presidente",
+            "AprobadoConsejo" => "Aprobado por Consejo",
+            "RechazadoComision" => "Rechazado por Comisión",
+            "RechazadoConsejo" => "Rechazado por Consejo",
+            "Procesado" => "Procesado",
+            "Finalizado" => "Finalizado",
+            _ => status
+        };
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/admin/reports");
+    }
+}

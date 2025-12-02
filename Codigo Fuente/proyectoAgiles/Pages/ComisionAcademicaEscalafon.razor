@@ -1,0 +1,1986 @@
+@page "/admin/comision-academica-escalafon"
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components
+@using Microsoft.JSInterop
+@using ProyectoAgiles.Application.DTOs
+@using proyectoAgiles.Services
+@using System.Text
+@using System.Net.Http.Json
+@layout proyectoAgiles.Layout.MainLayout
+@inject NavigationManager Navigation
+@inject proyectoAgiles.Services.UserSessionService UserSession
+@inject proyectoAgiles.Services.AuthService AuthService
+@inject HttpClient HttpClient
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Comisión Académica de Escalafón - UTA</PageTitle>
+
+<div class="direccion-talento-humano-page">
+    <!-- Botón Volver Flotante -->
+    <div class="back-button-container">
+        <button class="btn btn-outline-secondary" @onclick="GoBack">
+            <i class="fas fa-arrow-left"></i> Volver
+        </button>
+    </div>
+
+    <div class="page-container">
+        <!-- Título de la Página -->
+        <div class="page-header">
+            <div class="header-content">
+                <h1 class="page-title">Comisión Académica de Escalafón</h1>
+                <p class="page-subtitle">Gestión final de escalafón docente - Promoción del personal académico</p>
+            </div>
+        </div>
+
+        <!-- Resumen de Solicitudes -->
+        <div class="summary-cards">
+            <div class="summary-card processed">
+                <div class="summary-icon">
+                    <i class="fas fa-pen-fancy"></i>
+                </div>
+                <div class="summary-content">
+                    <h3>@processedSolicitudes</h3>
+                    <p>Firmadas por Talento Humano</p>
+                </div>
+            </div>
+            
+            <div class="summary-card approved">
+                <div class="summary-icon">
+                    <i class="fas fa-bell" style="color: white; font-size: 24px; display: block;"></i>
+                </div>
+                <div class="summary-content">
+                    <h3>@apelacionSolicitudes</h3>
+                    <p>Apelaciones de Docentes</p>
+                </div>
+            </div>
+            
+            <div class="summary-card approved">
+                <div class="summary-icon">
+                    <i class="fas fa-check-circle"></i>
+                </div>
+                <div class="summary-content">
+                    <h3>@verificatedSolicitudes</h3>
+                    <p>Verificadas por Comisión</p>
+                </div>
+            </div>
+            
+            <div class="summary-card finalized">
+                <div class="summary-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="summary-content">
+                    <h3>@approvedForReportSolicitudes</h3>
+                    <p>Listas para Informe</p>
+                </div>
+            </div>
+            
+            <div class="summary-card finalized">
+                <div class="summary-icon">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="summary-content">
+                    <h3>@finalizedSolicitudes</h3>
+                    <p>Escalafón Finalizado</p>
+                </div>
+            </div>
+            
+            <div class="summary-card rejected">
+                <div class="summary-icon">
+                    <i class="fas fa-times-circle"></i>
+                </div>
+                <div class="summary-content">
+                    <h3>@rejectedByComision</h3>
+                    <p>Rechazadas por Comisión</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters-section">
+            <div class="filters-container">
+                <select class="form-select" @bind="selectedFilter">
+                    <option value="procesado">Firmadas por Talento Humano</option>
+                    <option value="apelacion">Apelaciones de Docentes</option>
+                    <option value="verificado">Verificadas por Comisión</option>
+                    <option value="aprobado-presidente">Listas para Informe</option>
+                    <option value="finalizado">Escalafón Finalizado</option>
+                    <option value="rechazado-comision">Rechazadas por Comisión</option>
+                    <option value="all">Todas</option>
+                </select>
+                
+                <input type="text" class="form-control" placeholder="Buscar por nombre o cédula..." @bind="searchTerm" @oninput="FilterSolicitudes" />
+                
+                <button class="btn btn-theme-primary" @onclick="RefreshSolicitudes">
+                    <i class="fas fa-refresh"></i> Actualizar
+                </button>
+            </div>
+        </div>
+
+        <!-- Lista de Solicitudes -->
+        <div class="solicitudes-section">
+            @if (filteredSolicitudes?.Any() == true)
+            {
+                @foreach (var solicitud in filteredSolicitudes)
+                {
+                    <div class="solicitud-card @GetStatusClass(solicitud.Status)">
+                        <div class="solicitud-header">
+                            <div class="solicitud-info">
+                                <h4>@solicitud.DocenteNombre</h4>
+                                <p class="solicitud-cedula">
+                                    <i class="fas fa-id-card"></i> @solicitud.DocenteCedula
+                                </p>
+                                <p class="solicitud-fecha">
+                                    <i class="fas fa-calendar"></i> Firmada: @(solicitud.FechaFirma?.ToString("dd/MM/yyyy HH:mm") ?? "No disponible")
+                                </p>
+                            </div>
+                            <div class="solicitud-status">
+                                <span class="status-badge @GetStatusClass(solicitud.Status)">
+                                    @GetStatusText(solicitud.Status)
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="solicitud-details">
+                            <div class="detail-row">
+                                <span class="detail-label">Nivel Actual:</span>
+                                <span class="detail-value">@solicitud.NivelActual</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Nivel Solicitado:</span>
+                                <span class="detail-value">@solicitud.NivelSolicitado</span>
+                            </div>
+                            <div class="detail-row">
+                                <span class="detail-label">Años de Experiencia:</span>
+                                <span class="detail-value">@solicitud.AnosExperiencia años</span>
+                            </div>
+                        </div>
+
+                        <div class="solicitud-actions">
+                            <button class="btn btn-info" @onclick="() => VerDetalles(solicitud.Id)">
+                                <i class="fas fa-eye"></i> Ver Detalles
+                            </button>
+                            
+                            @* Botones de Apelación *@
+                            @if (!string.IsNullOrEmpty(solicitud.Observaciones) && solicitud.Observaciones.Contains("APELACIÓN DE SOLICITUD") && solicitud.Status != "RechazadoComision")
+                            {
+                                @if (!apelacionesProcesadas.Contains(solicitud.Id))
+                                {
+                                    <button class="btn btn-success ms-2" @onclick="() => AceptarApelacion(solicitud.Id)">
+                                        <i class="fas fa-check"></i> Aceptar Apelación
+                                    </button>
+                                    <button class="btn btn-danger ms-2" @onclick="() => RechazarApelacion(solicitud.Id)">
+                                        <i class="fas fa-times"></i> Rechazar Apelación
+                                    </button>
+                                }
+                            }
+                            
+                            @if (solicitud.Status == "Procesado")
+                            {
+                                <button class="btn btn-success" @onclick="() => FinalizarEscalafon(solicitud.Id)">
+                                    <i class="fas fa-check-circle"></i> Verificar
+                                </button>
+                                <button class="btn btn-danger ms-2" @onclick="() => RechazarSolicitudComision(solicitud.Id)">
+                                    <i class="fas fa-times"></i> Rechazar
+                                </button>
+                            }
+                            
+                            @if (solicitud.Status == "AprobadoPresidente" || solicitud.Status == "Finalizado")
+                            {
+                                @if (!solicitudesConInforme.Contains(solicitud.Id))
+                                {
+                                    <button class="btn btn-primary" @onclick="() => GenerarInforme(solicitud.Id)">
+                                        <i class="fas fa-file-alt"></i> Generar Informe
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="btn btn-info" @onclick="() => VerInformePDF(solicitud.Id)" title="Ver Informe PDF">
+                                        <i class="fas fa-file-pdf"></i> Ver Informe
+                                    </button>
+                                }
+                                @if (solicitud.Status == "AprobadoPresidente")
+                                {
+                                    <button class="btn btn-success" @onclick="() => FinalizarConInforme(solicitud.Id)">
+                                        <i class="fas fa-trophy"></i> Finalizar Escalafón
+                                    </button>
+                                }
+                            }
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="no-solicitudes">
+                    <div class="no-solicitudes-icon">
+                        <i class="fas fa-inbox"></i>
+                    </div>
+                    <h3>No hay solicitudes</h3>
+                    <p>No se encontraron solicitudes que coincidan con los filtros seleccionados.</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Detalles -->
+@if (showDetailsModal)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalles de la Solicitud de Escalafón</h5>
+                    <button type="button" class="btn-close" @onclick="CloseDetailsModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if (selectedSolicitud != null)
+                    {
+                        <!-- Resumen de Cumplimiento de Requisitos -->
+                        <div class="details-section">
+                            <h6><i class="fas fa-clipboard-check"></i> Resumen de Cumplimiento de Requisitos</h6>
+                            <div class="requirements-summary">
+                                <div class="requirement-summary-item">
+                                    <span class="requirement-name">Años de Experiencia</span>
+                                    <span class="requirement-status @((estadisticasDocente?.Secciones?.Experiencia?.Datos?.Cumple == true) ? "cumple" : "no-cumple")">
+                                        @if (estadisticasDocente?.Secciones?.Experiencia?.Datos?.Cumple == true)
+                                        {
+                                            <i class="fas fa-check"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-times"></i>
+                                        }
+                                    </span>
+                                </div>
+                                <div class="requirement-summary-item">
+                                    <span class="requirement-name">Publicaciones</span>
+                                    <span class="requirement-status @((estadisticasDocente?.Secciones?.Obras?.Datos?.Cumple == true) ? "cumple" : "no-cumple")">
+                                        @if (estadisticasDocente?.Secciones?.Obras?.Datos?.Cumple == true)
+                                        {
+                                            <i class="fas fa-check"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-times"></i>
+                                        }
+                                    </span>
+                                </div>
+                                <div class="requirement-summary-item">
+                                    <span class="requirement-name">Capacitaciones</span>
+                                    <span class="requirement-status @((estadisticasDocente?.Secciones?.Capacitaciones?.Datos?.Cumple == true) ? "cumple" : "no-cumple")">
+                                        @if (estadisticasDocente?.Secciones?.Capacitaciones?.Datos?.Cumple == true)
+                                        {
+                                            <i class="fas fa-check"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-times"></i>
+                                        }
+                                    </span>
+                                </div>
+                                <div class="requirement-summary-item">
+                                    <span class="requirement-name">Proyectos de Investigación/Vinculación</span>
+                                    <span class="requirement-status @((estadisticasDocente?.Secciones?.Evaluaciones?.Datos?.Cumple == true) ? "cumple" : "no-cumple")">
+                                        @if (estadisticasDocente?.Secciones?.Evaluaciones?.Datos?.Cumple == true)
+                                        {
+                                            <i class="fas fa-check"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-times"></i>
+                                        }
+                                    </span>
+                                </div>
+                                <div class="requirement-summary-item">
+                                    <span class="requirement-name">Evaluación Desempeño</span>
+                                    <span class="requirement-status @((estadisticasDocente?.Secciones?.Evaluaciones?.Datos?.Cumple == true) ? "cumple" : "no-cumple")">
+                                        @if (estadisticasDocente?.Secciones?.Evaluaciones?.Datos?.Cumple == true)
+                                        {
+                                            <i class="fas fa-check"></i>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-times"></i>
+                                        }
+                                    </span>
+                                </div>
+                                <div class="overall-compliance">
+                                    <span class="overall-label">Estado General:</span>
+                                    <span class="overall-status @((estadisticasDocente?.Secciones?.Experiencia?.Datos?.Cumple == true && 
+                                                                    estadisticasDocente?.Secciones?.Obras?.Datos?.Cumple == true && 
+                                                                    estadisticasDocente?.Secciones?.Capacitaciones?.Datos?.Cumple == true && 
+                                                                    estadisticasDocente?.Secciones?.Evaluaciones?.Datos?.Cumple == true) ? "cumple-todos" : "no-cumple-todos")">
+                                        @if (estadisticasDocente?.Secciones?.Experiencia?.Datos?.Cumple == true && 
+                                             estadisticasDocente?.Secciones?.Obras?.Datos?.Cumple == true && 
+                                             estadisticasDocente?.Secciones?.Capacitaciones?.Datos?.Cumple == true && 
+                                             estadisticasDocente?.Secciones?.Evaluaciones?.Datos?.Cumple == true)
+                                        {
+                                            <i class="fas fa-check-circle"></i>
+                                            <span>Cumple todos los requisitos</span>
+                                        }
+                                        else
+                                        {
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            <span>No cumple todos los requisitos</span>
+                                        }
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Información Personal -->
+                        <div class="details-section">
+                            <h6><i class="fas fa-user"></i> Información Personal</h6>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Nombre Completo:</strong></td>
+                                            <td>@selectedSolicitud.DocenteNombre</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Cédula:</strong></td>
+                                            <td>@selectedSolicitud.DocenteCedula</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Email:</strong></td>
+                                            <td>@selectedSolicitud.DocenteEmail</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Información Académica -->
+                        <div class="details-section">
+                            <h6><i class="fas fa-graduation-cap"></i> Información Académica</h6>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Nivel Actual:</strong></td>
+                                            <td>@selectedSolicitud.NivelActual</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Nivel Solicitado:</strong></td>
+                                            <td>@selectedSolicitud.NivelSolicitado</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Años de Experiencia:</strong></td>
+                                            <td>
+                                                <div class="requirement-item">
+                                                    <span>@selectedSolicitud.AnosExperiencia años</span>
+                                                    <span class="requirement-status @((estadisticasDocente?.Secciones?.Experiencia?.Datos?.Cumple == true) ? "cumple" : "no-cumple")">
+                                                        @if (estadisticasDocente?.Secciones?.Experiencia?.Datos?.Cumple == true)
+                                                        {
+                                                            <i class="fas fa-check"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="fas fa-times"></i>
+                                                        }
+                                                    </span>
+                                                </div>
+                                                <small class="text-muted">Requerido: @(estadisticasDocente?.Secciones?.Experiencia?.Datos?.AñosRequeridos != null ? $"{estadisticasDocente.Secciones.Experiencia.Datos.AñosRequeridos} años - {estadisticasDocente.Secciones.Experiencia.Datos.Detalles}" : "Cargando...")</small>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Publicaciones:</strong></td>
+                                            <td>
+                                                <div class="requirement-item">
+                                                    <span>@selectedSolicitud.Publicaciones</span>
+                                                    <span class="requirement-status @((estadisticasDocente?.Secciones?.Obras?.Datos?.Cumple == true) ? "cumple" : "no-cumple")">
+                                                        @if (estadisticasDocente?.Secciones?.Obras?.Datos?.Cumple == true)
+                                                        {
+                                                            <i class="fas fa-check"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="fas fa-times"></i>
+                                                        }
+                                                    </span>
+                                                </div>
+                                                <small class="text-muted">Requerido: @(estadisticasDocente?.Secciones?.Obras?.Datos?.Detalles ?? "Cargando...")</small>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Capacitaciones:</strong></td>
+                                            <td>
+                                                <div class="requirement-item">
+                                                    <span>@(string.IsNullOrEmpty(selectedSolicitud.Capacitaciones) ? "No especificadas" : selectedSolicitud.Capacitaciones)</span>
+                                                    <span class="requirement-status @((estadisticasDocente?.Secciones?.Capacitaciones?.Datos?.Cumple == true) ? "cumple" : "no-cumple")">
+                                                        @if (estadisticasDocente?.Secciones?.Capacitaciones?.Datos?.Cumple == true)
+                                                        {
+                                                            <i class="fas fa-check"></i>
+                                                        }
+                                                        else
+                                                        {
+                                                            <i class="fas fa-times"></i>
+                                                        }
+                                                    </span>
+                                                </div>
+                                                <small class="text-muted">Requerido: @(estadisticasDocente?.Secciones?.Capacitaciones?.Datos?.Detalles ?? "Cargando...")</small>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Investigación -->
+                        <div class="details-section">
+                            <h6><i class="fas fa-search"></i> Investigación</h6>
+                            <div class="table-responsive">
+                                <table class="table professional-table">
+                                    <thead>
+                                        <tr>
+                                            <th><i class="fas fa-book me-2"></i>Título</th>
+                                            <th><i class="fas fa-flask me-2"></i>Área</th>
+                                            <th><i class="fas fa-tag me-2"></i>Tipo</th>
+                                            <th><i class="fas fa-chart-line me-2"></i>Estado</th>
+                                            <th><i class="fas fa-calendar me-2"></i>Fecha Pub.</th>
+                                            <th><i class="fas fa-university me-2"></i>Filiación</th>
+                                            <th><i class="fas fa-cogs me-2"></i>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (GetInvestigacionesDocente(selectedSolicitud).Any())
+                                        {
+                                            @foreach (var investigacion in GetInvestigacionesDocente(selectedSolicitud))
+                                            {
+                                                <tr>
+                                                    <td class="col-title">
+                                                        <div class="fw-medium">@investigacion.Titulo</div>
+                                                        @if (!string.IsNullOrEmpty(investigacion.RevistaOEditorial))
+                                                        {
+                                                            <small class="text-muted d-block mt-1">
+                                                                <i class="fas fa-newspaper me-1"></i>@investigacion.RevistaOEditorial
+                                                            </small>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <span class="table-badge info">
+                                                            <i class="fas fa-atom"></i>
+                                                            @investigacion.CampoConocimiento
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="table-badge secondary">
+                                                            @investigacion.Tipo
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="table-badge success">
+                                                            <i class="fas fa-check-circle"></i>
+                                                            Publicado
+                                                        </span>
+                                                    </td>
+                                                    <td class="col-date">
+                                                        <i class="fas fa-calendar-alt me-1"></i>
+                                                        @investigacion.FechaPublicacion.ToString("dd/MM/yyyy")
+                                                    </td>
+                                                    <td>
+                                                        @if (!string.IsNullOrEmpty(investigacion.Filiacion))
+                                                        {
+                                                            <span class="table-badge @(investigacion.Filiacion.Contains("UTA", StringComparison.OrdinalIgnoreCase) || investigacion.Filiacion.Contains("Universidad Técnica de Ambato", StringComparison.OrdinalIgnoreCase) ? "success" : "secondary")">
+                                                                @if (investigacion.Filiacion.Contains("UTA", StringComparison.OrdinalIgnoreCase) || investigacion.Filiacion.Contains("Universidad Técnica de Ambato", StringComparison.OrdinalIgnoreCase))
+                                                                {
+                                                                    <i class="fas fa-check-circle"></i>
+                                                                }
+                                                                @investigacion.Filiacion
+                                                            </span>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">
+                                                                <i class="fas fa-minus-circle me-1"></i>Sin filiación
+                                                            </span>
+                                                        }
+                                                    </td>
+                                                    <td class="col-actions">
+                                                        <div class="action-btn-group">
+                                                            @if (investigacion.TienePdf)
+                                                            {
+                                                                <button class="action-btn view" @onclick="() => VerPdf(investigacion.Id)" title="Ver PDF">
+                                                                    <i class="fas fa-file-pdf"></i>
+                                                                </button>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="text-muted">
+                                                                    <i class="fas fa-file-pdf"></i>
+                                                                </span>
+                                                            }
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <tr>
+                                                <td colspan="7" class="empty-state">
+                                                    <i class="fas fa-search"></i>
+                                                    <h6>No hay investigaciones registradas</h6>
+                                                    <p>No se encontraron investigaciones para este docente</p>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Evaluación -->
+                        <div class="details-section">
+                            <h6><i class="fas fa-chart-line"></i> Evaluación de Desempeño</h6>
+                            <div class="table-responsive">
+                                <table class="table professional-table">
+                                    <thead>
+                                        <tr>
+                                            <th><i class="fas fa-calendar-alt me-2"></i>Período</th>
+                                            <th><i class="fas fa-calendar me-2"></i>Año</th>
+                                            <th><i class="fas fa-list-ol me-2"></i>Sem.</th>
+                                            <th><i class="fas fa-chart-bar me-2"></i>Puntaje</th>
+                                            <th><i class="fas fa-percentage me-2"></i>Porcentaje</th>
+                                            <th><i class="fas fa-check-circle me-2"></i>Estado</th>
+                                            <th><i class="fas fa-clock me-2"></i>Fecha Eval.</th>
+                                            <th><i class="fas fa-user-tie me-2"></i>Evaluador</th>
+                                            <th><i class="fas fa-cogs me-2"></i>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (GetEvaluacionesDocente(selectedSolicitud).Any())
+                                        {
+                                            @foreach (var evaluacion in GetEvaluacionesDocente(selectedSolicitud))
+                                            {
+                                                <tr>
+                                                    <td class="fw-medium">
+                                                        <i class="fas fa-graduation-cap me-2 text-primary"></i>
+                                                        @evaluacion.PeriodoAcademico
+                                                    </td>
+                                                    <td class="col-date">
+                                                        <span class="table-badge info">@evaluacion.Anio</span>
+                                                    </td>
+                                                    <td class="text-center">
+                                                        <span class="table-badge secondary">@evaluacion.Semestre</span>
+                                                    </td>
+                                                    <td class="col-score">
+                                                        <div class="fw-bold">@evaluacion.PuntajeObtenido</div>
+                                                        <small class="text-muted">/ @evaluacion.PuntajeMaximo</small>
+                                                    </td>
+                                                    <td class="col-score">
+                                                        <span class="table-badge @(evaluacion.PorcentajeObtenido >= 90 ? "success" : evaluacion.PorcentajeObtenido >= 75 ? "warning" : "danger")">
+                                                            <i class="fas @(evaluacion.PorcentajeObtenido >= 90 ? "fa-trophy" : evaluacion.PorcentajeObtenido >= 75 ? "fa-star" : "fa-exclamation-triangle")"></i>
+                                                            @evaluacion.PorcentajeObtenido.ToString("F1")%
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="table-badge @(evaluacion.CumpleMinimo ? "success" : "danger")">
+                                                            <i class="fas @(evaluacion.CumpleMinimo ? "fa-check" : "fa-times")"></i>
+                                                            @evaluacion.Estado
+                                                        </span>
+                                                    </td>
+                                                    <td class="col-date">
+                                                        <i class="fas fa-calendar-check me-1"></i>
+                                                        @evaluacion.FechaEvaluacion.ToString("dd/MM/yyyy")
+                                                    </td>
+                                                    <td>
+                                                        @if (!string.IsNullOrEmpty(evaluacion.Evaluador))
+                                                        {
+                                                            <div class="fw-medium">@evaluacion.Evaluador</div>
+                                                            <small class="text-muted">@evaluacion.TipoEvaluacion</small>
+                                                        }
+                                                        else
+                                                        {
+                                                            <span class="text-muted">
+                                                                <i class="fas fa-user-slash me-1"></i>Sin asignar
+                                                            </span>
+                                                        }
+                                                    </td>
+                                                    <td class="col-actions">
+                                                        <div class="action-btn-group">
+                                                            @if (!string.IsNullOrEmpty(evaluacion.NombreArchivoRespaldo))
+                                                            {
+                                                                <button class="action-btn view" @onclick="() => VerPdfEvaluacion(evaluacion.Id)" title="Ver PDF">
+                                                                    <i class="fas fa-file-pdf"></i>
+                                                                </button>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="text-muted">
+                                                                    <i class="fas fa-file-pdf"></i>
+                                                                </span>
+                                                            }
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <tr>
+                                                <td colspan="9" class="empty-state">
+                                                    <i class="fas fa-star"></i>
+                                                    <h6>No hay evaluaciones de desempeño registradas</h6>
+                                                    <p>No se encontraron evaluaciones para este docente</p>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Tabla de Capacitación -->
+                        <div class="details-section">
+                            <h6><i class="fas fa-graduation-cap"></i> Capacitación y Formación</h6>
+                            <div class="table-responsive">
+                                <table class="table professional-table">
+                                    <thead>
+                                        <tr>
+                                            <th><i class="fas fa-graduation-cap me-2"></i>Nombre</th>
+                                            <th><i class="fas fa-university me-2"></i>Institución</th>
+                                            <th><i class="fas fa-tag me-2"></i>Tipo</th>
+                                            <th><i class="fas fa-laptop me-2"></i>Modalidad</th>
+                                            <th><i class="fas fa-clock me-2"></i>Horas</th>
+                                            <th><i class="fas fa-calendar-plus me-2"></i>Fecha Inicio</th>
+                                            <th><i class="fas fa-calendar-check me-2"></i>Fecha Fin</th>
+                                            <th><i class="fas fa-chart-line me-2"></i>Estado</th>
+                                            <th><i class="fas fa-cogs me-2"></i>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @if (GetCapacitacionesDocente(selectedSolicitud).Any())
+                                        {
+                                            @foreach (var capacitacion in GetCapacitacionesDocente(selectedSolicitud))
+                                            {
+                                                <tr>
+                                                    <td class="col-title">
+                                                        <div class="fw-medium">@capacitacion.NombreCapacitacion</div>
+                                                        @if (!string.IsNullOrEmpty(capacitacion.Descripcion))
+                                                        {
+                                                            <small class="text-muted d-block mt-1" title="@capacitacion.Descripcion">
+                                                                <i class="fas fa-info-circle me-1"></i>@capacitacion.Descripcion.Substring(0, Math.Min(50, capacitacion.Descripcion.Length))...
+                                                            </small>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <div class="fw-medium">@capacitacion.Institucion</div>
+                                                        @if (!string.IsNullOrEmpty(capacitacion.Instructor))
+                                                        {
+                                                            <small class="text-muted d-block mt-1">
+                                                                <i class="fas fa-user-tie me-1"></i>@capacitacion.Instructor
+                                                            </small>
+                                                        }
+                                                    </td>
+                                                    <td>
+                                                        <span class="table-badge @(capacitacion.EsPedagogica ? "success" : "info")">
+                                                            <i class="fas @(capacitacion.EsPedagogica ? "fa-chalkboard-teacher" : "fa-cogs")"></i>
+                                                            @capacitacion.TipoCapacitacion
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <span class="table-badge secondary">
+                                                            <i class="fas @(capacitacion.Modalidad.Contains("Virtual", StringComparison.OrdinalIgnoreCase) ? "fa-laptop" : capacitacion.Modalidad.Contains("Presencial", StringComparison.OrdinalIgnoreCase) ? "fa-users" : "fa-sync-alt")"></i>
+                                                            @capacitacion.Modalidad
+                                                        </span>
+                                                    </td>
+                                                    <td class="col-score">
+                                                        <div class="fw-bold text-primary">@capacitacion.HorasAcademicas</div>
+                                                        <small class="text-muted">horas</small>
+                                                    </td>
+                                                    <td class="col-date">
+                                                        <i class="fas fa-calendar-alt me-1"></i>
+                                                        @capacitacion.FechaInicio.ToString("dd/MM/yyyy")
+                                                    </td>
+                                                    <td class="col-date">
+                                                        <i class="fas fa-calendar-check me-1"></i>
+                                                        @capacitacion.FechaFin.ToString("dd/MM/yyyy")
+                                                    </td>
+                                                    <td>
+                                                        <span class="table-badge @(capacitacion.Estado?.ToLower() switch { "aprobada" or "completada" => "success", "en progreso" => "warning", "reprobada" => "danger", _ => "secondary" })">
+                                                            <i class="fas @(capacitacion.Estado?.ToLower() switch { "aprobada" or "completada" => "fa-check-circle", "en progreso" => "fa-clock", "reprobada" => "fa-times-circle", _ => "fa-question-circle" })"></i>
+                                                            @capacitacion.Estado
+                                                        </span>
+                                                        @if (capacitacion.Calificacion.HasValue)
+                                                        {
+                                                            <div class="mt-1">
+                                                                <small class="text-muted">
+                                                                    <i class="fas fa-star me-1"></i>@capacitacion.Calificacion.Value.ToString("F1")
+                                                                </small>
+                                                            </div>
+                                                        }
+                                                    </td>
+                                                    <td class="col-actions">
+                                                        <div class="action-btn-group">
+                                                            @if (!string.IsNullOrEmpty(capacitacion.NombreArchivoCertificado))
+                                                            {
+                                                                <button class="action-btn view" @onclick="() => VerPdfCapacitacion(capacitacion.Id)" title="Ver Certificado">
+                                                                    <i class="fas fa-file-pdf"></i>
+                                                                </button>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span class="text-muted">
+                                                                    <i class="fas fa-file-pdf"></i>
+                                                                </span>
+                                                            }
+                                                        </div>
+                                                    </td>
+                                                </tr>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <tr>
+                                                <td colspan="9" class="empty-state">
+                                                    <i class="fas fa-search"></i>
+                                                    <h6>No hay capacitaciones registradas</h6>
+                                                    <p>No se encontraron capacitaciones para este docente</p>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Información de la Solicitud -->
+                        <div class="details-section">
+                            <h6><i class="fas fa-file-alt"></i> Información de la Solicitud</h6>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <tbody>
+                                        <tr>
+                                            <td><strong>Fecha de Solicitud:</strong></td>
+                                            <td>@selectedSolicitud.FechaSolicitud.ToString("dd/MM/yyyy HH:mm")</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Fecha de Aprobación:</strong></td>
+                                            <td>@(selectedSolicitud.FechaAprobacion?.ToString("dd/MM/yyyy HH:mm") ?? "No disponible")</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Fecha de Firma:</strong></td>
+                                            <td>@(selectedSolicitud.FechaFirma?.ToString("dd/MM/yyyy HH:mm") ?? "No disponible")</td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Estado:</strong></td>
+                                            <td>
+                                                <span class="status-badge @GetStatusClass(selectedSolicitud.Status)">
+                                                    @GetStatusText(selectedSolicitud.Status)
+                                                </span>
+                                            </td>
+                                        </tr>
+                                        <tr>
+                                            <td><strong>Observaciones:</strong></td>
+                                            <td>
+                                                @if (string.IsNullOrEmpty(selectedSolicitud.Observaciones))
+                                                {
+                                                    <span class="text-muted">Sin observaciones</span>
+                                                }
+                                                else
+                                                {
+                                                    var (textoFormateado, archivos) = FormatearObservacionesApelacion(selectedSolicitud.Observaciones);
+                                                    
+                                                    <div class="observaciones-container">
+                                                        @if (selectedSolicitud.Observaciones.Contains("APELACIÓN DE SOLICITUD"))
+                                                        {
+                                                            <div class="apelacion-badge mb-2">
+                                                                <i class="fas fa-exclamation-triangle text-warning"></i>
+                                                                <strong>APELACIÓN</strong>
+                                                            </div>
+                                                        }
+                                                        
+                                                        <div class="observacion-texto">
+                                                            @textoFormateado
+                                                        </div>
+                                                        
+                                                        @if (archivos.Any())
+                                                        {
+                                                            <div class="archivos-adjuntos mt-3">
+                                                                <div class="archivos-header">
+                                                                    <i class="fas fa-paperclip text-primary"></i>
+                                                                    <strong>Archivos Adjuntos (@archivos.Count)</strong>
+                                                                </div>
+                                                                <ul class="archivos-lista mt-2">
+                                                                    @foreach (var archivo in archivos)
+                                                                    {
+                                                                        <li class="archivo-item">
+                                                                            <i class="fas fa-file-pdf text-danger me-2"></i>
+                                                                            <span class="archivo-nombre">@archivo</span>
+                                                                            <button class="btn btn-sm btn-outline-primary ms-2" 
+                                                                                    @onclick="() => VerArchivoApelacion(selectedSolicitud.Id, archivo)"
+                                                                                    title="Ver archivo en nueva pestaña">
+                                                                                <i class="fas fa-eye"></i> Ver
+                                                                            </button>
+                                                                        </li>
+                                                                    }
+                                                                </ul>
+                                                            </div>
+                                                        }
+                                                    </div>
+                                                }
+                                            </td>
+                                        </tr>
+                                        @if (!string.IsNullOrEmpty(selectedSolicitud.MotivoRechazo))
+                                        {
+                                            <tr>
+                                                <td><strong>Motivo de Rechazo:</strong></td>
+                                                <td>@selectedSolicitud.MotivoRechazo</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    @if (selectedSolicitud?.Status == "Procesado")
+                    {
+                        <button type="button" class="btn btn-success" @onclick="() => FinalizarEscalafon(selectedSolicitud.Id)">
+                            <i class="fas fa-check-circle"></i> Verificar
+                        </button>
+                        <button type="button" class="btn btn-danger" @onclick="() => RechazarSolicitudComision(selectedSolicitud.Id)">
+                            <i class="fas fa-times"></i> Rechazar
+                        </button>
+                    }
+                    @if (selectedSolicitud?.Status == "AprobadoPresidente" || selectedSolicitud?.Status == "Finalizado")
+                    {
+                        @if (!solicitudesConInforme.Contains(selectedSolicitud.Id))
+                        {
+                            <button type="button" class="btn btn-primary" @onclick="() => GenerarInforme(selectedSolicitud.Id)">
+                                <i class="fas fa-file-alt"></i> Generar Informe
+                            </button>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-info" @onclick="() => VerInformePDF(selectedSolicitud.Id)" title="Ver Informe PDF">
+                                <i class="fas fa-file-pdf"></i> Ver Informe
+                            </button>
+                        }
+                        @if (selectedSolicitud?.Status == "AprobadoPresidente")
+                        {
+                            <button type="button" class="btn btn-success" @onclick="() => FinalizarConInforme(selectedSolicitud.Id)">
+                                <i class="fas fa-trophy"></i> Finalizar Escalafón
+                            </button>
+                        }
+                    }
+                    <button type="button" class="btn btn-secondary" @onclick="CloseDetailsModal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- Modal de Rechazo -->
+@if (showRejectModal)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Rechazar Solicitud</h5>
+                    <button type="button" class="btn-close" @onclick="CloseRejectModal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>¿Está seguro que desea rechazar esta solicitud de escalafón desde la Comisión Académica?</p>
+                    <div class="mb-3">
+                        <label class="form-label">Motivo del rechazo:</label>
+                        <textarea class="form-control" rows="3" @bind="motivoRechazo" placeholder="Ingrese el motivo del rechazo desde la Comisión Académica..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-danger" @onclick="ConfirmRejectComision">
+                        <i class="fas fa-times"></i> Rechazar
+                    </button>
+                    <button type="button" class="btn btn-secondary" @onclick="CloseRejectModal">Cancelar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    // Variables para el manejo de solicitudes
+    private List<SolicitudEscalafon> solicitudes = new List<SolicitudEscalafon>();
+    private List<SolicitudEscalafon> filteredSolicitudes = new List<SolicitudEscalafon>();
+    private SolicitudEscalafon? selectedSolicitud;
+    
+    // Variables para contadores
+    private int processedSolicitudes = 0;
+    private int apelacionSolicitudes = 0;
+    private int finalizedSolicitudes = 0;
+    private int rejectedByComision = 0;
+    private int verificatedSolicitudes = 0;
+    private int approvedForReportSolicitudes = 0;
+    
+    // Variables para controlar informes generados
+    private HashSet<int> solicitudesConInforme = new HashSet<int>();
+    
+    // Variables para controlar apelaciones procesadas
+    private HashSet<int> apelacionesProcesadas = new HashSet<int>();
+    
+    // Variables para filtros
+    private string selectedFilter = "all";
+    private string searchTerm = "";
+    
+    // Variables para modales
+    private bool showDetailsModal = false;
+    private bool showRejectModal = false;
+    private string motivoRechazo = "";
+    private int solicitudToReject = 0;
+    
+    // Variables para datos detallados
+    private List<proyectoAgiles.Services.InvestigacionDto> investigaciones = new List<proyectoAgiles.Services.InvestigacionDto>();
+    private List<proyectoAgiles.Services.EvaluacionDesempenoDto> evaluaciones = new List<proyectoAgiles.Services.EvaluacionDesempenoDto>();
+    private List<ProyectoAgiles.Application.DTOs.DiticDto> capacitaciones = new List<ProyectoAgiles.Application.DTOs.DiticDto>();
+    private proyectoAgiles.Services.EstadisticasDocenteResponse? estadisticasDocente;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserSession.InitializeAsync();
+        
+        if (UserSession.CurrentUser == null || UserSession.CurrentUser.UserType != 1)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+        
+        await LoadSolicitudes();
+        FilterSolicitudes();
+        UpdateCounters();
+    }
+
+    private void GoBack()
+    {
+        Navigation.NavigateTo("/admin/talento-humano");
+    }
+
+    private async Task LoadSolicitudes()
+    {
+        try
+        {
+            // Cargar solicitudes desde la API
+            var response = await HttpClient.GetAsync("/api/solicitudes-escalafon");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var solicitudesDto = await response.Content.ReadFromJsonAsync<List<ProyectoAgiles.Application.DTOs.SolicitudEscalafonDto>>();
+                
+                if (solicitudesDto != null)
+                {
+                    // Convertir DTOs a modelo local
+                    solicitudes = solicitudesDto.Select(dto => new SolicitudEscalafon
+                    {
+                        Id = dto.Id,
+                        DocenteNombre = dto.DocenteNombre,
+                        DocenteCedula = dto.DocenteCedula,
+                        DocenteEmail = dto.DocenteEmail,
+                        DocenteTelefono = dto.DocenteTelefono ?? "",
+                        Facultad = dto.Facultad ?? "",
+                        Carrera = dto.Carrera ?? "",
+                        NivelActual = dto.NivelActual,
+                        NivelSolicitado = dto.NivelSolicitado,
+                        AnosExperiencia = dto.AnosExperiencia,
+                        Titulos = dto.Titulos ?? "",
+                        Publicaciones = dto.Publicaciones ?? "",
+                        Capacitaciones = dto.Capacitaciones ?? "",
+                        FechaSolicitud = dto.FechaSolicitud,
+                        FechaAprobacion = dto.FechaAprobacion,
+                        FechaFirma = dto.FechaAprobacion, // Asumiendo que FechaFirma es cuando se procesa
+                        FechaRechazo = dto.FechaRechazo,
+                        Status = dto.Status,
+                        Observaciones = dto.Observaciones ?? "",
+                        MotivoRechazo = dto.MotivoRechazo ?? ""
+                    }).ToList();
+                }
+                else
+                {
+                    solicitudes = new List<SolicitudEscalafon>();
+                }
+            }
+            else
+            {
+                // En caso de error de API, inicializar lista vacía
+                solicitudes = new List<SolicitudEscalafon>();
+                await JSRuntime.InvokeVoidAsync("console.error", $"Error loading solicitudes: {response.StatusCode}");
+            }
+        }
+        catch (Exception ex)
+        {
+            // En caso de error, inicializar lista vacía
+            solicitudes = new List<SolicitudEscalafon>();
+            await JSRuntime.InvokeVoidAsync("console.error", $"Exception loading solicitudes: {ex.Message}");
+        }
+    }
+
+    private void FilterSolicitudes()
+    {
+        var filtered = solicitudes.AsEnumerable();
+
+        // EXCLUIR siempre las solicitudes pendientes - estas solo las ve el Presidente
+        // EXCLUIR también las solicitudes rechazadas por el Presidente
+        filtered = filtered.Where(s => s.Status != "Pendiente" && s.Status != "RechazadoPresidente");
+
+        // Filtrar por estado (incluir el estado "Apelacion" para apelaciones)
+        filtered = selectedFilter switch
+        {
+            "procesado" => filtered.Where(s => s.Status == "Procesado"),
+            "verificado" => filtered.Where(s => s.Status == "Verificado"),
+            "apelacion" => filtered.Where(s => s.Status == "Apelacion"),
+            "aprobado-presidente" => filtered.Where(s => s.Status == "AprobadoPresidente"),
+            "finalizado" => filtered.Where(s => s.Status == "Finalizado"),
+            "rechazado-comision" => filtered.Where(s => s.Status == "RechazadoComision"),
+            _ => filtered
+        };
+
+        // Filtrar por término de búsqueda
+        if (!string.IsNullOrWhiteSpace(searchTerm))
+        {
+            filtered = filtered.Where(s => 
+                s.DocenteNombre.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                s.DocenteCedula.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));
+        }
+
+        filteredSolicitudes = filtered.ToList();
+    }
+
+    private void UpdateCounters()
+    {
+        processedSolicitudes = solicitudes.Count(s => s.Status == "Procesado");
+        apelacionSolicitudes = solicitudes.Count(s => s.Status == "Apelacion");
+        verificatedSolicitudes = solicitudes.Count(s => s.Status == "Verificado");
+        approvedForReportSolicitudes = solicitudes.Count(s => s.Status == "AprobadoPresidente");
+        finalizedSolicitudes = solicitudes.Count(s => s.Status == "Finalizado");
+        rejectedByComision = solicitudes.Count(s => s.Status == "RechazadoComision");
+    }
+
+    private async Task RefreshSolicitudes()
+    {
+        await LoadSolicitudes();
+        FilterSolicitudes();
+        UpdateCounters();
+        StateHasChanged();
+    }
+
+    private async Task VerDetalles(int solicitudId)
+    {
+        try
+        {
+            selectedSolicitud = solicitudes.FirstOrDefault(s => s.Id == solicitudId);
+            if (selectedSolicitud != null)
+            {
+                await CargarDatosDocente(selectedSolicitud.DocenteCedula);
+                
+                // Mostrar información de depuración en la consola
+                var detallesRequisitos = GetDetallesCumplimientoRequisitos(selectedSolicitud);
+                await JSRuntime.InvokeVoidAsync("console.log", "=== EVALUACIÓN DE REQUISITOS ===");
+                await JSRuntime.InvokeVoidAsync("console.log", $"Docente: {selectedSolicitud.DocenteNombre}");
+                await JSRuntime.InvokeVoidAsync("console.log", $"Nivel Actual: {selectedSolicitud.NivelActual}");
+                await JSRuntime.InvokeVoidAsync("console.log", $"Nivel Solicitado: {selectedSolicitud.NivelSolicitado}");
+                await JSRuntime.InvokeVoidAsync("console.log", detallesRequisitos);
+                await JSRuntime.InvokeVoidAsync("console.log", "================================");
+                
+                showDetailsModal = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Error al ver detalles: {ex.Message}");
+        }
+    }
+
+    private void CloseDetailsModal()
+    {
+        showDetailsModal = false;
+        selectedSolicitud = null;
+    }
+
+    private async Task FinalizarEscalafon(int solicitudId)
+    {
+        try
+        {
+            // Cambiar el estado a "Verificado" para que regrese al Presidente de la Comisión Académica
+            var updateDto = new { Id = solicitudId, Status = "Verificado" };
+            var response = await HttpClient.PutAsJsonAsync($"/api/solicitudes-escalafon/{solicitudId}/status", updateDto);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.success", 
+                    "Solicitud Verificada", 
+                    "La solicitud ha sido verificada y enviada al Presidente de la Comisión Académica para envío de notificación.");
+                await RefreshSolicitudes();
+                CloseDetailsModal();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                    "Error", 
+                    "No se pudo verificar la solicitud.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                "Error", 
+                $"Error al verificar la solicitud: {ex.Message}");
+        }
+    }
+
+    private void RechazarSolicitudComision(int solicitudId)
+    {
+        solicitudToReject = solicitudId;
+        motivoRechazo = "";
+        showRejectModal = true;
+    }
+
+    private async Task ConfirmRejectComision()
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(motivoRechazo))
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                    "Error", 
+                    "Debe ingresar un motivo para el rechazo.");
+                return;
+            }
+
+            // Usar el nuevo endpoint de rechazo con motivo
+            var rechazarDto = new { 
+                MotivoRechazo = motivoRechazo,
+                RechazadoPor = "Comisión Académica de Escalafón",
+                NivelRechazo = "ComisionAcademica"
+            };
+            
+            var response = await HttpClient.PostAsJsonAsync($"/api/solicitudes-escalafon/{solicitudToReject}/rechazar", rechazarDto);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.success", 
+                    "Solicitud Rechazada", 
+                    "La solicitud ha sido rechazada por la Comisión Académica. Se ha enviado un email al docente con el motivo del rechazo.");
+                await RefreshSolicitudes();
+                CloseDetailsModal();
+                CloseRejectModal();
+            }
+            else
+            {
+                var errorMessage = await response.Content.ReadAsStringAsync();
+                await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                    "Error", 
+                    $"No se pudo rechazar la solicitud: {errorMessage}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                "Error", 
+                $"Error al rechazar la solicitud: {ex.Message}");
+        }
+    }
+
+    private void CloseRejectModal()
+    {
+        showRejectModal = false;
+        solicitudToReject = 0;
+        motivoRechazo = "";
+    }
+
+    private string GetStatusClass(string status)
+    {
+        return status switch
+        {
+            "Procesado" => "processed",
+            "Verificado" => "approved",
+            "AprobadoPresidente" => "finalized",
+            "Finalizado" => "finalized",
+            "RechazadoComision" => "rejected",
+            _ => "default"
+        };
+    }
+
+    private string GetStatusText(string status)
+    {
+        return status switch
+        {
+            "Procesado" => "Firmado por Talento Humano",
+            "Verificado" => "Verificado por Comisión",
+            "AprobadoPresidente" => "Aprobado - Lista para Informe",
+            "Finalizado" => "Escalafón Finalizado",
+            "RechazadoComision" => "Rechazado por Comisión",
+            _ => status
+        };
+    }
+
+
+
+    // Método para cargar datos del docente desde la API
+    private async Task CargarDatosDocente(string cedula)
+    {
+        try
+        {
+            // Limpiar datos anteriores
+            investigaciones.Clear();
+            evaluaciones.Clear();
+            capacitaciones.Clear();
+
+            // Cargar investigaciones
+            await CargarInvestigaciones(cedula);
+            
+            // Cargar evaluaciones
+            await CargarEvaluaciones(cedula);
+            
+            // Cargar capacitaciones
+            await CargarCapacitaciones(cedula);
+            
+            // Obtener estadísticas actualizadas del docente
+            await ActualizarEstadisticasSolicitud(cedula);
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Error cargando datos del docente: {ex.Message}");
+        }
+    }
+    
+    // Método para actualizar las estadísticas de la solicitud con datos reales
+    private async Task ActualizarEstadisticasSolicitud(string cedula)
+    {
+        try
+        {
+            if (selectedSolicitud == null) return;
+            
+            // Obtener estadísticas actualizadas del docente
+            estadisticasDocente = await AuthService.ObtenerEstadisticasDocente(cedula);
+            
+            if (estadisticasDocente?.Secciones != null)
+            {
+                // Actualizar años de experiencia
+                if (estadisticasDocente.Secciones.Experiencia?.Datos != null)
+                {
+                    selectedSolicitud.AnosExperiencia = (int)Math.Round(estadisticasDocente.Secciones.Experiencia.Datos.AñosObtenidos);
+                }
+                
+                // Actualizar publicaciones
+                if (estadisticasDocente.Secciones.Obras?.Datos != null)
+                {
+                    var datos = estadisticasDocente.Secciones.Obras.Datos;
+                    selectedSolicitud.Publicaciones = $"Total: {datos.TotalObras} obra(s) registrada(s). Con filiación UTA: {datos.ObrasConUTA} obra(s).";
+                }
+                
+                // Actualizar capacitaciones
+                if (estadisticasDocente.Secciones.Capacitaciones?.Datos != null)
+                {
+                    var datos = estadisticasDocente.Secciones.Capacitaciones.Datos;
+                    selectedSolicitud.Capacitaciones = $"Total: {datos.HorasObtenidas} horas de capacitación. Horas pedagógicas: {datos.HorasPedagogicasObtenidas} horas.";
+                }
+                
+                // Forzar actualización de la UI
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Error actualizando estadísticas: {ex.Message}");
+        }
+    }
+
+    private async Task CargarInvestigaciones(string cedula)
+    {
+        try
+        {
+            var response = await AuthService.GetInvestigacionesPorCedula(cedula);
+            if (response != null)
+            {
+                investigaciones = response.ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Error cargando investigaciones: {ex.Message}");
+        }
+    }
+
+    private async Task CargarEvaluaciones(string cedula)
+    {
+        try
+        {
+            var response = await AuthService.GetEvaluacionesPorCedula(cedula);
+            if (response != null)
+            {
+                evaluaciones = response.ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Error cargando evaluaciones: {ex.Message}");
+        }
+    }
+
+    private async Task CargarCapacitaciones(string cedula)
+    {
+        try
+        {
+            var response = await AuthService.GetCapacitacionesPorCedula(cedula);
+            if (response != null)
+            {
+                capacitaciones = response.ToList();
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", $"Error cargando capacitaciones: {ex.Message}");
+        }
+    }
+
+    // Métodos para obtener datos de las tablas
+    private List<proyectoAgiles.Services.InvestigacionDto> GetInvestigacionesDocente(SolicitudEscalafon solicitud)
+    {
+        return investigaciones;
+    }
+
+    private List<proyectoAgiles.Services.EvaluacionDesempenoDto> GetEvaluacionesDocente(SolicitudEscalafon solicitud)
+    {
+        return evaluaciones;
+    }
+
+    private List<ProyectoAgiles.Application.DTOs.DiticDto> GetCapacitacionesDocente(SolicitudEscalafon solicitud)
+    {
+        return capacitaciones;
+    }
+    
+    // Métodos para ver PDFs
+    private async Task VerPdf(int investigacionId)
+    {
+        try
+        {
+            var pdfBytes = await AuthService.ObtenerPdfInvestigacion(investigacionId);
+            
+            if (pdfBytes is not null && pdfBytes.Length > 0)
+            {
+                var base64 = Convert.ToBase64String(pdfBytes);
+                var pdfDataUrl = $"data:application/pdf;base64,{base64}";
+                var fileName = $"investigacion_{investigacionId}.pdf";
+                
+                // Usar la función JavaScript personalizada
+                var success = await JSRuntime.InvokeAsync<bool>("showPdf", pdfDataUrl, fileName);
+                
+                if (!success)
+                {
+                    await JSRuntime.InvokeVoidAsync("toastNotifications.success", 
+                        "PDF descargado", 
+                        "El PDF se ha descargado a tu carpeta de descargas.");
+                }
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                    "PDF no disponible", 
+                    "No se encontró el archivo PDF para esta investigación.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                "Error", 
+                $"Error al obtener el PDF: {ex.Message}");
+        }
+    }
+
+    private async Task VerPdfEvaluacion(int evaluacionId)
+    {
+        try
+        {
+            var pdfBytes = await AuthService.ObtenerPdfEvaluacion(evaluacionId);
+            
+            if (pdfBytes is not null && pdfBytes.Length > 0)
+            {
+                var base64 = Convert.ToBase64String(pdfBytes);
+                var pdfDataUrl = $"data:application/pdf;base64,{base64}";
+                var fileName = $"evaluacion_{evaluacionId}.pdf";
+                
+                var success = await JSRuntime.InvokeAsync<bool>("showPdf", pdfDataUrl, fileName);
+                
+                if (!success)
+                {
+                    await JSRuntime.InvokeVoidAsync("toastNotifications.success", 
+                        "PDF descargado", 
+                        "El PDF se ha descargado a tu carpeta de descargas.");
+                }
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                    "PDF no disponible", 
+                    "No se encontró el archivo PDF para esta evaluación.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                "Error", 
+                $"Error al obtener el PDF: {ex.Message}");
+        }
+    }
+
+    private async Task VerPdfCapacitacion(int capacitacionId)
+    {
+        try
+        {
+            var pdfBytes = await AuthService.ObtenerPdfCapacitacion(capacitacionId);
+            
+            if (pdfBytes is not null && pdfBytes.Length > 0)
+            {
+                var base64 = Convert.ToBase64String(pdfBytes);
+                var pdfDataUrl = $"data:application/pdf;base64,{base64}";
+                var fileName = $"capacitacion_{capacitacionId}.pdf";
+                
+                var success = await JSRuntime.InvokeAsync<bool>("showPdf", pdfDataUrl, fileName);
+                
+                if (!success)
+                {
+                    await JSRuntime.InvokeVoidAsync("toastNotifications.success", 
+                        "PDF descargado", 
+                        "El PDF se ha descargado a tu carpeta de descargas.");
+                }
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                    "PDF no disponible", 
+                    "No se encontró el archivo PDF para esta capacitación.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                "Error", 
+                $"Error al obtener el PDF: {ex.Message}");
+        }
+    }
+
+    // Método para ver archivo de apelación en nueva pestaña
+    private async Task VerArchivoApelacion(int solicitudId, string nombreArchivo)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("toastNotifications.info", 
+                "Cargando archivo", 
+                "Se está cargando el archivo de apelación...");
+
+            // Llamar al endpoint del backend
+            var response = await HttpClient.GetAsync($"/api/solicitudes-escalafon/{solicitudId}/apelacion/archivo/{nombreArchivo}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var archivoBytes = await response.Content.ReadAsByteArrayAsync();
+                var contentType = response.Content.Headers.ContentType?.MediaType ?? "application/octet-stream";
+                
+                var base64 = Convert.ToBase64String(archivoBytes);
+                var dataUrl = $"data:{contentType};base64,{base64}";
+                
+                // Abrir el archivo en una nueva pestaña
+                await JSRuntime.InvokeVoidAsync("open", dataUrl, "_blank");
+                
+                await JSRuntime.InvokeVoidAsync("toastNotifications.success", 
+                    "Archivo abierto", 
+                    "El archivo se ha abierto en una nueva pestaña.");
+            }
+            else if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.warning", 
+                    "Archivo no encontrado", 
+                    "El archivo solicitado no se encontró en el servidor.");
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                    "Error al cargar archivo", 
+                    "No se pudo cargar el archivo. Intente nuevamente.");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al ver archivo de apelación: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                "Error", 
+                "Ocurrió un error al intentar abrir el archivo.");
+        }
+    }
+
+    // Método para generar informe de escalafón
+    private async Task GenerarInforme(int solicitudId)
+    {
+        try
+        {
+            var solicitud = solicitudes.FirstOrDefault(s => s.Id == solicitudId);
+            if (solicitud == null) return;
+
+            await JSRuntime.InvokeVoidAsync("toastNotifications.info", 
+                "Generando Informe", 
+                "Se está generando el informe de escalafón docente...");
+
+            // Simular tiempo de procesamiento
+            await Task.Delay(2000);
+
+            // Marcar que esta solicitud ya tiene informe generado
+            solicitudesConInforme.Add(solicitudId);
+
+            await JSRuntime.InvokeVoidAsync("toastNotifications.success", 
+                "Informe Generado", 
+                $"El informe de escalafón para {solicitud.DocenteNombre} ha sido generado exitosamente. Ahora puede verlo haciendo clic en el botón 'Ver Informe'.");
+            
+            // Actualizar la UI
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                "Error", 
+                $"Error al generar el informe: {ex.Message}");
+        }
+    }
+
+    // Método para ver el informe PDF en nueva pestaña
+    private async Task VerInformePDF(int solicitudId)
+    {
+        try
+        {
+            var solicitud = solicitudes.FirstOrDefault(s => s.Id == solicitudId);
+            if (solicitud == null) return;
+
+            // Cargar datos del docente si no están cargados
+            if (selectedSolicitud?.Id != solicitudId)
+            {
+                await CargarDatosDocente(solicitud.DocenteCedula);
+            }
+
+            // Generar el contenido HTML del informe
+            var htmlContent = GenerarHtmlInforme(solicitud);
+
+            // Abrir el PDF en una nueva pestaña
+            await JSRuntime.InvokeVoidAsync("openPDFInNewTab", htmlContent, $"Informe de Escalafón - {solicitud.DocenteNombre}");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                "Error", 
+                $"Error al mostrar el informe: {ex.Message}");
+        }
+    }
+
+    // Método para generar el contenido HTML del informe
+    private string GenerarHtmlInforme(SolicitudEscalafon solicitud)
+    {
+        var html = new StringBuilder();
+        html.Append(@"
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset='utf-8'>
+            <title>Informe de Escalafón Docente</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+                .header { text-align: center; margin-bottom: 30px; }
+                .logo { width: 100px; height: auto; }
+                .title { color: #2c3e50; font-size: 24px; font-weight: bold; margin: 10px 0; }
+                .subtitle { color: #7f8c8d; font-size: 14px; }
+                .section { margin: 20px 0; }
+                .section-title { color: #34495e; font-size: 18px; font-weight: bold; margin-bottom: 10px; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+                .info-table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+                .info-table th, .info-table td { border: 1px solid #bdc3c7; padding: 8px; text-align: left; }
+                .info-table th { background-color: #ecf0f1; font-weight: bold; }
+                .status { padding: 5px 10px; border-radius: 15px; font-weight: bold; color: white; }
+                .status.aprobado { background-color: #27ae60; }
+                .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #7f8c8d; }
+                .signature-section { margin-top: 50px; }
+                .signature-box { border-top: 1px solid #000; width: 200px; margin: 20px auto; text-align: center; padding-top: 5px; }
+            </style>
+        </head>
+        <body>
+            <div class='header'>
+                <h1 class='title'>UNIVERSIDAD TÉCNICA DE AMBATO</h1>
+                <h2 class='subtitle'>FACULTAD DE INGENIERÍA EN SISTEMAS, ELECTRÓNICA E INDUSTRIAL</h2>
+                <h3 class='subtitle'>COMISIÓN ACADÉMICA DE ESCALAFÓN DOCENTE</h3>
+                <h2 class='title'>INFORME DE ESCALAFÓN DOCENTE</h2>
+            </div>
+
+            <div class='section'>
+                <h3 class='section-title'>INFORMACIÓN GENERAL</h3>
+                <table class='info-table'>
+                    <tr>
+                        <th>Número de Solicitud:</th>
+                        <td>" + solicitud.Id + @"</td>
+                    </tr>
+                    <tr>
+                        <th>Fecha de Solicitud:</th>
+                        <td>" + solicitud.FechaSolicitud.ToString("dd/MM/yyyy") + @"</td>
+                    </tr>
+                    <tr>
+                        <th>Estado:</th>
+                        <td><span class='status aprobado'>" + solicitud.Status + @"</span></td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class='section'>
+                <h3 class='section-title'>DATOS DEL DOCENTE</h3>
+                <table class='info-table'>
+                    <tr>
+                        <th>Nombre Completo:</th>
+                        <td>" + solicitud.DocenteNombre + @"</td>
+                    </tr>
+                    <tr>
+                        <th>Cédula:</th>
+                        <td>" + solicitud.DocenteCedula + @"</td>
+                    </tr>
+                    <tr>
+                        <th>Email:</th>
+                        <td>" + solicitud.DocenteEmail + @"</td>
+                    </tr>
+                    <tr>
+                        <th>Teléfono:</th>
+                        <td>" + solicitud.DocenteTelefono + @"</td>
+                    </tr>
+                    <tr>
+                        <th>Facultad:</th>
+                        <td>" + solicitud.Facultad + @"</td>
+                    </tr>
+                    <tr>
+                        <th>Departamento:</th>
+                        <td>" + solicitud.Carrera + @"</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class='section'>
+                <h3 class='section-title'>DETALLES DEL ESCALAFÓN</h3>
+                <table class='info-table'>
+                    <tr>
+                        <th>Categoría Actual:</th>
+                        <td>" + solicitud.NivelActual + @"</td>
+                    </tr>
+                    <tr>
+                        <th>Categoría Solicitada:</th>
+                        <td>" + solicitud.NivelSolicitado + @"</td>
+                    </tr>
+                    <tr>
+                        <th>Años de Experiencia:</th>
+                        <td>" + solicitud.AnosExperiencia + @" años</td>
+                    </tr>
+                    <tr>
+                        <th>Título Académico:</th>
+                        <td>" + solicitud.Titulos + @"</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class='section'>
+                <h3 class='section-title'>EVALUACIÓN Y APROBACIÓN</h3>
+                <p>Esta solicitud ha sido evaluada y procesada por:</p>
+                <ul>
+                    <li><strong>Dirección de Talento Humano:</strong> Firmado y verificado</li>
+                    <li><strong>Comisión Académica de Escalafón:</strong> Verificado y procesado</li>
+                    <li><strong>Presidente de Comisión Académica:</strong> Aprobado</li>
+                </ul>
+                <p><strong>Fecha de Aprobación:</strong> " + DateTime.Now.ToString("dd/MM/yyyy") + @"</p>
+            </div>
+
+            <div class='section'>
+                <h3 class='section-title'>OBSERVACIONES</h3>
+                <p>El docente ha cumplido con todos los requisitos establecidos para el escalafón solicitado. 
+                Se recomienda la aprobación de la solicitud de escalafón de acuerdo a los reglamentos vigentes.</p>
+            </div>
+
+            <div class='signature-section'>
+                <div class='signature-box'>
+                    <p>Presidente de Comisión Académica</p>
+                </div>
+                <div class='signature-box'>
+                    <p>Secretario de Comisión</p>
+                </div>
+            </div>
+
+            <div class='footer'>
+                <p>Documento generado automáticamente por el Sistema de Gestión de Escalafón Docente</p>
+                <p>Universidad Técnica de Ambato - " + DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss") + @"</p>
+            </div>
+        </body>
+        </html>");
+
+        return html.ToString();
+    }
+
+    // Método para finalizar escalafón con informe
+    private async Task FinalizarConInforme(int solicitudId)
+    {
+        try
+        {
+            var solicitud = solicitudes.FirstOrDefault(s => s.Id == solicitudId);
+            if (solicitud == null) return;
+
+            // Llamar al nuevo endpoint que finaliza el escalafón y actualiza el nivel del docente
+            var response = await HttpClient.PostAsync($"/api/solicitudes-escalafon/{solicitudId}/finalizar-escalafon", null);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.success", 
+                    "¡Escalafón Finalizado Exitosamente!", 
+                    $"El escalafón de {solicitud.DocenteNombre} ha sido finalizado. Se ha actualizado su nivel académico a '{solicitud.NivelSolicitado}' y se ha enviado la notificación por correo electrónico.");
+                
+                await RefreshSolicitudes();
+                CloseDetailsModal();
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                    "Error al Finalizar Escalafón", 
+                    "No se pudo finalizar el escalafón. Verifique que la solicitud y el docente existan en el sistema.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                "Error", 
+                $"Error al finalizar el escalafón: {ex.Message}");
+        }
+    }
+
+    // Clase para los datos de solicitud
+    public class SolicitudEscalafon
+    {
+        public int Id { get; set; }
+        public string DocenteNombre { get; set; } = "";
+        public string DocenteCedula { get; set; } = "";
+        public string DocenteEmail { get; set; } = "";
+        public string DocenteTelefono { get; set; } = "";
+        public string Facultad { get; set; } = "";
+        public string Carrera { get; set; } = "";
+        public string NivelActual { get; set; } = "";
+        public string NivelSolicitado { get; set; } = "";
+        public int AnosExperiencia { get; set; }
+        public string Titulos { get; set; } = "";
+        public string Publicaciones { get; set; } = "";
+        public string Capacitaciones { get; set; } = "";
+        public DateTime FechaSolicitud { get; set; }
+        public DateTime? FechaAprobacion { get; set; }
+        public DateTime? FechaFirma { get; set; }
+        public DateTime? FechaRechazo { get; set; }
+        public string Status { get; set; } = "";
+        public string Observaciones { get; set; } = "";
+        public string MotivoRechazo { get; set; } = "";
+    }
+
+    // Método para obtener información detallada sobre el cumplimiento de requisitos
+    private string GetDetallesCumplimientoRequisitos(SolicitudEscalafon solicitud)
+    {
+        var detalles = new StringBuilder();
+        
+        if (estadisticasDocente?.Secciones != null)
+        {
+            // Evaluar experiencia
+            if (estadisticasDocente.Secciones.Experiencia?.Datos != null)
+            {
+                var datos = estadisticasDocente.Secciones.Experiencia.Datos;
+                detalles.AppendLine($"EXPERIENCIA: {(datos.Cumple ? "✓ CUMPLE" : "✗ NO CUMPLE")}");
+                detalles.AppendLine($"- Tiene: {datos.AñosObtenidos} años");
+                detalles.AppendLine($"- Requiere: {datos.AñosRequeridos} años - {datos.Detalles}");
+                detalles.AppendLine();
+            }
+            
+            // Evaluar publicaciones
+            if (estadisticasDocente.Secciones.Obras?.Datos != null)
+            {
+                var datos = estadisticasDocente.Secciones.Obras.Datos;
+                detalles.AppendLine($"PUBLICACIONES: {(datos.Cumple ? "✓ CUMPLE" : "✗ NO CUMPLE")}");
+                detalles.AppendLine($"- Total: {datos.TotalObras} obra(s)");
+                detalles.AppendLine($"- Con UTA: {datos.ObrasConUTA} obra(s)");
+                detalles.AppendLine($"- Requiere: {datos.Detalles}");
+                detalles.AppendLine();
+            }
+            
+            // Evaluar capacitaciones
+            if (estadisticasDocente.Secciones.Capacitaciones?.Datos != null)
+            {
+                var datos = estadisticasDocente.Secciones.Capacitaciones.Datos;
+                detalles.AppendLine($"CAPACITACIONES: {(datos.Cumple ? "✓ CUMPLE" : "✗ NO CUMPLE")}");
+                detalles.AppendLine($"- Horas obtenidas: {datos.HorasObtenidas}");
+                detalles.AppendLine($"- Horas pedagógicas: {datos.HorasPedagogicasObtenidas}");
+                detalles.AppendLine($"- Requiere: {datos.Detalles}");
+                detalles.AppendLine();
+            }
+            
+            // Evaluar evaluaciones
+            if (estadisticasDocente.Secciones.Evaluaciones?.Datos != null)
+            {
+                var datos = estadisticasDocente.Secciones.Evaluaciones.Datos;
+                detalles.AppendLine($"EVALUACIÓN DE DESEMPEÑO: {(datos.Cumple ? "✓ CUMPLE" : "✗ NO CUMPLE")}");
+                detalles.AppendLine($"- Promedio: {datos.PromedioObtenido:F2}");
+                detalles.AppendLine($"- Requiere: {datos.Detalles}");
+            }
+        }
+        else
+        {
+            detalles.AppendLine("Cargando estadísticas del docente...");
+        }
+        
+        return detalles.ToString();
+    }
+
+    // Función para formatear observaciones de apelación con archivos adjuntos
+    private (string textoFormateado, List<string> archivos) FormatearObservacionesApelacion(string observaciones)
+    {
+        var archivos = new List<string>();
+        var textoFormateado = observaciones;
+        
+        if (string.IsNullOrEmpty(observaciones))
+            return (textoFormateado, archivos);
+
+        // Buscar patrón de apelación con archivos adjuntos
+        if (observaciones.Contains("APELACIÓN DE SOLICITUD") && observaciones.Contains("Archivos adjuntos:"))
+        {
+            var partes = observaciones.Split(new[] { "Archivos adjuntos:" }, StringSplitOptions.None);
+            if (partes.Length == 2)
+            {
+                textoFormateado = partes[0].Trim();
+                var partesArchivos = partes[1].Trim();
+                
+                // Extraer información de archivos - buscar tanto nombres de archivos como patrones
+                var lineas = partesArchivos.Split(new[] { '\n', '\r', '-' }, StringSplitOptions.RemoveEmptyEntries);
+                foreach (var linea in lineas)
+                {
+                    var lineaLimpia = linea.Trim();
+                    
+                    // Buscar patrones de archivos
+                    if (lineaLimpia.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase) || 
+                        lineaLimpia.EndsWith(".doc", StringComparison.OrdinalIgnoreCase) ||
+                        lineaLimpia.EndsWith(".docx", StringComparison.OrdinalIgnoreCase) || 
+                        lineaLimpia.EndsWith(".jpg", StringComparison.OrdinalIgnoreCase) || 
+                        lineaLimpia.EndsWith(".png", StringComparison.OrdinalIgnoreCase))
+                    {
+                        archivos.Add(lineaLimpia);
+                    }
+                    // También buscar líneas que contengan información de archivos con números
+                    else if (lineaLimpia.Contains("archivo(s)") && lineaLimpia.Contains(".pdf"))
+                    {
+                        // Extraer el nombre del archivo después del patrón
+                        var partesPdf = lineaLimpia.Split(new[] { " - " }, StringSplitOptions.None);
+                        if (partesPdf.Length > 1)
+                        {
+                            var nombreArchivo = partesPdf[partesPdf.Length - 1].Trim();
+                            if (nombreArchivo.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase))
+                            {
+                                archivos.Add(nombreArchivo);
+                            }
+                        }
+                    }
+                }
+                
+                // Si no se encontraron archivos con extensiones, buscar patrones específicos
+                if (!archivos.Any() && partesArchivos.Contains("archivo(s)"))
+                {
+                    // Buscar patrón específico como "1 archivo(s) - APE No. 4 Ajuste_Funcional (1).pdf"
+                    var lineasArchivos = partesArchivos.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                    foreach (var linea in lineasArchivos)
+                    {
+                        if (linea.Contains("archivo(s)"))
+                        {
+                            // Extraer todo después de "archivo(s) - "
+                            var indiceDash = linea.IndexOf(" - ");
+                            if (indiceDash > 0 && indiceDash < linea.Length - 3)
+                            {
+                                var nombreArchivo = linea.Substring(indiceDash + 3).Trim();
+                                if (!string.IsNullOrEmpty(nombreArchivo))
+                                {
+                                    archivos.Add(nombreArchivo);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        return (textoFormateado, archivos);
+    }
+
+    private async Task AceptarApelacion(int solicitudId)
+    {
+        try
+        {
+            // Al aceptar la apelación, cambiar el estado a "Pendiente" para que vaya al Presidente
+            var updateDto = new { Id = solicitudId, Status = "Pendiente" };
+            var response = await HttpClient.PutAsJsonAsync($"/api/solicitudes-escalafon/{solicitudId}/status", updateDto);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                // Marcar la apelación como procesada
+                apelacionesProcesadas.Add(solicitudId);
+                
+                await JSRuntime.InvokeVoidAsync("toastNotifications.success", 
+                    "Apelación Aceptada", 
+                    "La apelación ha sido aceptada y enviada al Presidente de la Comisión Académica para continuar el proceso normal.");
+                await RefreshSolicitudes();
+                CloseDetailsModal();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                    "Error", 
+                    "No se pudo aceptar la apelación.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                "Error", 
+                $"Error al aceptar la apelación: {ex.Message}");
+        }
+    }
+
+    private async Task RechazarApelacion(int solicitudId)
+    {
+        try
+        {
+            // Al rechazar la apelación, usar el endpoint de rechazo existente
+            var rechazarDto = new
+            {
+                MotivoRechazo = "La apelación ha sido rechazada por la Comisión Académica de Escalafón tras revisión del caso.",
+                RechazadoPor = "Comisión Académica de Escalafón",
+                NivelRechazo = "ComisionAcademica"
+            };
+
+            var response = await HttpClient.PostAsJsonAsync($"/api/solicitudes-escalafon/{solicitudId}/rechazar", rechazarDto);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                // Marcar la apelación como procesada
+                apelacionesProcesadas.Add(solicitudId);
+                
+                await JSRuntime.InvokeVoidAsync("toastNotifications.success", 
+                    "Apelación Rechazada", 
+                    "La apelación ha sido rechazada definitivamente. Se ha enviado una notificación al docente.");
+                await RefreshSolicitudes();
+                CloseDetailsModal();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                    "Error", 
+                    "No se pudo rechazar la apelación.");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("toastNotifications.error", 
+                "Error", 
+                $"Error al rechazar la apelación: {ex.Message}");
+        }
+    }
+}

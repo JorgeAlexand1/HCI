@@ -1,0 +1,130 @@
+using AutoMapper;
+using IncidentesFISEI.Application.DTOs;
+using IncidentesFISEI.Application.Interfaces;
+using IncidentesFISEI.Domain.Entities;
+using IncidentesFISEI.Domain.Interfaces;
+using IncidentesFISEI.Domain.Enums;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
+using BCrypt.Net;
+
+namespace IncidentesFISEI.Application.Services;
+
+public class AuthService : IAuthService
+{
+    private readonly IUsuarioRepository _usuarioRepository;
+    private readonly IMapper _mapper;
+    private readonly IConfiguration _configuration;
+
+    public AuthService(
+        IUsuarioRepository usuarioRepository,
+        IMapper mapper,
+        IConfiguration configuration)
+    {
+        _usuarioRepository = usuarioRepository;
+        _mapper = mapper;
+        _configuration = configuration;
+    }
+
+    public async Task<AuthResponseDto> LoginAsync(LoginDto loginDto)
+    {
+        var usuario = await _usuarioRepository.GetByEmailAsync(loginDto.Email);
+        if (usuario == null || !BCrypt.Net.BCrypt.Verify(loginDto.Password, usuario.Password))
+        {
+            return null;
+        }
+
+        var token = GenerateJwtToken(usuario);
+        return new AuthResponseDto
+        {
+            Token = token,
+            Usuario = _mapper.Map<UsuarioDto>(usuario)
+        };
+    }
+
+    public async Task<bool> RegisterAsync(RegisterDto registerDto)
+    {
+        // Verificar si el usuario ya existe
+        var existingUser = await _usuarioRepository.GetByEmailAsync(registerDto.Email);
+        if (existingUser != null)
+            return false;
+
+        var usuario = new Usuario
+        {
+            NombreCompleto = registerDto.NombreCompleto,
+            Email = registerDto.Email,
+            Password = BCrypt.Net.BCrypt.HashPassword(registerDto.Password),
+            Rol = RolUsuario.Estudiante, // Por defecto
+            Activo = true
+        };
+
+        await _usuarioRepository.AddAsync(usuario);
+        return true;
+    }
+
+    public async Task<bool> ChangePasswordAsync(ChangePasswordDto changePasswordDto)
+    {
+        var usuario = await _usuarioRepository.GetByIdAsync(changePasswordDto.UsuarioId);
+        if (usuario == null || !BCrypt.Net.BCrypt.Verify(changePasswordDto.CurrentPassword, usuario.Password))
+        {
+            return false;
+        }
+
+        usuario.Password = BCrypt.Net.BCrypt.HashPassword(changePasswordDto.NewPassword);
+        await _usuarioRepository.UpdateAsync(usuario);
+        return true;
+    }
+
+    public async Task<bool> ResetPasswordAsync(string email)
+    {
+        var usuario = await _usuarioRepository.GetByEmailAsync(email);
+        if (usuario == null)
+            return false;
+
+        // En una implementación real, se enviaría un email con un token de reset
+        // Por simplicidad, generaremos una contraseña temporal
+        var tempPassword = GenerateTemporaryPassword();
+        usuario.Password = BCrypt.Net.BCrypt.HashPassword(tempPassword);
+        
+        await _usuarioRepository.UpdateAsync(usuario);
+        
+        // TODO: Implementar envío de email
+        return true;
+    }
+
+    private string GenerateJwtToken(Usuario usuario)
+    {
+        var key = new SymmetricSecurityKey(
+            Encoding.UTF8.GetBytes(_configuration["Jwt:Key"] ?? "default-secret-key-for-development-only"));
+        
+        var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
+            new Claim(ClaimTypes.Email, usuario.Email),
+            new Claim(ClaimTypes.Name, usuario.NombreCompleto),
+            new Claim(ClaimTypes.Role, usuario.Rol.ToString())
+        };
+
+        var token = new JwtSecurityToken(
+            issuer: _configuration["Jwt:Issuer"] ?? "IncidentesFISEI",
+            audience: _configuration["Jwt:Audience"] ?? "IncidentesFISEI",
+            claims: claims,
+            expires: DateTime.UtcNow.AddHours(24),
+            signingCredentials: credentials);
+
+        return new JwtSecurityTokenHandler().WriteToken(token);
+    }
+
+    private static string GenerateTemporaryPassword()
+    {
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+        var random = new Random();
+        return new string(Enumerable.Repeat(chars, 8)
+            .Select(s => s[random.Next(s.Length)]).ToArray());
+    }
+}

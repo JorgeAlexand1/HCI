@@ -1,0 +1,120 @@
+using AutoMapper;
+using IncidentesFISEI.Application.DTOs;
+using IncidentesFISEI.Application.Interfaces;
+using IncidentesFISEI.Domain.Entities;
+using IncidentesFISEI.Domain.Interfaces;
+using IncidentesFISEI.Domain.Enums;
+
+namespace IncidentesFISEI.Application.Services;
+
+public class UsuarioService : IUsuarioService
+{
+    private readonly IUsuarioRepository _usuarioRepository;
+    private readonly IMapper _mapper;
+
+    public UsuarioService(IUsuarioRepository usuarioRepository, IMapper mapper)
+    {
+        _usuarioRepository = usuarioRepository;
+        _mapper = mapper;
+    }
+
+    public async Task<IEnumerable<UsuarioDto>> GetAllUsuariosAsync()
+    {
+        var usuarios = await _usuarioRepository.GetAllAsync();
+        return _mapper.Map<IEnumerable<UsuarioDto>>(usuarios);
+    }
+
+    public async Task<UsuarioDto> GetUsuarioByIdAsync(int id)
+    {
+        var usuario = await _usuarioRepository.GetByIdAsync(id);
+        return _mapper.Map<UsuarioDto>(usuario);
+    }
+
+    public async Task<UsuarioDto> GetUsuarioByEmailAsync(string email)
+    {
+        var usuario = await _usuarioRepository.GetByEmailAsync(email);
+        return _mapper.Map<UsuarioDto>(usuario);
+    }
+
+    public async Task<IEnumerable<UsuarioDto>> GetUsuariosByRolAsync(RolUsuario rol)
+    {
+        var usuarios = await _usuarioRepository.GetUsuariosByRolAsync(rol);
+        return _mapper.Map<IEnumerable<UsuarioDto>>(usuarios);
+    }
+
+    public async Task<UsuarioDto> CreateUsuarioAsync(CreateUsuarioDto createUsuarioDto)
+    {
+        // Verificar si el email ya existe
+        var existingUser = await _usuarioRepository.GetByEmailAsync(createUsuarioDto.Email);
+        if (existingUser != null)
+            throw new ArgumentException("Ya existe un usuario con este email");
+
+        var usuario = new Usuario
+        {
+            NombreCompleto = createUsuarioDto.NombreCompleto,
+            Email = createUsuarioDto.Email,
+            Password = BCrypt.Net.BCrypt.HashPassword(createUsuarioDto.Password),
+            Rol = createUsuarioDto.Rol,
+            Activo = true
+        };
+
+        var usuarioCreado = await _usuarioRepository.AddAsync(usuario);
+        return _mapper.Map<UsuarioDto>(usuarioCreado);
+    }
+
+    public async Task<UsuarioDto> UpdateUsuarioAsync(int id, UpdateUsuarioDto updateUsuarioDto)
+    {
+        var usuario = await _usuarioRepository.GetByIdAsync(id);
+        if (usuario == null)
+            return null;
+
+        usuario.NombreCompleto = updateUsuarioDto.NombreCompleto;
+        usuario.Email = updateUsuarioDto.Email;
+        usuario.Rol = updateUsuarioDto.Rol;
+        usuario.Activo = updateUsuarioDto.Activo;
+
+        await _usuarioRepository.UpdateAsync(usuario);
+        return _mapper.Map<UsuarioDto>(usuario);
+    }
+
+    public async Task<bool> DeleteUsuarioAsync(int id)
+    {
+        var usuario = await _usuarioRepository.GetByIdAsync(id);
+        if (usuario == null)
+            return false;
+
+        // En lugar de eliminar, desactivar el usuario
+        usuario.Activo = false;
+        await _usuarioRepository.UpdateAsync(usuario);
+        return true;
+    }
+
+    public async Task<IEnumerable<UsuarioDto>> GetUsuariosActivosAsync()
+    {
+        var usuarios = await _usuarioRepository.GetAllAsync();
+        var usuariosActivos = usuarios.Where(u => u.Activo);
+        return _mapper.Map<IEnumerable<UsuarioDto>>(usuariosActivos);
+    }
+
+    public async Task<bool> UpdatePasswordAsync(int userId, string newPassword)
+    {
+        var usuario = await _usuarioRepository.GetByIdAsync(userId);
+        if (usuario == null)
+            return false;
+
+        usuario.Password = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        await _usuarioRepository.UpdateAsync(usuario);
+        return true;
+    }
+
+    public async Task<bool> UpdateRolAsync(int userId, RolUsuario nuevoRol)
+    {
+        var usuario = await _usuarioRepository.GetByIdAsync(userId);
+        if (usuario == null)
+            return false;
+
+        usuario.Rol = nuevoRol;
+        await _usuarioRepository.UpdateAsync(usuario);
+        return true;
+    }
+}

@@ -1,0 +1,491 @@
+@page "/admin"
+@using Microsoft.AspNetCore.Components.Web
+@layout proyectoAgiles.Layout.MainLayout
+@inject NavigationManager Navigation
+@inject proyectoAgiles.Services.AuthService AuthService
+@inject proyectoAgiles.Services.UserSessionService UserSession
+@inject HttpClient HttpClient
+@inject IConfiguration Configuration
+
+<PageTitle>Panel de Administración - UTA</PageTitle>
+
+<div class="admin-dashboard">
+    <!-- Título del Panel -->
+    <div class="dashboard-title-section">
+        <h1 class="dashboard-main-title">Panel de Administración</h1>
+    </div>
+    
+    <!-- Tarjetas de Estadísticas -->
+    <div class="stats-section">
+        <h2 class="section-title">Resumen General</h2>
+        <div class="row">            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="stat-card">
+                    <div class="stat-icon teachers">
+                        <i class="fas fa-chalkboard-teacher"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number">@totalTeachers</h3>
+                        <p class="stat-label">Docentes Registrados</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="stat-card">
+                    <div class="stat-icon active">
+                        <i class="fas fa-user-check"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number">@activeUsers</h3>
+                        <p class="stat-label">Usuarios Activos</p>
+                    </div>
+                </div>
+            </div>            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="stat-card">
+                    <div class="stat-icon registrations">
+                        <i class="fas fa-calendar-day"></i>
+                    </div>
+                    <div class="stat-content">
+                        <h3 class="stat-number">@todayRegistrations</h3>
+                        <p class="stat-label">Registros Hoy</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>    <!-- Sección de Acciones Rápidas -->
+    <div class="quick-actions">
+        <h2 class="section-title">Acciones Rápidas</h2>        
+        <div class="row">
+            <div class="col-lg-4 col-md-4 mb-4">
+                <div class="action-card" @onclick="NavigateToTeachers">
+                    <div class="action-icon">
+                        <i class="fas fa-user-tie"></i>
+                    </div>
+                    <h3>Gestionar Docentes</h3>
+                    <p>Registrar nuevos docentes y validar su información externa</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-4 mb-4">
+                <div class="action-card" @onclick="NavigateToReports">
+                    <div class="action-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <h3>Reportes y Estadísticas</h3>
+                    <p>Generar reportes detallados y análisis del sistema</p>
+                </div>
+            </div>
+            <div class="col-lg-4 col-md-4 mb-4">
+                <div class="action-card" @onclick="NavigateToTimeManagement">
+                    <div class="action-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <h3>Gestionar Tiempos</h3>
+                    <p>Configurar períodos de tiempo para solicitudes de escalafón</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección de Instituciones -->
+    <div class="instituciones-section">
+        <h2 class="section-title">Instituciones</h2>
+        <div class="row">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="action-card notification-card" @onclick="NavigateToTalentoHumano">
+                    <div class="action-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    @if (pendingSolicitudesCount > 0)
+                    {
+                        <div class="notification-badge">
+                            @pendingSolicitudesCount
+                        </div>
+                    }
+                    <h3>Talento Humano</h3>
+                    <p>Gestionar información de recursos humanos y personal institucional</p>
+                    @if (pendingSolicitudesCount > 0)
+                    {
+                        <div class="notification-alert">
+                            <i class="fas fa-bell"></i>
+                            <span>@pendingSolicitudesCount solicitud@(pendingSolicitudesCount > 1 ? "es" : "") de escalafón pendiente@(pendingSolicitudesCount > 1 ? "s" : "")</span>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección de Actividad Reciente -->
+    <div class="recent-activity">
+        <h2 class="section-title">Actividad Reciente</h2>
+        <div class="activity-list">
+            @if (recentActivities.Any())
+            {
+                @foreach (var activity in recentActivities)
+                {
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas @GetActivityIcon(activity.Type)"></i>
+                        </div>
+                        <div class="activity-content">
+                            <p class="activity-description">@activity.Description</p>
+                            <span class="activity-time">@activity.Timestamp.ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="no-activity">
+                    <i class="fas fa-inbox"></i>
+                    <p>No hay actividad reciente</p>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+@code {
+    private int totalTeachers = 0;
+    private int activeUsers = 0;
+    private int todayRegistrations = 0;
+    private int pendingSolicitudesCount = 0;
+    private List<ActivityItem> recentActivities = new();protected override async Task OnInitializedAsync()
+    {
+        // Asegurar que la sesión esté inicializada
+        await UserSession.InitializeAsync();
+        
+        // Verificar que el usuario esté autenticado y sea admin
+        if (UserSession.CurrentUser == null || UserSession.CurrentUser.UserType != 1)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        await LoadDashboardData();
+        await LoadPendingSolicitudes();
+    }    private async Task LoadDashboardData()
+    {
+        try
+        {
+            var apiBaseUrl = Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5200";
+            Console.WriteLine($"Using API Base URL: {apiBaseUrl}");
+            
+            // Intentar cargar estadísticas del dashboard
+            bool statsLoaded = false;
+            
+            try
+            {
+                var statsResponse = await HttpClient.GetAsync($"{apiBaseUrl}/api/dashboard/stats");
+                Console.WriteLine($"Stats API response status: {statsResponse.StatusCode}");
+                
+                if (statsResponse.IsSuccessStatusCode)
+                {
+                    var statsJson = await statsResponse.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Stats JSON response: {statsJson}");
+                    
+                    var stats = System.Text.Json.JsonSerializer.Deserialize<DashboardStatsDto>(statsJson, new System.Text.Json.JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true
+                    });
+
+                    if (stats != null)
+                    {
+                        totalTeachers = stats.TotalTeachers;
+                        activeUsers = stats.ActiveUsers;
+                        todayRegistrations = stats.TodayRegistrations;
+                        
+                        Console.WriteLine($"Loaded stats - Teachers: {totalTeachers}, Users: {activeUsers}, Today Registrations: {todayRegistrations}");
+                        statsLoaded = true;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Stats object is null after deserialization");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Stats API call failed with status: {statsResponse.StatusCode}");
+                    var errorContent = await statsResponse.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Error response: {errorContent}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Exception calling stats API: {ex.Message}");
+            }
+            
+            // Si las estadísticas principales no se cargaron, intentar métodos alternativos
+            if (!statsLoaded)
+            {
+                Console.WriteLine("Stats API failed, trying alternative methods...");
+                await LoadAlternativeStats(apiBaseUrl);
+            }            // Cargar actividades recientes
+            var activitiesResponse = await HttpClient.GetAsync($"{apiBaseUrl}/api/dashboard/recent-activities");
+            if (activitiesResponse.IsSuccessStatusCode)
+            {
+                var activitiesJson = await activitiesResponse.Content.ReadAsStringAsync();
+                var activities = System.Text.Json.JsonSerializer.Deserialize<List<ActivityItemDto>>(activitiesJson, new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (activities != null)
+                {
+                    recentActivities = activities.Select(a => new ActivityItem
+                    {
+                        Type = a.Type,
+                        Description = a.Description,
+                        Timestamp = a.Timestamp
+                    }).ToList();
+                }
+            }
+
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // En caso de error, usar valores por defecto
+            Console.WriteLine($"Error loading dashboard data: {ex.Message}");
+            
+            // Intentar calcular manualmente los registros de hoy como respaldo
+            await CalculateTodayRegistrationsManually();
+            
+            // Valores por defecto para otros campos
+            totalTeachers = 0;
+            activeUsers = 0;
+            recentActivities = new List<ActivityItem>
+            {
+                new ActivityItem 
+                { 
+                    Type = "system", 
+                    Description = "Sistema iniciado correctamente", 
+                    Timestamp = DateTime.Now.AddMinutes(-30) 
+                }
+            };
+        }
+    }
+
+    private async Task LoadPendingSolicitudes()
+    {
+        try
+        {
+            // Obtener el conteo real de solicitudes pendientes desde la API
+            var response = await HttpClient.GetAsync("/api/solicitudes-escalafon/pending-count");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var content = await response.Content.ReadAsStringAsync();
+                if (int.TryParse(content, out int count))
+                {
+                    pendingSolicitudesCount = count;
+                }
+                else
+                {
+                    pendingSolicitudesCount = 0;
+                }
+            }
+            else
+            {
+                pendingSolicitudesCount = 0;
+            }
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading pending solicitudes: {ex.Message}");
+            pendingSolicitudesCount = 0;
+        }
+    }private void NavigateToUsers()
+    {
+        Navigation.NavigateTo("/admin/users");
+    }
+
+    private void NavigateToTeachers()
+    {
+        Navigation.NavigateTo("/admin/manage-teachers");
+    }
+
+    private void NavigateToReports()
+    {
+        Navigation.NavigateTo("/admin/reports");
+    }
+
+    private void NavigateToTimeManagement()
+    {
+        Navigation.NavigateTo("/admin/time-management");
+    }
+
+    private void NavigateToTalentoHumano()
+    {
+        Navigation.NavigateTo("/admin/talento-humano");
+    }
+
+    private void NavigateToPresidenteComision()
+    {
+        Navigation.NavigateTo("/admin/presidente-comision-academica");
+    }
+
+    private void NavigateToDireccionTalentoHumano()
+    {
+        Navigation.NavigateTo("/admin/direccion-talento-humano");
+    }
+
+    private void NavigateToComisionAcademica()
+    {
+        Navigation.NavigateTo("/admin/comision-academica-escalafon");
+    }
+
+    private void NavigateToSettings()
+    {
+        Navigation.NavigateTo("/admin/settings");
+    }
+
+    private string GetActivityIcon(string type)
+    {
+        return type switch
+        {
+            "user_registered" => "fa-user-plus",
+            "user_login" => "fa-sign-in-alt",
+            "system" => "fa-cog",
+            _ => "fa-info-circle"
+        };
+    }    private async Task Logout()
+    {
+        await UserSession.ClearSessionAsync();
+        Navigation.NavigateTo("/");
+    }    public class ActivityItem
+    {
+        public string Type { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; }
+    }
+
+    public class DashboardStatsDto
+    {
+        public int TotalTeachers { get; set; }
+        public int ActiveUsers { get; set; }
+        public int TodayRegistrations { get; set; }
+    }
+
+    public class ActivityItemDto
+    {
+        public string Type { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public DateTime Timestamp { get; set; }
+        public string Icon { get; set; } = string.Empty;
+    }
+
+    public class UserDto
+    {
+        public int Id { get; set; }
+        public string Email { get; set; } = string.Empty;
+        public string Name { get; set; } = string.Empty;
+        public int UserType { get; set; }
+        public DateTime CreatedAt { get; set; } // Cambiado de FechaCreacion a CreatedAt
+        public bool IsActive { get; set; }
+    }
+
+    // Método alternativo para cargar estadísticas cuando la API principal falla
+    private async Task LoadAlternativeStats(string apiBaseUrl)
+    {
+        try
+        {
+            Console.WriteLine("Loading alternative stats...");
+            
+            // Intentar cargar todos los usuarios directamente
+            var usersResponse = await HttpClient.GetAsync($"{apiBaseUrl}/api/users");
+            if (usersResponse.IsSuccessStatusCode)
+            {
+                var usersJson = await usersResponse.Content.ReadAsStringAsync();
+                var users = System.Text.Json.JsonSerializer.Deserialize<List<UserDto>>(usersJson, new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (users != null)
+                {
+                    totalTeachers = users.Count(u => u.UserType == 2); // UserType.Docente = 2
+                    activeUsers = users.Count(u => u.IsActive);
+                    
+                    // Calcular registros de hoy (considerar UTC)
+                    var todayDateUtc = DateTime.UtcNow.Date;
+                    var todayDateLocal = DateTime.Today;
+                    
+                    // Intentar ambas comparaciones para manejar diferencias de zona horaria
+                    var todayRegistrationsUtc = users.Count(u => u.CreatedAt.Date == todayDateUtc);
+                    var todayRegistrationsLocal = users.Count(u => u.CreatedAt.Date == todayDateLocal);
+                    
+                    // Usar el mayor de los dos (más probable que sea correcto)
+                    todayRegistrations = Math.Max(todayRegistrationsUtc, todayRegistrationsLocal);
+                    
+                    Console.WriteLine($"Alternative stats - UTC today: {todayRegistrationsUtc}, Local today: {todayRegistrationsLocal}, Using: {todayRegistrations}");
+                    
+                    Console.WriteLine($"Alternative stats loaded - Teachers: {totalTeachers}, Active: {activeUsers}, Today: {todayRegistrations}");
+                    return;
+                }
+            }
+            
+            // Si todo falla, usar valores por defecto
+            totalTeachers = 0;
+            activeUsers = 0;
+            todayRegistrations = 0;
+            Console.WriteLine("All methods failed, using default values");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in LoadAlternativeStats: {ex.Message}");
+            totalTeachers = 0;
+            activeUsers = 0;
+            todayRegistrations = 0;
+        }
+    }
+
+    // Método de respaldo para calcular registros de hoy manualmente
+    private async Task CalculateTodayRegistrationsManually()
+    {
+        try
+        {
+            var apiBaseUrl = Configuration["ApiSettings:BaseUrl"] ?? "http://localhost:5200";
+            
+            // Obtener todos los usuarios creados hoy
+            var todayDate = DateTime.Today;
+            
+            var usersResponse = await HttpClient.GetAsync($"{apiBaseUrl}/api/users");
+            if (usersResponse.IsSuccessStatusCode)
+            {
+                var usersJson = await usersResponse.Content.ReadAsStringAsync();
+                var users = System.Text.Json.JsonSerializer.Deserialize<List<UserDto>>(usersJson, new System.Text.Json.JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+                if (users != null)
+                {
+                    // Contar usuarios creados hoy (manejar diferencias UTC/local)
+                    var todayDateUtc = DateTime.UtcNow.Date;
+                    var todayDateLocal = DateTime.Today;
+                    
+                    var todayRegistrationsUtc = users.Count(u => u.CreatedAt.Date == todayDateUtc);
+                    var todayRegistrationsLocal = users.Count(u => u.CreatedAt.Date == todayDateLocal);
+                    
+                    todayRegistrations = Math.Max(todayRegistrationsUtc, todayRegistrationsLocal);
+                    
+                    Console.WriteLine($"Manual calculation - UTC: {todayRegistrationsUtc}, Local: {todayRegistrationsLocal}, Using: {todayRegistrations}");
+                    Console.WriteLine($"UTC date: {todayDateUtc}, Local date: {todayDateLocal}, Users found: {users.Count}");
+                    
+                    // Debug: mostrar las fechas de algunos usuarios
+                    foreach (var user in users.Take(5))
+                    {
+                        Console.WriteLine($"User {user.Id}: CreatedAt = {user.CreatedAt}, Date = {user.CreatedAt.Date}, UTC Date = {user.CreatedAt.Date}");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error in manual calculation: {ex.Message}");
+            todayRegistrations = 0;
+        }
+    }
+}

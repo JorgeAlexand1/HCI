@@ -1,0 +1,48 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>IncidentesFISEI.Api</name>
+    </assembly>
+    <members>
+        <member name="M:IncidentesFISEI.Api.Controllers.AuthController.Login(IncidentesFISEI.Application.DTOs.LoginDto)">
+            <summary>
+            Iniciar sesión en el sistema
+            </summary>
+            <param name="loginDto">Credenciales de login</param>
+            <returns>Token JWT y datos del usuario</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.AuthController.Register(IncidentesFISEI.Application.DTOs.RegisterDto)">
+            <summary>
+            Registrar nuevo usuario (auto-registro)
+            </summary>
+            <param name="registerDto">Datos de registro</param>
+            <returns>Resultado del registro</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.AuthController.ChangePassword(IncidentesFISEI.Application.DTOs.ChangePasswordDto)">
+            <summary>
+            Cambiar contraseña del usuario autenticado
+            </summary>
+            <param name="changePasswordDto">Datos para cambio de contraseña</param>
+            <returns>Resultado del cambio</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.AuthController.ValidateToken(System.String)">
+            <summary>
+            Validar token JWT
+            </summary>
+            <param name="token">Token a validar</param>
+            <returns>Resultado de la validación</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.AuthController.GetCurrentUser">
+            <summary>
+            Obtener información del usuario autenticado
+            </summary>
+            <returns>Información del usuario</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.AuthController.Logout">
+            <summary>
+            Cerrar sesión (logout)
+            </summary>
+            <returns>Confirmación del logout</returns>
+        </member>
+    </members>
+</doc>

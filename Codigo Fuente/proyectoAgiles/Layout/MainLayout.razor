@@ -1,0 +1,68 @@
+﻿@using proyectoAgiles.Services
+@inherits LayoutComponentBase
+@inject UserSessionService UserSession
+@inject NavigationManager Navigation
+<div class="page">
+    <nav class="navbar navbar-expand-lg navbar-light">
+        <div class="container-fluid">
+            <div class="navbar-brand">
+                <img src="images/uta-logo.png" alt="Universidad Técnica de Ambato" class="logo-uta">
+            </div>            <div class="ms-auto d-flex align-items-center">
+                @if (UserSession.IsAuthenticated)
+                {                    <div class="user-info-section d-flex align-items-center me-3">
+                        <div class="user-avatar">
+                            @if (UserSession.IsAdmin)
+                            {
+                                <i class="fas fa-shield-alt text-primary"></i>
+                            }
+                            else if (UserSession.IsTeacher)
+                            {
+                                <i class="fas fa-chalkboard-teacher text-info"></i>
+                            }
+                            else
+                            {
+                                <i class="fas fa-user text-secondary"></i>
+                            }
+                        </div>
+                        <div class="user-details">
+                            <span class="navbar-text">Hola, @UserSession.CurrentUser!.FirstName</span>
+                            @if (UserSession.IsTeacher)
+                            {
+                                <small class="user-role text-muted d-block">@UserSession.GetUserNivel()</small>
+                            }
+                            else
+                            {
+                                <small class="user-role text-muted d-block">@UserSession.GetUserRole()</small>
+                            }
+                        </div>
+                    </div>
+                    <button @onclick="Logout" class="btn btn-outline-danger">
+                        <i class="fas fa-sign-out-alt me-1"></i>
+                        Cerrar Sesión
+                    </button>
+                }
+                else
+                {
+                    <a href="/login" class="btn btn-outline-primary me-2">
+                        Iniciar Sesión
+                    </a>
+                }
+            </div>
+        </div>
+    </nav>    <main class="main-content">
+        <div class="container-fluid">
+            @Body
+        </div>
+    </main>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await UserSession.InitializeAsync();
+    }    private async Task Logout()
+    {
+        await UserSession.ClearSessionAsync();
+        Navigation.NavigateTo("/");
+    }
+}

@@ -1,0 +1,318 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using IncidentesFISEI.Application.Interfaces;
+using IncidentesFISEI.Application.DTOs;
+using IncidentesFISEI.Domain.Enums;
+using System.Security.Claims;
+using Swashbuckle.AspNetCore.Annotations;
+
+namespace IncidentesFISEI.Api.Controllers;
+
+/// <summary>
+/// Controlador para la gestión de incidentes según ITIL v3
+/// </summary>
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
+public class IncidentesController : ControllerBase
+{
+    private readonly IIncidenteService _incidenteService;
+    private readonly ILogger<IncidentesController> _logger;
+
+    public IncidentesController(IIncidenteService incidenteService, ILogger<IncidentesController> logger)
+    {
+        _incidenteService = incidenteService;
+        _logger = logger;
+    }
+
+    /// <summary>
+    /// Crear un nuevo incidente
+    /// </summary>
+    /// <param name="createDto">Datos del incidente a crear</param>
+    /// <returns>Incidente creado</returns>
+    [HttpPost]
+    [SwaggerOperation(Summary = "Crear incidente", Description = "Crea un nuevo incidente en el sistema")]
+    [SwaggerResponse(200, "Incidente creado exitosamente", typeof(ApiResponse<IncidenteDto>))]
+    [SwaggerResponse(400, "Datos inválidos")]
+    [SwaggerResponse(401, "No autorizado")]
+    public async Task<ActionResult<ApiResponse<IncidenteDto>>> CreateIncidente([FromBody] CreateIncidenteDto createDto)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var result = await _incidenteService.CreateIncidenteAsync(createDto, userId);
+            
+            if (result.Success)
+            {
+                _logger.LogInformation("Incidente creado: {NumeroIncidente} por usuario {UserId}", 
+                    result.Data?.NumeroIncidente, userId);
+                return Ok(result);
+            }
+
+            return BadRequest(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al crear incidente");
+            return StatusCode(500, new ApiResponse<IncidenteDto>(false, null, "Error interno del servidor"));
+        }
+    }
+
+    /// <summary>
+    /// Actualizar un incidente existente
+    /// </summary>
+    /// <param name="updateDto">Datos del incidente a actualizar</param>
+    /// <returns>Incidente actualizado</returns>
+    [HttpPut]
+    [SwaggerOperation(Summary = "Actualizar incidente", Description = "Actualiza un incidente existente")]
+    [SwaggerResponse(200, "Incidente actualizado exitosamente", typeof(ApiResponse<IncidenteDto>))]
+    [SwaggerResponse(400, "Datos inválidos")]
+    [SwaggerResponse(404, "Incidente no encontrado")]
+    public async Task<ActionResult<ApiResponse<IncidenteDto>>> UpdateIncidente([FromBody] UpdateIncidenteDto updateDto)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var result = await _incidenteService.UpdateIncidenteAsync(updateDto, userId);
+            
+            if (result.Success)
+                return Ok(result);
+
+            return BadRequest(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al actualizar incidente {IncidenteId}", updateDto.Id);
+            return StatusCode(500, new ApiResponse<IncidenteDto>(false, null, "Error interno del servidor"));
+        }
+    }
+
+    /// <summary>
+    /// Obtener un incidente por ID
+    /// </summary>
+    /// <param name="id">ID del incidente</param>
+    /// <returns>Detalles del incidente</returns>
+    [HttpGet("{id}")]
+    [SwaggerOperation(Summary = "Obtener incidente", Description = "Obtiene los detalles de un incidente por su ID")]
+    [SwaggerResponse(200, "Incidente encontrado", typeof(ApiResponse<IncidenteDetalleDto>))]
+    [SwaggerResponse(404, "Incidente no encontrado")]
+    public async Task<ActionResult<ApiResponse<IncidenteDetalleDto>>> GetIncidente(int id)
+    {
+        try
+        {
+            var result = await _incidenteService.GetIncidenteByIdAsync(id);
+            
+            if (result.Success)
+                return Ok(result);
+
+            return NotFound(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener incidente {IncidenteId}", id);
+            return StatusCode(500, new ApiResponse<IncidenteDetalleDto>(false, null, "Error interno del servidor"));
+        }
+    }
+
+    /// <summary>
+    /// Obtener todos los incidentes
+    /// </summary>
+    /// <returns>Lista de incidentes</returns>
+    [HttpGet]
+    [SwaggerOperation(Summary = "Listar incidentes", Description = "Obtiene la lista de todos los incidentes")]
+    [SwaggerResponse(200, "Lista de incidentes", typeof(ApiResponse<IEnumerable<IncidenteDto>>))]
+    public async Task<ActionResult<ApiResponse<IEnumerable<IncidenteDto>>>> GetIncidentes()
+    {
+        try
+        {
+            var result = await _incidenteService.GetIncidentesAsync();
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener incidentes");
+            return StatusCode(500, new ApiResponse<IEnumerable<IncidenteDto>>(false, null, "Error interno del servidor"));
+        }
+    }
+
+    /// <summary>
+    /// Obtener incidentes del usuario autenticado
+    /// </summary>
+    /// <returns>Incidentes del usuario</returns>
+    [HttpGet("mis-incidentes")]
+    [SwaggerOperation(Summary = "Mis incidentes", Description = "Obtiene los incidentes reportados por el usuario autenticado")]
+    [SwaggerResponse(200, "Incidentes del usuario", typeof(ApiResponse<IEnumerable<IncidenteDto>>))]
+    public async Task<ActionResult<ApiResponse<IEnumerable<IncidenteDto>>>> GetMisIncidentes()
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var result = await _incidenteService.GetIncidentesByUsuarioAsync(userId);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener incidentes del usuario");
+            return StatusCode(500, new ApiResponse<IEnumerable<IncidenteDto>>(false, null, "Error interno del servidor"));
+        }
+    }
+
+    /// <summary>
+    /// Obtener incidentes asignados al técnico autenticado
+    /// </summary>
+    /// <returns>Incidentes asignados</returns>
+    [HttpGet("asignados")]
+    [Authorize(Roles = "Tecnico,Supervisor,Administrador")]
+    [SwaggerOperation(Summary = "Incidentes asignados", Description = "Obtiene los incidentes asignados al técnico autenticado")]
+    [SwaggerResponse(200, "Incidentes asignados", typeof(ApiResponse<IEnumerable<IncidenteDto>>))]
+    public async Task<ActionResult<ApiResponse<IEnumerable<IncidenteDto>>>> GetIncidentesAsignados()
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var result = await _incidenteService.GetIncidentesByTecnicoAsync(userId);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener incidentes asignados");
+            return StatusCode(500, new ApiResponse<IEnumerable<IncidenteDto>>(false, null, "Error interno del servidor"));
+        }
+    }
+
+    /// <summary>
+    /// Obtener incidentes por estado
+    /// </summary>
+    /// <param name="estado">Estado del incidente</param>
+    /// <returns>Incidentes filtrados por estado</returns>
+    [HttpGet("por-estado/{estado}")]
+    [SwaggerOperation(Summary = "Incidentes por estado", Description = "Obtiene los incidentes filtrados por estado")]
+    [SwaggerResponse(200, "Incidentes filtrados", typeof(ApiResponse<IEnumerable<IncidenteDto>>))]
+    public async Task<ActionResult<ApiResponse<IEnumerable<IncidenteDto>>>> GetIncidentesPorEstado(EstadoIncidente estado)
+    {
+        try
+        {
+            var result = await _incidenteService.GetIncidentesByEstadoAsync(estado);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener incidentes por estado {Estado}", estado);
+            return StatusCode(500, new ApiResponse<IEnumerable<IncidenteDto>>(false, null, "Error interno del servidor"));
+        }
+    }
+
+    /// <summary>
+    /// Asignar un incidente a un técnico
+    /// </summary>
+    /// <param name="incidenteId">ID del incidente</param>
+    /// <param name="tecnicoId">ID del técnico</param>
+    /// <returns>Resultado de la asignación</returns>
+    [HttpPost("{incidenteId}/asignar/{tecnicoId}")]
+    [Authorize(Roles = "Supervisor,Administrador")]
+    [SwaggerOperation(Summary = "Asignar incidente", Description = "Asigna un incidente a un técnico específico")]
+    [SwaggerResponse(200, "Incidente asignado exitosamente")]
+    [SwaggerResponse(400, "Error en la asignación")]
+    [SwaggerResponse(403, "Sin permisos para asignar")]
+    public async Task<ActionResult<ApiResponse<bool>>> AsignarIncidente(int incidenteId, int tecnicoId)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var result = await _incidenteService.AsignarIncidenteAsync(incidenteId, tecnicoId, userId);
+            
+            if (result.Success)
+                return Ok(result);
+
+            return BadRequest(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al asignar incidente {IncidenteId} a técnico {TecnicoId}", incidenteId, tecnicoId);
+            return StatusCode(500, new ApiResponse<bool>(false, false, "Error interno del servidor"));
+        }
+    }
+
+    /// <summary>
+    /// Cerrar un incidente
+    /// </summary>
+    /// <param name="incidenteId">ID del incidente</param>
+    /// <param name="solucion">Solución implementada</param>
+    /// <returns>Resultado del cierre</returns>
+    [HttpPost("{incidenteId}/cerrar")]
+    [Authorize(Roles = "Tecnico,Supervisor,Administrador")]
+    [SwaggerOperation(Summary = "Cerrar incidente", Description = "Cierra un incidente con la solución implementada")]
+    [SwaggerResponse(200, "Incidente cerrado exitosamente")]
+    [SwaggerResponse(400, "Error al cerrar incidente")]
+    public async Task<ActionResult<ApiResponse<bool>>> CerrarIncidente(int incidenteId, [FromBody] string solucion)
+    {
+        try
+        {
+            var userId = GetCurrentUserId();
+            var result = await _incidenteService.CerrarIncidenteAsync(incidenteId, solucion, userId);
+            
+            if (result.Success)
+                return Ok(result);
+
+            return BadRequest(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al cerrar incidente {IncidenteId}", incidenteId);
+            return StatusCode(500, new ApiResponse<bool>(false, false, "Error interno del servidor"));
+        }
+    }
+
+    /// <summary>
+    /// Obtener estadísticas de incidentes por estado
+    /// </summary>
+    /// <returns>Estadísticas por estado</returns>
+    [HttpGet("estadisticas/por-estado")]
+    [Authorize(Roles = "Supervisor,Administrador")]
+    [SwaggerOperation(Summary = "Estadísticas por estado", Description = "Obtiene estadísticas de incidentes agrupados por estado")]
+    [SwaggerResponse(200, "Estadísticas obtenidas", typeof(ApiResponse<Dictionary<EstadoIncidente, int>>))]
+    public async Task<ActionResult<ApiResponse<Dictionary<EstadoIncidente, int>>>> GetEstadisticasEstado()
+    {
+        try
+        {
+            var result = await _incidenteService.GetEstadisticasEstadoAsync();
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener estadísticas por estado");
+            return StatusCode(500, new ApiResponse<Dictionary<EstadoIncidente, int>>(false, null, "Error interno del servidor"));
+        }
+    }
+
+    /// <summary>
+    /// Obtener estadísticas de incidentes por prioridad
+    /// </summary>
+    /// <returns>Estadísticas por prioridad</returns>
+    [HttpGet("estadisticas/por-prioridad")]
+    [Authorize(Roles = "Supervisor,Administrador")]
+    [SwaggerOperation(Summary = "Estadísticas por prioridad", Description = "Obtiene estadísticas de incidentes agrupados por prioridad")]
+    [SwaggerResponse(200, "Estadísticas obtenidas", typeof(ApiResponse<Dictionary<PrioridadIncidente, int>>))]
+    public async Task<ActionResult<ApiResponse<Dictionary<PrioridadIncidente, int>>>> GetEstadisticasPrioridad()
+    {
+        try
+        {
+            var result = await _incidenteService.GetEstadisticasPrioridadAsync();
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener estadísticas por prioridad");
+            return StatusCode(500, new ApiResponse<Dictionary<PrioridadIncidente, int>>(false, null, "Error interno del servidor"));
+        }
+    }
+
+    private int GetCurrentUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (int.TryParse(userIdClaim, out int userId))
+            return userId;
+        
+        throw new UnauthorizedAccessException("Usuario no autenticado");
+    }
+}
