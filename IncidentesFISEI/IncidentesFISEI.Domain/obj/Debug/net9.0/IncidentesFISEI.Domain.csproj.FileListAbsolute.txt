@@ -20,3 +20,4 @@ D:\PERSONAL\Descargas\HCI-main\HCI-main\IncidentesFISEI\IncidentesFISEI.Domain\o
 D:\PERSONAL\Descargas\HCI-main\HCI-main\IncidentesFISEI\IncidentesFISEI.Domain\obj\Debug\net9.0\refint\IncidentesFISEI.Domain.dll
 D:\PERSONAL\Descargas\HCI-main\HCI-main\IncidentesFISEI\IncidentesFISEI.Domain\obj\Debug\net9.0\IncidentesFISEI.Domain.pdb
 D:\PERSONAL\Descargas\HCI-main\HCI-main\IncidentesFISEI\IncidentesFISEI.Domain\obj\Debug\net9.0\ref\IncidentesFISEI.Domain.dll
+D:\PERSONAL\Descargas\HCI-main\HCI-main\IncidentesFISEI\IncidentesFISEI.Domain\obj\Debug\net9.0\IncidentesFISEI.Domain.sourcelink.json

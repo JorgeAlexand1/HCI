@@ -156,18 +156,16 @@ builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Swagger habilitado para todos los ambientes (Development y Production)
+app.UseSwagger();
+app.UseSwaggerUI(c =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
-    {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "IncidentesFISEI API v1");
-        c.RoutePrefix = string.Empty; // Swagger UI en la raíz
-        c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
-        c.DefaultModelsExpandDepth(-1);
-        c.DisplayRequestDuration();
-    });
-}
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "IncidentesFISEI API v1");
+    c.RoutePrefix = "swagger"; // Swagger UI en /swagger
+    c.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
+    c.DefaultModelsExpandDepth(-1);
+    c.DisplayRequestDuration();
+});
 
 app.UseHttpsRedirection();
 app.UseCors("AllowBlazorClient");

@@ -338,3 +338,4 @@ D:\PERSONAL\Descargas\HCI-main\HCI-main\IncidentesFISEI\IncidentesFISEI.Api\obj\
 D:\PERSONAL\Descargas\HCI-main\HCI-main\IncidentesFISEI\IncidentesFISEI.Api\obj\Debug\net9.0\IncidentesFISEI.Api.pdb
 D:\PERSONAL\Descargas\HCI-main\HCI-main\IncidentesFISEI\IncidentesFISEI.Api\obj\Debug\net9.0\IncidentesFISEI.Api.genruntimeconfig.cache
 D:\PERSONAL\Descargas\HCI-main\HCI-main\IncidentesFISEI\IncidentesFISEI.Api\obj\Debug\net9.0\ref\IncidentesFISEI.Api.dll
+D:\PERSONAL\Descargas\HCI-main\HCI-main\IncidentesFISEI\IncidentesFISEI.Api\obj\Debug\net9.0\IncidentesFISEI.Api.sourcelink.json

@@ -36,3 +36,4 @@ D:\PERSONAL\Descargas\HCI-main\HCI-main\IncidentesFISEI\IncidentesFISEI.Infrastr
 D:\PERSONAL\Descargas\HCI-main\HCI-main\IncidentesFISEI\IncidentesFISEI.Infrastructure\obj\Debug\net9.0\IncidentesFISEI.Infrastructure.pdb
 D:\PERSONAL\Descargas\HCI-main\HCI-main\IncidentesFISEI\IncidentesFISEI.Infrastructure\obj\Debug\net9.0\IncidentesFISEI.Infrastructure.genruntimeconfig.cache
 D:\PERSONAL\Descargas\HCI-main\HCI-main\IncidentesFISEI\IncidentesFISEI.Infrastructure\obj\Debug\net9.0\ref\IncidentesFISEI.Infrastructure.dll
+D:\PERSONAL\Descargas\HCI-main\HCI-main\IncidentesFISEI\IncidentesFISEI.Infrastructure\obj\Debug\net9.0\IncidentesFISEI.Infrastructure.sourcelink.json
