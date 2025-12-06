@@ -1,0 +1,193 @@
+<div class="incident-card @GetPriorityClass(Priority) @GetStatusClass(Status)">
+    <div class="card-header">
+        <div class="incident-number">
+            <span class="number">#@Number</span>
+            <span class="priority-badge @Priority.ToString().ToLower()">@Priority</span>
+        </div>
+        <div class="incident-actions">
+            @if (ShowActions && Actions != null)
+            {
+                @foreach (var action in Actions)
+                {
+                    <button class="btn btn-sm @action.Class" @onclick="() => action.OnClick?.Invoke()">
+                        <i class="@action.Icon"></i> @action.Text
+                    </button>
+                }
+            }
+        </div>
+    </div>
+
+    <div class="card-body">
+        <h5 class="incident-title">@Title</h5>
+        <p class="incident-description">@TruncateText(Description, 150)</p>
+        
+        <div class="incident-meta">
+            <div class="meta-item">
+                <i class="fas fa-user"></i>
+                <span>@ReportedBy</span>
+            </div>
+            @if (!string.IsNullOrEmpty(AssignedTo))
+            {
+                <div class="meta-item">
+                    <i class="fas fa-user-cog"></i>
+                    <span>@AssignedTo</span>
+                </div>
+            }
+            <div class="meta-item">
+                <i class="fas fa-clock"></i>
+                <span>@FormatDate(CreatedAt)</span>
+            </div>
+            @if (SlaTimeRemaining.HasValue)
+            {
+                <div class="meta-item sla @GetSlaClass(SlaTimeRemaining.Value)">
+                    <i class="fas fa-stopwatch"></i>
+                    <span>SLA: @FormatTimeSpan(SlaTimeRemaining.Value)</span>
+                </div>
+            }
+        </div>
+
+        @if (!string.IsNullOrEmpty(Category))
+        {
+            <div class="incident-category">
+                <span class="category-tag">@Category</span>
+            </div>
+        }
+    </div>
+
+    <div class="card-footer">
+        <div class="status-indicator">
+            <span class="status @Status.ToString().ToLower()">@GetStatusText(Status)</span>
+        </div>
+        
+        @if (ShowViewButton)
+        {
+            <a href="/incident/@Id" class="btn btn-outline-primary btn-sm">
+                <i class="fas fa-eye"></i> Ver Detalle
+            </a>
+        }
+    </div>
+</div>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    [Parameter] public string Number { get; set; } = "";
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Description { get; set; } = "";
+    [Parameter] public string ReportedBy { get; set; } = "";
+    [Parameter] public string? AssignedTo { get; set; }
+    [Parameter] public string Category { get; set; } = "";
+    [Parameter] public DateTime CreatedAt { get; set; }
+    [Parameter] public TimeSpan? SlaTimeRemaining { get; set; }
+    [Parameter] public PriorityLevel Priority { get; set; } = PriorityLevel.Media;
+    [Parameter] public IncidentStatus Status { get; set; } = IncidentStatus.Nuevo;
+    [Parameter] public bool ShowActions { get; set; } = true;
+    [Parameter] public bool ShowViewButton { get; set; } = true;
+    [Parameter] public List<IncidentAction>? Actions { get; set; }
+
+    public enum PriorityLevel
+    {
+        Critica,
+        Alta,
+        Media,
+        Baja
+    }
+
+    public enum IncidentStatus
+    {
+        Nuevo,
+        Asignado,
+        EnProgreso,
+        Escalado,
+        Resuelto,
+        Cerrado
+    }
+
+    public class IncidentAction
+    {
+        public string Text { get; set; } = "";
+        public string Icon { get; set; } = "";
+        public string Class { get; set; } = "";
+        public Action? OnClick { get; set; }
+    }
+
+    private string GetPriorityClass(PriorityLevel priority)
+    {
+        return priority switch
+        {
+            PriorityLevel.Critica => "priority-critical",
+            PriorityLevel.Alta => "priority-high",
+            PriorityLevel.Media => "priority-medium",
+            PriorityLevel.Baja => "priority-low",
+            _ => "priority-medium"
+        };
+    }
+
+    private string GetStatusClass(IncidentStatus status)
+    {
+        return status switch
+        {
+            IncidentStatus.Nuevo => "status-new",
+            IncidentStatus.Asignado => "status-assigned",
+            IncidentStatus.EnProgreso => "status-progress",
+            IncidentStatus.Escalado => "status-escalated",
+            IncidentStatus.Resuelto => "status-resolved",
+            IncidentStatus.Cerrado => "status-closed",
+            _ => "status-new"
+        };
+    }
+
+    private string GetStatusText(IncidentStatus status)
+    {
+        return status switch
+        {
+            IncidentStatus.Nuevo => "Nuevo",
+            IncidentStatus.Asignado => "Asignado",
+            IncidentStatus.EnProgreso => "En Progreso",
+            IncidentStatus.Escalado => "Escalado",
+            IncidentStatus.Resuelto => "Resuelto",
+            IncidentStatus.Cerrado => "Cerrado",
+            _ => "Desconocido"
+        };
+    }
+
+    private string GetSlaClass(TimeSpan timeRemaining)
+    {
+        if (timeRemaining.TotalHours < 1)
+            return "sla-critical";
+        if (timeRemaining.TotalHours < 4)
+            return "sla-warning";
+        return "sla-ok";
+    }
+
+    private string TruncateText(string text, int maxLength)
+    {
+        if (string.IsNullOrEmpty(text) || text.Length <= maxLength)
+            return text;
+        
+        return text.Substring(0, maxLength) + "...";
+    }
+
+    private string FormatDate(DateTime date)
+    {
+        var timeSpan = DateTime.Now - date;
+        
+        if (timeSpan.TotalMinutes < 60)
+            return $"Hace {(int)timeSpan.TotalMinutes} min";
+        if (timeSpan.TotalHours < 24)
+            return $"Hace {(int)timeSpan.TotalHours}h";
+        if (timeSpan.TotalDays < 7)
+            return $"Hace {(int)timeSpan.TotalDays}d";
+        
+        return date.ToString("dd/MM/yyyy");
+    }
+
+    private string FormatTimeSpan(TimeSpan timeSpan)
+    {
+        if (timeSpan.TotalDays >= 1)
+            return $"{(int)timeSpan.TotalDays}d {timeSpan.Hours}h";
+        if (timeSpan.TotalHours >= 1)
+            return $"{(int)timeSpan.TotalHours}h {timeSpan.Minutes}m";
+        
+        return $"{(int)timeSpan.TotalMinutes}m";
+    }
+}

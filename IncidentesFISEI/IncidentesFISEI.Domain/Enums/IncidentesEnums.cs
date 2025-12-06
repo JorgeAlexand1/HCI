@@ -103,3 +103,73 @@ public enum TipoArticulo
     KnownError = 6,
     Workaround = 7
 }
+
+// ===== ENUMS PARA SISTEMA DE NOTIFICACIONES ITIL v3 =====
+
+public enum TipoNotificacion
+{
+    // Incidentes
+    IncidenteCreado = 1,
+    IncidenteAsignado = 2,
+    IncidenteActualizado = 3,
+    IncidenteEscalado = 4,
+    IncidenteResuelto = 5,
+    IncidenteCerrado = 6,
+    
+    // SLA
+    SLAProximoVencimiento = 10,
+    SLAVencido = 11,
+    SLAEscalacion = 12,
+    
+    // Sistema
+    MantenimientoProgramado = 20,
+    ActualizacionSistema = 21,
+    
+    // Base de Conocimiento
+    ArticuloPublicado = 30,
+    ArticuloActualizado = 31,
+    
+    // Recordatorios
+    RecordatorioTarea = 40,
+    RecordatorioSeguimiento = 41
+}
+
+public enum PrioridadNotificacion
+{
+    Baja = 1,
+    Normal = 2,
+    Alta = 3,
+    Critica = 4
+}
+
+public enum TipoEventoNotificacion
+{
+    TodosLosIncidentes = 1,
+    IncidentesAsignados = 2,
+    IncidentesCreados = 3,
+    EscalacionSLA = 4,
+    ActualizacionEstado = 5,
+    Comentarios = 6,
+    BaseConocimiento = 7,
+    Mantenimiento = 8
+}
+
+public enum CanalNotificacion
+{
+    Sistema = 1,
+    Email = 2,
+    SMS = 3,
+    Push = 4,
+    Teams = 5,
+    Slack = 6
+}
+
+public enum EstadoEnvioNotificacion
+{
+    Pendiente = 1,
+    Enviando = 2,
+    Enviado = 3,
+    Entregado = 4,
+    Fallido = 5,
+    Cancelado = 6
+}

@@ -73,7 +73,13 @@ builder.Services.AddSwaggerGen(c =>
 
 // Configuración de Entity Framework
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"), sqlOptions =>
+    {
+        sqlOptions.EnableRetryOnFailure();
+    });
+    options.EnableSensitiveDataLogging(builder.Environment.IsDevelopment());
+});
 
 // Configuración de JWT
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
@@ -102,7 +108,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowBlazorClient", policy =>
     {
-        policy.WithOrigins("http://localhost:5001", "https://localhost:5001", "http://localhost:5000", "https://localhost:7000", "https://localhost:7001")
+        policy.WithOrigins("http://localhost:5001", "https://localhost:5001", "http://localhost:5000", "https://localhost:7000", "https://localhost:7001", "http://localhost:7001", "https://localhost:7002", "http://localhost:5291", "https://localhost:5291")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -117,9 +123,11 @@ builder.Services.AddScoped<ICategoriaIncidenteRepository, CategoriaIncidenteRepo
 builder.Services.AddScoped<IArticuloConocimientoRepository, ArticuloConocimientoRepository>();
 builder.Services.AddScoped<IComentarioRepository, ComentarioRepository>();
 builder.Services.AddScoped<IArchivoAdjuntoRepository, ArchivoAdjuntoRepository>();
+builder.Services.AddScoped<IServicioRepository, ServicioRepository>();
 
 // Registro de servicios
 builder.Services.AddScoped<IAuthService, IncidentesFISEI.Infrastructure.Services.AuthService>();
+builder.Services.AddScoped<IServicioService, IncidentesFISEI.Application.Services.ServicioService>();
 //builder.Services.AddScoped<IIncidenteService, IncidenteService>();
 //builder.Services.AddScoped<IComentarioService, ComentarioService>();
 //builder.Services.AddScoped<ICategoriaService, CategoriaService>();
@@ -145,7 +153,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+// app.UseHttpsRedirection(); // Comentado temporalmente para desarrollo
 app.UseCors("AllowBlazorClient");
 app.UseAuthentication();
 app.UseAuthorization();

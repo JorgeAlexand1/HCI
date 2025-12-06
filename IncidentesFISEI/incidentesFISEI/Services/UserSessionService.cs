@@ -5,17 +5,22 @@ namespace incidentesFISEI.Services
 {
     public class Usuario
     {
+        public int Id { get; set; }
         public string FirstName { get; set; } = "";
         public string LastName { get; set; } = "";
         public string Email { get; set; } = "";
         public TipoUsuario TipoUsuario { get; set; }
+        
+        public string FullName => $"{FirstName} {LastName}".Trim();
     }
 
     public enum TipoUsuario
     {
         UsuarioFinal = 1,
         Tecnico = 2,
-        Administrador = 4
+        Supervisor = 3,
+        Administrador = 4,
+        Docente = 5
     }
 
     public class UserSessionService
@@ -36,7 +41,14 @@ namespace incidentesFISEI.Services
 
         public bool IsAdmin => CurrentUser?.TipoUsuario == TipoUsuario.Administrador;
         public bool IsTechnician => CurrentUser?.TipoUsuario == TipoUsuario.Tecnico;
+        public bool IsSupervisor => CurrentUser?.TipoUsuario == TipoUsuario.Supervisor;
+        public bool IsTeacher => CurrentUser?.TipoUsuario == TipoUsuario.Docente;
         public bool IsEndUser => CurrentUser?.TipoUsuario == TipoUsuario.UsuarioFinal;
+        public bool IsLoggedIn => IsAuthenticated && CurrentUser != null;
+        
+        // Propiedades para obtener información del usuario actual
+        public string FullName => CurrentUser?.FullName ?? "";
+        public int UserId => CurrentUser?.Id ?? 0;
 
         public async Task InitializeAsync()
         {

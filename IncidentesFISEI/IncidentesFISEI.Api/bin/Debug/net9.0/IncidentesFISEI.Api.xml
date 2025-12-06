@@ -44,5 +44,265 @@
             </summary>
             <returns>Confirmación del logout</returns>
         </member>
+        <member name="T:IncidentesFISEI.Api.Controllers.CategoriasController">
+            <summary>
+            Controlador para la gestión de categorías de incidentes
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.CategoriasController.GetCategoriasActivas">
+            <summary>
+            Obtener todas las categorías activas
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.CategoriasController.GetCategoria(System.Int32)">
+            <summary>
+            Obtener una categoría por ID
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.CategoriasController.CreateCategoria(IncidentesFISEI.Application.DTOs.CreateCategoriaIncidenteDto)">
+            <summary>
+            Crear una nueva categoría
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.CategoriasController.UpdateCategoria(System.Int32,IncidentesFISEI.Application.DTOs.UpdateCategoriaIncidenteDto)">
+            <summary>
+            Actualizar una categoría existente
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.CategoriasController.DeleteCategoria(System.Int32)">
+            <summary>
+            Eliminar una categoría (soft delete)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.DashboardController.GetAdminStats">
+            <summary>
+            Obtener estadísticas generales del dashboard de administración
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.DashboardController.GetUsers(System.Int32,System.Int32)">
+            <summary>
+            Obtener lista de usuarios para administración
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.DashboardController.GetRecentIncidents(System.Int32)">
+            <summary>
+            Obtener incidentes recientes
+            </summary>
+        </member>
+        <member name="T:IncidentesFISEI.Api.Controllers.IncidentesController">
+            <summary>
+            Controlador para la gestión de incidentes según ITIL v3
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.IncidentesController.GetIncidentes(System.Int32,System.Int32)">
+            <summary>
+            Obtener todos los incidentes
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.IncidentesController.GetIncidente(System.Int32)">
+            <summary>
+            Obtener un incidente por ID
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.IncidentesController.CreateIncidente(IncidentesFISEI.Api.Controllers.CreateIncidenteDto)">
+            <summary>
+            Crear un nuevo incidente
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.IncidentesController.UpdateIncident(System.Int32,IncidentesFISEI.Api.Controllers.UpdateIncidenteDto)">
+            <summary>
+            Actualizar un incidente existente
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.IncidentesController.CloseIncident(System.Int32)">
+            <summary>
+            Cerrar un incidente
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.IncidentesController.ReopenIncident(System.Int32)">
+            <summary>
+            Reabrir un incidente cerrado
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.IncidentesController.DeleteIncidente(System.Int32)">
+            <summary>
+            Eliminar un incidente
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.IncidentesController.AsignarIncidente(System.Int32,IncidentesFISEI.Api.Controllers.AsignarIncidenteRequest)">
+            <summary>
+            Asignar un incidente a un técnico (solo admin y supervisores)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.IncidentesController.GetAutoAssigneeByCategory(System.Int32)">
+            <summary>
+            Obtiene automáticamente el usuario asignado basándose en la categoría del incidente
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.IncidentesController.ResolverIncidente(System.Int32,IncidentesFISEI.Api.Controllers.ResolverIncidenteRequest)">
+            <summary>
+            Marcar incidente como resuelto (solo técnicos asignados)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.IncidentesController.CerrarIncidente(System.Int32,IncidentesFISEI.Api.Controllers.CerrarIncidenteRequest)">
+            <summary>
+            Cerrar incidente definitivamente (supervisores y administradores)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.IncidentesController.ReabrirIncidente(System.Int32,IncidentesFISEI.Api.Controllers.ReabrirIncidenteRequest)">
+            <summary>
+            Reabrir incidente cerrado (solo administradores)
+            </summary>
+        </member>
+        <member name="T:IncidentesFISEI.Api.Controllers.ResolverIncidenteRequest">
+            <summary>
+            DTO para resolver incidentes
+            </summary>
+        </member>
+        <member name="T:IncidentesFISEI.Api.Controllers.CerrarIncidenteRequest">
+            <summary>
+            DTO para cerrar incidentes
+            </summary>
+        </member>
+        <member name="T:IncidentesFISEI.Api.Controllers.ReabrirIncidenteRequest">
+            <summary>
+            DTO para reabrir incidentes
+            </summary>
+        </member>
+        <member name="T:IncidentesFISEI.Api.Controllers.CreateIncidenteDto">
+            <summary>
+            DTO para crear incidentes
+            </summary>
+        </member>
+        <member name="T:IncidentesFISEI.Api.Controllers.UpdateIncidenteDto">
+            <summary>
+            DTO para actualizar incidentes
+            </summary>
+        </member>
+        <member name="T:IncidentesFISEI.Api.Controllers.AsignarIncidenteRequest">
+            <summary>
+            DTO para asignar incidentes
+            </summary>
+        </member>
+        <member name="T:IncidentesFISEI.Api.Controllers.NotificationController">
+            <summary>
+            Controlador para la gestión de notificaciones ITIL v3
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.NotificationController.GetNotificaciones(System.Boolean,System.Int32,System.Int32)">
+            <summary>
+            Obtiene las notificaciones del usuario actual
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.NotificationController.GetConteoNoLeidas">
+            <summary>
+            Obtiene el conteo de notificaciones no leídas
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.NotificationController.MarcarComoLeida(System.Int32)">
+            <summary>
+            Marca una notificación como leída
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.NotificationController.MarcarTodasComoLeidas">
+            <summary>
+            Marca todas las notificaciones como leídas
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.NotificationController.GetConfiguracion">
+            <summary>
+            Obtiene la configuración de notificaciones del usuario
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.NotificationController.ActualizarConfiguracion(System.String,IncidentesFISEI.Application.DTOs.UpdateNotificationSettingsDto)">
+            <summary>
+            Actualiza la configuración de notificaciones del usuario
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.NotificationController.CrearNotificacionPrueba(IncidentesFISEI.Application.DTOs.CreateNotificationDto)">
+            <summary>
+            Endpoint para pruebas - crear notificación manual (solo administradores)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ServiciosController.GetServicios">
+            <summary>
+            Obtiene todos los servicios
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ServiciosController.GetServiciosByCategoria(System.Int32)">
+            <summary>
+            Obtiene servicios por categoría
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ServiciosController.GetServicio(System.Int32)">
+            <summary>
+            Obtiene un servicio por ID
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ServiciosController.SearchServicios(System.String)">
+            <summary>
+            Busca servicios por término de búsqueda
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ServiciosController.CreateServicio(IncidentesFISEI.Application.DTOs.CreateServicioDto)">
+            <summary>
+            Crea un nuevo servicio
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ServiciosController.UpdateServicio(System.Int32,IncidentesFISEI.Application.DTOs.UpdateServicioDto)">
+            <summary>
+            Actualiza un servicio existente
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ServiciosController.DeleteServicio(System.Int32)">
+            <summary>
+            Elimina un servicio
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ServiciosController.ExistsCodigo(System.String,System.Nullable{System.Int32})">
+            <summary>
+            Verifica si existe un código de servicio
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.UsersController.CreateUser(IncidentesFISEI.Api.Controllers.CreateUserRequest)">
+            <summary>
+            Crear nuevo usuario
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.UsersController.GetUser(System.Int32)">
+            <summary>
+            Obtener usuario por ID
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.UsersController.GetAssignableUsers">
+            <summary>
+            Obtener usuarios asignables (técnicos y supervisores activos)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.UsersController.GetAllUsers">
+            <summary>
+            Obtener todos los usuarios (temporal para debugging)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.UsersController.UpdateUser(System.Int32,IncidentesFISEI.Api.Controllers.UpdateUserRequest)">
+            <summary>
+            Actualizar usuario
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.UsersController.ToggleUserStatus(System.Int32)">
+            <summary>
+            Activar/Desactivar usuario
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.UsersController.ApproveUser(System.Int32)">
+            <summary>
+            Aprobar usuario pendiente
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.UsersController.DeleteUser(System.Int32)">
+            <summary>
+            Rechazar usuario pendiente
+            </summary>
+        </member>
     </members>
 </doc>

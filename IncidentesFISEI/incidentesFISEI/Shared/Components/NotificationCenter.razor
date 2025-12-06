@@ -1,0 +1,232 @@
+@inject IJSRuntime JSRuntime
+@inject HttpClient Http
+@using System.Timers
+
+<div class="notification-center">
+    <button class="notification-bell" @onclick="ToggleNotifications">
+        <i class="fas fa-bell"></i>
+        @if (UnreadCount > 0)
+        {
+            <span class="notification-badge">@UnreadCount</span>
+        }
+    </button>
+
+    @if (showNotifications)
+    {
+        <div class="notifications-dropdown">
+            <div class="notifications-header">
+                <h4>Notificaciones</h4>
+                <button class="mark-all-read" @onclick="MarkAllAsRead" disabled="@(UnreadCount == 0)">
+                    Marcar todas como leídas
+                </button>
+            </div>
+
+            <div class="notifications-list">
+                @if (notifications?.Any() == true)
+                {
+                    @foreach (var notification in notifications.Take(10))
+                    {
+                        <div class="notification-item @(notification.Leida ? "read" : "unread")" 
+                             @onclick="() => MarkAsRead(notification)">
+                            <div class="notification-icon @GetNotificationTypeClass(notification.TipoNotificacion)">
+                                <i class="@GetNotificationIcon(notification.TipoNotificacion)"></i>
+                            </div>
+                            <div class="notification-content">
+                                <h5>@notification.Titulo</h5>
+                                <p>@notification.Mensaje</p>
+                                <small>@FormatDate(notification.FechaCreacion)</small>
+                            </div>
+                            @if (!notification.Leida)
+                            {
+                                <div class="unread-indicator"></div>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <div class="no-notifications">
+                        <i class="fas fa-bell-slash"></i>
+                        <p>No hay notificaciones</p>
+                    </div>
+                }
+            </div>
+
+            <div class="notifications-footer">
+                <a href="/notifications" class="view-all">Ver todas las notificaciones</a>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public int UserId { get; set; }
+    
+    private bool showNotifications = false;
+    private List<NotificationDto>? notifications = new();
+    private int UnreadCount = 0;
+    private System.Timers.Timer? refreshTimer;
+
+    public class NotificationDto
+    {
+        public int Id { get; set; }
+        public string Titulo { get; set; } = "";
+        public string Mensaje { get; set; } = "";
+        public string TipoNotificacion { get; set; } = "";
+        public bool Leida { get; set; }
+        public DateTime FechaCreacion { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadNotifications();
+        
+        // Refresh notifications every 30 seconds
+        refreshTimer = new System.Timers.Timer(30000);
+        refreshTimer.Elapsed += async (sender, e) => await RefreshNotifications();
+        refreshTimer.Start();
+    }
+
+    private async Task LoadNotifications()
+    {
+        try
+        {
+            // Load recent notifications
+            var response = await Http.GetFromJsonAsync<NotificationsResponse>("/api/notification");
+            notifications = response?.Notifications?.ToList() ?? new();
+            
+            // Get unread count
+            var countResponse = await Http.GetFromJsonAsync<UnreadCountResponse>("/api/notification/unread-count");
+            UnreadCount = countResponse?.Count ?? 0;
+            
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            // Handle error
+            Console.WriteLine($"Error loading notifications: {ex.Message}");
+        }
+    }
+
+    private async Task RefreshNotifications()
+    {
+        await InvokeAsync(async () =>
+        {
+            await LoadNotifications();
+        });
+    }
+
+    private void ToggleNotifications()
+    {
+        showNotifications = !showNotifications;
+        if (showNotifications)
+        {
+            // Close dropdown when clicking outside (implement via JS)
+            _ = Task.Run(async () =>
+            {
+                await Task.Delay(100);
+                await JSRuntime.InvokeVoidAsync("setupNotificationClickOutside");
+            });
+        }
+    }
+
+    private async Task MarkAsRead(NotificationDto notification)
+    {
+        if (!notification.Leida)
+        {
+            try
+            {
+                await Http.PutAsync($"/api/notification/{notification.Id}/read", null);
+                notification.Leida = true;
+                UnreadCount = Math.Max(0, UnreadCount - 1);
+                StateHasChanged();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error marking notification as read: {ex.Message}");
+            }
+        }
+
+        // Navigate to related page if applicable
+        if (notification.TipoNotificacion.Contains("Incidente"))
+        {
+            // Navigate to incident details
+        }
+    }
+
+    private async Task MarkAllAsRead()
+    {
+        try
+        {
+            await Http.PutAsync("/api/notification/read-all", null);
+            
+            foreach (var notification in notifications ?? new())
+            {
+                notification.Leida = true;
+            }
+            
+            UnreadCount = 0;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error marking all notifications as read: {ex.Message}");
+        }
+    }
+
+    private string GetNotificationTypeClass(string tipo)
+    {
+        return tipo.ToLower() switch
+        {
+            var t when t.Contains("critico") || t.Contains("vencido") => "critical",
+            var t when t.Contains("escalado") || t.Contains("proximo") => "warning",
+            var t when t.Contains("asignado") || t.Contains("actualizado") => "info",
+            var t when t.Contains("creado") || t.Contains("resuelto") => "success",
+            _ => "default"
+        };
+    }
+
+    private string GetNotificationIcon(string tipo)
+    {
+        return tipo.ToLower() switch
+        {
+            var t when t.Contains("incidente") => "fas fa-exclamation-triangle",
+            var t when t.Contains("sla") => "fas fa-clock",
+            var t when t.Contains("escalado") => "fas fa-arrow-up",
+            var t when t.Contains("asignado") => "fas fa-user",
+            var t when t.Contains("sistema") => "fas fa-cog",
+            _ => "fas fa-bell"
+        };
+    }
+
+    private string FormatDate(DateTime date)
+    {
+        var timeSpan = DateTime.Now - date;
+        
+        if (timeSpan.TotalMinutes < 1)
+            return "Ahora mismo";
+        if (timeSpan.TotalMinutes < 60)
+            return $"Hace {(int)timeSpan.TotalMinutes} min";
+        if (timeSpan.TotalHours < 24)
+            return $"Hace {(int)timeSpan.TotalHours}h";
+        if (timeSpan.TotalDays < 7)
+            return $"Hace {(int)timeSpan.TotalDays}d";
+        
+        return date.ToString("dd/MM/yyyy");
+    }
+
+    public void Dispose()
+    {
+        refreshTimer?.Dispose();
+    }
+
+    private class NotificationsResponse
+    {
+        public IEnumerable<NotificationDto>? Notifications { get; set; }
+    }
+
+    private class UnreadCountResponse
+    {
+        public int Count { get; set; }
+    }
+}

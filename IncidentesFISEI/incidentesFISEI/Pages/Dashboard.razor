@@ -1,0 +1,43 @@
+@page "/dashboard"
+@using incidentesFISEI.Services
+@inject UserSessionService UserSession
+@inject NavigationManager Navigation
+
+<div class="loading-container">
+    <div class="loading-spinner">
+        <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Cargando...</span>
+        </div>
+        <p class="mt-3">Redirigiendo a tu dashboard...</p>
+    </div>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await UserSession.InitializeAsync();
+        
+        if (!UserSession.IsLoggedIn)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+        
+        // Redirigir al dashboard apropiado según el tipo de usuario
+        var dashboardRoute = GetDashboardRoute(UserSession.CurrentUser?.TipoUsuario);
+        Navigation.NavigateTo(dashboardRoute);
+    }
+
+    private string GetDashboardRoute(TipoUsuario? tipoUsuario)
+    {
+        return tipoUsuario switch
+        {
+            TipoUsuario.Administrador => "/admin-dashboard",
+            TipoUsuario.Supervisor => "/supervisor-dashboard",
+            TipoUsuario.Tecnico => "/technician-dashboard", 
+            TipoUsuario.Docente => "/teacher-dashboard",
+            TipoUsuario.UsuarioFinal => "/student-dashboard",
+            _ => "/login"
+        };
+    }
+}

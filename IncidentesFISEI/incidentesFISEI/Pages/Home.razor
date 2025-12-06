@@ -1,6 +1,11 @@
 ﻿@page "/"
+@using incidentesFISEI.Services
+@inject UserSessionService UserSession
+@inject NavigationManager Navigation
 
-<PageTitle>IncidentesFISEI - Sistema de Gestión de Incidentes ITIL v3</PageTitle>
+@{
+    var title = "IncidentesFISEI - Sistema de Gestión de Incidentes ITIL v3";
+}
 
 <!-- Main Layout -->
 <div class="main-horizontal-layout">
@@ -165,3 +170,30 @@
         </section>
     </div>
 </div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await UserSession.InitializeAsync();
+        
+        // Si el usuario está autenticado, redirigir al dashboard apropiado
+        if (UserSession.IsLoggedIn)
+        {
+            var dashboardRoute = GetDashboardRoute(UserSession.CurrentUser?.TipoUsuario);
+            Navigation.NavigateTo(dashboardRoute);
+        }
+    }
+
+    private string GetDashboardRoute(TipoUsuario? tipoUsuario)
+    {
+        return tipoUsuario switch
+        {
+            TipoUsuario.Administrador => "/admin-dashboard",
+            TipoUsuario.Supervisor => "/supervisor-dashboard",
+            TipoUsuario.Tecnico => "/technician-dashboard", 
+            TipoUsuario.Docente => "/teacher-dashboard",
+            TipoUsuario.UsuarioFinal => "/student-dashboard",
+            _ => "/login" // Si no está autenticado, ir al login
+        };
+    }
+}

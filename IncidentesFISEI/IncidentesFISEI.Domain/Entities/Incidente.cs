@@ -27,6 +27,17 @@ public class Incidente : BaseEntity
     public string? ImpactoDetallado { get; set; }
     public string? ActivosAfectados { get; set; }
     
+    // Campos para flujo de cierre según ITIL v3
+    public string? ComentarioCierre { get; set; }
+    public int? CerradoPorId { get; set; }
+    public Usuario? CerradoPor { get; set; }
+    
+    // Campos para reapertura
+    public string? MotivoReapertura { get; set; }
+    public DateTime? FechaReapertura { get; set; }
+    public int? ReabiertoPorId { get; set; }
+    public Usuario? ReabiertoPor { get; set; }
+    
     // Relaciones
     public int ReportadoPorId { get; set; }
     public Usuario ReportadoPor { get; set; } = null!;
@@ -36,6 +47,9 @@ public class Incidente : BaseEntity
     
     public int CategoriaId { get; set; }
     public CategoriaIncidente Categoria { get; set; } = null!;
+    
+    public int? ServicioId { get; set; }
+    public Servicio? Servicio { get; set; }
     
     public int? ArticuloConocimientoId { get; set; }
     public ArticuloConocimiento? ArticuloConocimiento { get; set; }

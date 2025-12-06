@@ -17,6 +17,7 @@ namespace IncidentesFISEI.Infrastructure.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
+                .UseCollation("Modern_Spanish_CI_AS")
                 .HasAnnotation("ProductVersion", "9.0.0")
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
@@ -227,7 +228,7 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                         {
                             Id = 1,
                             Color = "#dc3545",
-                            CreatedAt = new DateTime(2025, 12, 2, 5, 22, 58, 675, DateTimeKind.Utc).AddTicks(3738),
+                            CreatedAt = new DateTime(2025, 12, 5, 2, 26, 28, 641, DateTimeKind.Utc).AddTicks(3339),
                             Descripcion = "Problemas relacionados con hardware",
                             Icono = "fas fa-desktop",
                             IsActive = true,
@@ -240,7 +241,7 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                         {
                             Id = 2,
                             Color = "#007bff",
-                            CreatedAt = new DateTime(2025, 12, 2, 5, 22, 58, 675, DateTimeKind.Utc).AddTicks(3889),
+                            CreatedAt = new DateTime(2025, 12, 5, 2, 26, 28, 641, DateTimeKind.Utc).AddTicks(3461),
                             Descripcion = "Problemas relacionados con software",
                             Icono = "fas fa-code",
                             IsActive = true,
@@ -253,7 +254,7 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                         {
                             Id = 3,
                             Color = "#28a745",
-                            CreatedAt = new DateTime(2025, 12, 2, 5, 22, 58, 675, DateTimeKind.Utc).AddTicks(3892),
+                            CreatedAt = new DateTime(2025, 12, 5, 2, 26, 28, 641, DateTimeKind.Utc).AddTicks(3464),
                             Descripcion = "Problemas de conectividad y red",
                             Icono = "fas fa-network-wired",
                             IsActive = true,
@@ -266,7 +267,7 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                         {
                             Id = 4,
                             Color = "#ffc107",
-                            CreatedAt = new DateTime(2025, 12, 2, 5, 22, 58, 675, DateTimeKind.Utc).AddTicks(3894),
+                            CreatedAt = new DateTime(2025, 12, 5, 2, 26, 28, 641, DateTimeKind.Utc).AddTicks(3466),
                             Descripcion = "Problemas de autenticación y permisos",
                             Icono = "fas fa-lock",
                             IsActive = true,
@@ -279,7 +280,7 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                         {
                             Id = 5,
                             Color = "#17a2b8",
-                            CreatedAt = new DateTime(2025, 12, 2, 5, 22, 58, 675, DateTimeKind.Utc).AddTicks(3896),
+                            CreatedAt = new DateTime(2025, 12, 5, 2, 26, 28, 641, DateTimeKind.Utc).AddTicks(3468),
                             Descripcion = "Problemas con correo electrónico",
                             Icono = "fas fa-envelope",
                             IsActive = true,
@@ -375,6 +376,75 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                     b.ToTable("ComentariosIncidente");
                 });
 
+            modelBuilder.Entity("IncidentesFISEI.Domain.Entities.ConfiguracionNotificacion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<TimeOnly?>("HoraFinSilencioso")
+                        .HasColumnType("time");
+
+                    b.Property<TimeOnly?>("HoraInicioSilencioso")
+                        .HasColumnType("time");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("NotificacionInmediata")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("NotificarEnSistema")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("NotificarPorEmail")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("NotificarPorSMS")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("ResumenDiario")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("ResumenSemanal")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("SoloIncidentesAsignados")
+                        .HasColumnType("bit");
+
+                    b.Property<int?>("SoloPrioridad")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TipoEvento")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UsuarioId", "TipoEvento")
+                        .IsUnique();
+
+                    b.ToTable("ConfiguracionesNotificacion");
+                });
+
             modelBuilder.Entity("IncidentesFISEI.Domain.Entities.EscalacionSLA", b =>
                 {
                     b.Property<int>("Id")
@@ -443,6 +513,12 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("nvarchar(1000)");
 
+                    b.Property<int?>("CerradoPorId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ComentarioCierre")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
@@ -461,6 +537,9 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime?>("FechaInicioTrabajo")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaReapertura")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("FechaReporte")
@@ -482,6 +561,9 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<string>("MotivoReapertura")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<string>("NumeroIncidente")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -494,7 +576,13 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                     b.Property<int>("Prioridad")
                         .HasColumnType("int");
 
+                    b.Property<int?>("ReabiertoPorId")
+                        .HasColumnType("int");
+
                     b.Property<int>("ReportadoPorId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("ServicioId")
                         .HasColumnType("int");
 
                     b.Property<string>("Solucion")
@@ -520,10 +608,16 @@ namespace IncidentesFISEI.Infrastructure.Migrations
 
                     b.HasIndex("CategoriaId");
 
+                    b.HasIndex("CerradoPorId");
+
                     b.HasIndex("NumeroIncidente")
                         .IsUnique();
 
+                    b.HasIndex("ReabiertoPorId");
+
                     b.HasIndex("ReportadoPorId");
+
+                    b.HasIndex("ServicioId");
 
                     b.ToTable("Incidentes");
                 });
@@ -565,6 +659,207 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                     b.HasIndex("IncidenteRelacionadoId");
 
                     b.ToTable("IncidentesRelacionados");
+                });
+
+            modelBuilder.Entity("IncidentesFISEI.Domain.Entities.LogNotificacion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Canal")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DireccionDestino")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
+
+                    b.Property<string>("ErrorDetalle")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
+                    b.Property<int>("Estado")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("FechaEntrega")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("FechaIntento")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("IdExterno")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("MensajeError")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("NotificacionId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NumeroReintentos")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("ProximoReintento")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("NotificacionId");
+
+                    b.HasIndex("Estado", "FechaIntento");
+
+                    b.ToTable("LogsNotificacion");
+                });
+
+            modelBuilder.Entity("IncidentesFISEI.Domain.Entities.Notificacion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DatosAdicionales")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ErrorEnvio")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("FechaEnvioEmail")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaEnvioSMS")
+                        .HasColumnType("datetime2");
+
+                    b.Property<DateTime?>("FechaLectura")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("IncidenteId")
+                        .HasColumnType("int");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Leida")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<string>("Mensaje")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)");
+
+                    b.Property<bool>("NotificadoPorEmail")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<bool>("NotificadoPorSMS")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
+                    b.Property<int>("Prioridad")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TipoNotificacion")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Titulo")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("UrlAccion")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<int>("UsuarioId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("IncidenteId");
+
+                    b.HasIndex("UsuarioId");
+
+                    b.HasIndex("UsuarioId", "Leida");
+
+                    b.ToTable("Notificaciones");
+                });
+
+            modelBuilder.Entity("IncidentesFISEI.Domain.Entities.PlantillaNotificacion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsActive")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(true);
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<string>("PlantillaEmail")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PlantillaMensaje")
+                        .IsRequired()
+                        .HasMaxLength(3000)
+                        .HasColumnType("nvarchar(3000)");
+
+                    b.Property<string>("PlantillaSMS")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PlantillaTitulo")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
+
+                    b.Property<int>("TipoNotificacion")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("VariablesDisponibles")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TipoNotificacion", "IsActive")
+                        .HasFilter("[IsActive] = 1");
+
+                    b.ToTable("PlantillasNotificacion");
                 });
 
             modelBuilder.Entity("IncidentesFISEI.Domain.Entities.RegistroTiempo", b =>
@@ -668,7 +963,7 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                         new
                         {
                             Id = 1,
-                            CreatedAt = new DateTime(2025, 12, 2, 5, 22, 58, 676, DateTimeKind.Utc).AddTicks(3158),
+                            CreatedAt = new DateTime(2025, 12, 5, 2, 26, 28, 642, DateTimeKind.Utc).AddTicks(1873),
                             Descripcion = "SLA para incidentes críticos",
                             Impacto = 4,
                             IsActive = true,
@@ -682,7 +977,7 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                         new
                         {
                             Id = 2,
-                            CreatedAt = new DateTime(2025, 12, 2, 5, 22, 58, 676, DateTimeKind.Utc).AddTicks(3162),
+                            CreatedAt = new DateTime(2025, 12, 5, 2, 26, 28, 642, DateTimeKind.Utc).AddTicks(1876),
                             Descripcion = "SLA para incidentes de alta prioridad",
                             Impacto = 3,
                             IsActive = true,
@@ -696,7 +991,7 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                         new
                         {
                             Id = 3,
-                            CreatedAt = new DateTime(2025, 12, 2, 5, 22, 58, 676, DateTimeKind.Utc).AddTicks(3164),
+                            CreatedAt = new DateTime(2025, 12, 5, 2, 26, 28, 642, DateTimeKind.Utc).AddTicks(1878),
                             Descripcion = "SLA para incidentes de prioridad media",
                             Impacto = 2,
                             IsActive = true,
@@ -710,7 +1005,7 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                         new
                         {
                             Id = 4,
-                            CreatedAt = new DateTime(2025, 12, 2, 5, 22, 58, 676, DateTimeKind.Utc).AddTicks(3166),
+                            CreatedAt = new DateTime(2025, 12, 5, 2, 26, 28, 642, DateTimeKind.Utc).AddTicks(1880),
                             Descripcion = "SLA para incidentes de baja prioridad",
                             Impacto = 1,
                             IsActive = true,
@@ -721,6 +1016,84 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                             TiempoRespuesta = 240,
                             Urgencia = 1
                         });
+                });
+
+            modelBuilder.Entity("IncidentesFISEI.Domain.Entities.Servicio", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("CategoriaId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Codigo")
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("ContactoTecnico")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)")
+                        .UseCollation("Modern_Spanish_CI_AS");
+
+                    b.Property<string>("EscalacionProcedure")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)")
+                        .UseCollation("Modern_Spanish_CI_AS");
+
+                    b.Property<string>("Instrucciones")
+                        .HasMaxLength(2000)
+                        .HasColumnType("nvarchar(2000)")
+                        .UseCollation("Modern_Spanish_CI_AS");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .UseCollation("Modern_Spanish_CI_AS");
+
+                    b.Property<bool>("RequiereAprobacion")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ResponsableArea")
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)")
+                        .UseCollation("Modern_Spanish_CI_AS");
+
+                    b.Property<int?>("TiempoResolucionMinutos")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("TiempoRespuestaMinutos")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("CategoriaId");
+
+                    b.HasIndex("Codigo")
+                        .IsUnique()
+                        .HasFilter("[Codigo] IS NOT NULL");
+
+                    b.ToTable("Servicios");
                 });
 
             modelBuilder.Entity("IncidentesFISEI.Domain.Entities.Usuario", b =>
@@ -1052,6 +1425,17 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                     b.Navigation("Incidente");
                 });
 
+            modelBuilder.Entity("IncidentesFISEI.Domain.Entities.ConfiguracionNotificacion", b =>
+                {
+                    b.HasOne("IncidentesFISEI.Domain.Entities.Usuario", "Usuario")
+                        .WithMany("ConfiguracionesNotificacion")
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
+                });
+
             modelBuilder.Entity("IncidentesFISEI.Domain.Entities.EscalacionSLA", b =>
                 {
                     b.HasOne("IncidentesFISEI.Domain.Entities.Incidente", "Incidente")
@@ -1089,11 +1473,26 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("IncidentesFISEI.Domain.Entities.Usuario", "CerradoPor")
+                        .WithMany()
+                        .HasForeignKey("CerradoPorId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
+                    b.HasOne("IncidentesFISEI.Domain.Entities.Usuario", "ReabiertoPor")
+                        .WithMany()
+                        .HasForeignKey("ReabiertoPorId")
+                        .OnDelete(DeleteBehavior.NoAction);
+
                     b.HasOne("IncidentesFISEI.Domain.Entities.Usuario", "ReportadoPor")
                         .WithMany("IncidentesReportados")
                         .HasForeignKey("ReportadoPorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("IncidentesFISEI.Domain.Entities.Servicio", "Servicio")
+                        .WithMany("Incidentes")
+                        .HasForeignKey("ServicioId")
+                        .OnDelete(DeleteBehavior.SetNull);
 
                     b.Navigation("ArticuloConocimiento");
 
@@ -1101,7 +1500,13 @@ namespace IncidentesFISEI.Infrastructure.Migrations
 
                     b.Navigation("Categoria");
 
+                    b.Navigation("CerradoPor");
+
+                    b.Navigation("ReabiertoPor");
+
                     b.Navigation("ReportadoPor");
+
+                    b.Navigation("Servicio");
                 });
 
             modelBuilder.Entity("IncidentesFISEI.Domain.Entities.IncidenteRelacionado", b =>
@@ -1123,6 +1528,35 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                     b.Navigation("IncidenteRef");
                 });
 
+            modelBuilder.Entity("IncidentesFISEI.Domain.Entities.LogNotificacion", b =>
+                {
+                    b.HasOne("IncidentesFISEI.Domain.Entities.Notificacion", "Notificacion")
+                        .WithMany("LogsEnvio")
+                        .HasForeignKey("NotificacionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Notificacion");
+                });
+
+            modelBuilder.Entity("IncidentesFISEI.Domain.Entities.Notificacion", b =>
+                {
+                    b.HasOne("IncidentesFISEI.Domain.Entities.Incidente", "Incidente")
+                        .WithMany()
+                        .HasForeignKey("IncidenteId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("IncidentesFISEI.Domain.Entities.Usuario", "Usuario")
+                        .WithMany("Notificaciones")
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Incidente");
+
+                    b.Navigation("Usuario");
+                });
+
             modelBuilder.Entity("IncidentesFISEI.Domain.Entities.RegistroTiempo", b =>
                 {
                     b.HasOne("IncidentesFISEI.Domain.Entities.Incidente", "Incidente")
@@ -1140,6 +1574,17 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                     b.Navigation("Incidente");
 
                     b.Navigation("Tecnico");
+                });
+
+            modelBuilder.Entity("IncidentesFISEI.Domain.Entities.Servicio", b =>
+                {
+                    b.HasOne("IncidentesFISEI.Domain.Entities.CategoriaIncidente", "Categoria")
+                        .WithMany("Servicios")
+                        .HasForeignKey("CategoriaId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Categoria");
                 });
 
             modelBuilder.Entity("IncidentesFISEI.Domain.Entities.VotacionArticulo", b =>
@@ -1178,6 +1623,8 @@ namespace IncidentesFISEI.Infrastructure.Migrations
 
                     b.Navigation("Incidentes");
 
+                    b.Navigation("Servicios");
+
                     b.Navigation("SubCategorias");
                 });
 
@@ -1192,15 +1639,29 @@ namespace IncidentesFISEI.Infrastructure.Migrations
                     b.Navigation("RegistrosTiempo");
                 });
 
+            modelBuilder.Entity("IncidentesFISEI.Domain.Entities.Notificacion", b =>
+                {
+                    b.Navigation("LogsEnvio");
+                });
+
+            modelBuilder.Entity("IncidentesFISEI.Domain.Entities.Servicio", b =>
+                {
+                    b.Navigation("Incidentes");
+                });
+
             modelBuilder.Entity("IncidentesFISEI.Domain.Entities.Usuario", b =>
                 {
                     b.Navigation("ArticulosCreados");
 
                     b.Navigation("Comentarios");
 
+                    b.Navigation("ConfiguracionesNotificacion");
+
                     b.Navigation("IncidentesAsignados");
 
                     b.Navigation("IncidentesReportados");
+
+                    b.Navigation("Notificaciones");
                 });
 #pragma warning restore 612, 618
         }

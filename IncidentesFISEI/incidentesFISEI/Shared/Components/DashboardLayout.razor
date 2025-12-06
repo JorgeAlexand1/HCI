@@ -1,0 +1,109 @@
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
+@using incidentesFISEI.Services
+@inherits LayoutComponentBase
+@inject IJSRuntime JSRuntime
+@inject UserSessionService UserSession
+@inject NavigationManager Navigation
+
+<div class="dashboard-layout">
+    <!-- Header -->
+    <header class="dashboard-header">
+        <div class="header-content">
+            <div class="header-left">
+                <h1 class="header-title">Dashboard FISEI</h1>
+            </div>
+            <div class="header-right">
+                @if (UserSession.IsAuthenticated)
+                {
+                    <div class="user-info-section d-flex align-items-center me-3">
+                        <div class="user-avatar">
+                            @if (UserSession.IsAdmin)
+                            {
+                                <i class="fas fa-shield-alt"></i>
+                            }
+                            else if (UserSession.IsTechnician)
+                            {
+                                <i class="fas fa-tools"></i>
+                            }
+                            else if (UserSession.IsSupervisor)
+                            {
+                                <i class="fas fa-users-cog"></i>
+                            }
+                            else if (UserSession.IsTeacher)
+                            {
+                                <i class="fas fa-chalkboard-teacher"></i>
+                            }
+                            else
+                            {
+                                <i class="fas fa-user-graduate"></i>
+                            }
+                        </div>
+                        <div class="user-details">
+                            <span class="user-name">@UserSession.CurrentUser?.FirstName @UserSession.CurrentUser?.LastName</span>
+                            <small class="user-role">@GetUserRole()</small>
+                        </div>
+                    </div>
+                    <button @onclick="Logout" class="btn btn-outline-light btn-sm logout-btn">
+                        <i class="fas fa-sign-out-alt me-1"></i>
+                        Cerrar Sesión
+                    </button>
+                }
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="dashboard-content-full">
+        @Body
+    </main>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await UserSession.InitializeAsync();
+        
+        // Si no hay usuario después de la inicialización, redirigir al login
+        if (!UserSession.IsAuthenticated)
+        {
+            Navigation.NavigateTo("/login", forceLoad: true);
+            return;
+        }
+        
+        // Forzar actualización de la interfaz
+        StateHasChanged();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            // Verificar nuevamente la sesión después del primer renderizado
+            if (!UserSession.IsAuthenticated)
+            {
+                await UserSession.InitializeAsync();
+                StateHasChanged();
+            }
+        }
+    }
+
+    private string GetUserRole()
+    {
+        return UserSession.CurrentUser?.TipoUsuario switch
+        {
+            TipoUsuario.Administrador => "Administrador del Sistema",
+            TipoUsuario.Supervisor => "Supervisor de Equipo",
+            TipoUsuario.Tecnico => "Técnico de Soporte",
+            TipoUsuario.Docente => "Docente",
+            TipoUsuario.UsuarioFinal => "Estudiante",
+            _ => "Usuario"
+        };
+    }
+
+    private async Task Logout()
+    {
+        await UserSession.LogoutAsync();
+        Navigation.NavigateTo("/login");
+    }
+}

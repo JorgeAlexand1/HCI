@@ -8,8 +8,8 @@ builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
 // Configurar HttpClient para comunicarse con la API
-builder.Services.AddScoped(sp => new HttpClient { 
-    BaseAddress = new Uri("https://localhost:7001/") 
+builder.Services.AddScoped(sp => new HttpClient {
+    BaseAddress = new Uri("http://localhost:7001/")
 });
 
 // Registrar servicios personalizados

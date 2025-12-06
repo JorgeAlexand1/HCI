@@ -1,0 +1,3226 @@
+@page "/admin-dashboard"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
+@using System.ComponentModel.DataAnnotations
+@using IncidentesFISEI.Domain.Entities
+@using IncidentesFISEI.Domain.Enums  
+@using IncidentesFISEI.Application.DTOs
+@attribute [Authorize(Roles = "Administrador")]
+@layout incidentesFISEI.Shared.Components.DashboardLayout
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@inject incidentesFISEI.Services.UserSessionService UserSession
+
+<div class="admin-dashboard">
+    @if (currentView == "dashboard")
+    {
+        <!-- Vista Principal del Dashboard -->
+        <!-- Título del Panel -->
+        <div class="dashboard-title-section">
+            <h1 class="dashboard-main-title">Panel de Administración</h1>
+            <p class="dashboard-subtitle">Sistema de Gestión de Incidentes ITIL v3</p>
+        </div>
+    
+    <!-- Tarjetas de Estadísticas Rápidas -->
+    @if (dashboardStats != null)
+    {
+        <div class="quick-stats-section">
+            <div class="row">
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="quick-stat-card incidents">
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 class="stat-number">@dashboardStats.TotalIncidentes</h3>
+                            <p class="stat-label">Incidentes Totales</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="quick-stat-card users">
+                        <div class="stat-icon">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 class="stat-number">@dashboardStats.UsuariosActivos</h3>
+                            <p class="stat-label">Usuarios Activos</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="quick-stat-card sla">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 class="stat-number">@dashboardStats.CumplimientoSla%</h3>
+                            <p class="stat-label">SLA Cumplimiento</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-3 col-md-6 mb-4">
+                    <div class="quick-stat-card reports">
+                        <div class="stat-icon">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 class="stat-number">@dashboardStats.ReportesHoy</h3>
+                            <p class="stat-label">Reportes Hoy</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (hasError)
+    {
+        <div class="error-stats">
+            <div class="text-center">
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Error al cargar estadísticas:</strong><br/>
+                    @errorMessage
+                </div>
+                <button class="btn btn-outline-primary" @onclick="RetryLoadData">
+                    <i class="fas fa-redo me-2"></i>
+                    Reintentar
+                </button>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="loading-stats">
+            <div class="text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-2">Cargando estadísticas...</p>
+            </div>
+        </div>
+    }
+
+    <!-- Módulos Administrativos -->
+    <div class="admin-modules-section">
+        <h2 class="section-title">Módulos de Administración</h2>
+        <div class="row">
+            <!-- Gestión de Usuarios -->
+            <div class="col-lg-6 mb-4">
+                <div class="admin-module-card" @onclick="ShowUserManagement">
+                    <div class="module-header">
+                        <div class="module-icon users">
+                            <i class="fas fa-users-cog"></i>
+                        </div>
+                        <div class="module-info">
+                            <h3>Gestión de Usuarios</h3>
+                            <p>Administrar usuarios, roles y permisos del sistema</p>
+                        </div>
+                    </div>
+                    <div class="module-preview">
+                        <div class="preview-stats">
+                            @if (dashboardStats != null)
+                            {
+                                <span class="stat-highlight">@dashboardStats.TotalUsuarios usuarios</span>
+                                <span class="stat-detail">@dashboardStats.AdminsCount admins, @dashboardStats.TecnicosCount técnicos, @dashboardStats.DocentesCount docentes, @dashboardStats.EstudiantesCount estudiantes</span>
+                            }
+                            else
+                            {
+                                <span class="stat-highlight">Cargando...</span>
+                                <span class="stat-detail">Obteniendo datos...</span>
+                            }
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Gestión de Incidentes -->
+            <div class="col-lg-6 mb-4">
+                <div class="admin-module-card" @onclick="ShowIncidentManagement">
+                    <div class="module-header">
+                        <div class="module-icon incidents">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="module-info">
+                            <h3>Gestión de Incidentes</h3>
+                            <p>Monitorear y gestionar todos los incidentes del sistema</p>
+                        </div>
+                    </div>
+                    <div class="module-preview">
+                        <div class="preview-stats">
+                            @if (dashboardStats != null)
+                            {
+                                <span class="stat-highlight">@dashboardStats.IncidentesCriticos críticos</span>
+                                <span class="stat-detail">@dashboardStats.IncidentesAltaPrioridad alta, @dashboardStats.IncidentesMediaPrioridad media, @dashboardStats.IncidentesBajaPrioridad baja prioridad</span>
+                            }
+                            else
+                            {
+                                <span class="stat-highlight">Cargando...</span>
+                                <span class="stat-detail">Obteniendo datos...</span>
+                            }
+                        </div>
+                    </div>
+
+
+
+                </div>
+            </div>
+
+            <!-- Configuración del Sistema -->
+            <div class="col-lg-6 mb-4">
+                <div class="admin-module-card" @onclick="ShowSystemSettings">
+                    <div class="module-header">
+                        <div class="module-icon settings">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <div class="module-info">
+                            <h3>Configuración del Sistema</h3>
+                            <p>Configurar parámetros generales, SLAs y políticas</p>
+                        </div>
+                    </div>
+                    <div class="module-preview">
+                        <div class="preview-stats">
+                            @if (dashboardStats != null)
+                            {
+                                <span class="stat-highlight">@dashboardStats.SlaActivos SLAs activos</span>
+                                <span class="stat-detail">@dashboardStats.CategoriasActivas categorías, políticas actualizadas</span>
+                            }
+                            else
+                            {
+                                <span class="stat-highlight">Cargando...</span>
+                                <span class="stat-detail">Obteniendo datos...</span>
+                            }
+                        </div>
+                    </div>
+
+
+
+                </div>
+            </div>
+
+            <!-- Reportes y Analytics -->
+            <div class="col-lg-6 mb-4">
+                <div class="admin-module-card" @onclick="ShowReports">
+                    <div class="module-header">
+                        <div class="module-icon reports">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div class="module-info">
+                            <h3>Reportes y Analytics</h3>
+                            <p>Generar reportes ejecutivos y análisis de rendimiento</p>
+                        </div>
+                    </div>
+                    <div class="module-preview">
+                        <div class="preview-stats">
+                            @if (dashboardStats != null)
+                            {
+                                <span class="stat-highlight">@dashboardStats.CumplimientoSla% SLA</span>
+                                <span class="stat-detail">@dashboardStats.ReportesHoy reportes hoy, análisis programados</span>
+                            }
+                            else
+                            {
+                                <span class="stat-highlight">Cargando...</span>
+                                <span class="stat-detail">Obteniendo datos...</span>
+                            }
+                        </div>
+                    </div>
+
+
+
+                </div>
+            </div>
+        </div>
+    </div>
+    }
+    
+    <!-- Vistas Individuales de Módulos -->
+    @if (currentView == "users")
+    {
+        <div class="module-full-view">
+            <div class="module-header-nav">
+                <button class="btn-back" @onclick="BackToDashboard">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Volver al Dashboard
+                </button>
+                <h1 class="module-title">
+                    <i class="fas fa-users-cog me-2"></i>
+                    Gestión de Usuarios
+                </h1>
+            </div>
+            
+            <div class="module-content-full">
+                <div class="content-section">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4><i class="fas fa-users"></i> Lista de Usuarios</h4>
+                        <button class="btn btn-primary" @onclick="ShowAddUserModal">
+                            <i class="fas fa-user-plus me-2"></i>
+                            Agregar Usuario
+                        </button>
+                    </div>
+                    @if (usuarios != null && usuarios.Any())
+                    {
+                        <div class="user-table">
+                            <div class="table-header">
+                                <div>Usuario</div>
+                                <div>Rol</div>
+                                <div>Estado</div>
+                                <div>Acciones</div>
+                            </div>
+                            @foreach (var usuario in usuarios)
+                            {
+                                <div class="table-row">
+                                    <div>
+                                        <i class="fas fa-user"></i> 
+                                        @usuario.FirstName @usuario.LastName<br/>
+                                        <small class="text-muted">@usuario.Email</small>
+                                    </div>
+                                    <div>
+                                        <span class="role-badge @GetRoleCssClass(usuario.TipoUsuario)">
+                                            @GetRoleDisplayName(usuario.TipoUsuario)
+                                        </span>
+                                    </div>
+                                    <div>
+                                        @if (!usuario.IsEmailConfirmed)
+                                        {
+                                            <span class="status-badge pending">Pendiente</span>
+                                        }
+                                        else if (usuario.IsActive)
+                                        {
+                                            <span class="status-badge active">Activo</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="status-badge inactive">Inactivo</span>
+                                        }
+                                    </div>
+                                    <div class="action-buttons">
+                                        <button class="btn-action edit" title="Editar" @onclick="() => ShowEditUserModal(usuario)">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        
+                                        @if (!usuario.IsEmailConfirmed)
+                                        {
+                                            <button class="btn-action approve" title="Aprobar" @onclick="() => ApproveUser(usuario.Id)">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        }
+                                        
+                                        @if (UserSession.CurrentUser?.Email != usuario.Email)
+                                        {
+                                            <button class="btn-action toggle" title="@(usuario.IsActive ? "Desactivar" : "Activar")" 
+                                                    @onclick="() => ToggleUserStatus(usuario.Id)">
+                                                <i class="fas @(usuario.IsActive ? "fa-user-slash" : "fa-user-check")"></i>
+                                            </button>
+                                            
+                                            <button class="btn-action delete" title="Eliminar" @onclick="() => DeleteUser(usuario.Id)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        }
+                                        else
+                                        {
+                                            
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else if (isLoadingUsers)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando usuarios...</span>
+                            </div>
+                            <p class="mt-2">Cargando usuarios...</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <p class="text-muted">No se encontraron usuarios.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    
+    @if (currentView == "incidents")
+    {
+        <div class="module-full-view">
+            <div class="module-header-nav">
+                <button class="btn-back" @onclick="BackToDashboard">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Volver al Dashboard
+                </button>
+                <h1 class="module-title">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Gestión de Incidentes
+                </h1>
+            </div>
+            
+            <div class="module-content-full">
+                <div class="content-section">
+                    <!-- Filtros y Controles -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="d-flex gap-3 align-items-center">
+                            <div>
+                                <select @bind="incidentFilter" @bind:after="FilterIncidentsChanged" class="form-select">
+                                    <option value="abierto">Incidentes Abiertos</option>
+                                    <option value="all" selected>Todos los Estados</option>
+                                    <option value="en-progreso">En Progreso</option>
+                                    <option value="en-espera">En Espera</option>
+                                    <option value="resuelto">Resueltos</option>
+                                    <option value="cerrado">Cerrados</option>
+                                    <option value="cancelado">Cancelados</option>
+                                    <option value="escalado">Escalados</option>
+                                </select>
+                            </div>
+                            <div>
+                                <select @bind="priorityFilter" @bind:after="FilterIncidentsChanged" class="form-select">
+                                    <option value="all">Todas las Prioridades</option>
+                                    <option value="critica">Crítica</option>
+                                    <option value="alta">Alta</option>
+                                    <option value="media">Media</option>
+                                    <option value="baja">Baja</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn-primary" @onclick="ShowCreateIncidentModal">
+                                <i class="fas fa-plus me-2"></i>
+                                Nuevo Incidente
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tabla de Incidentes -->
+                    @if (filteredIncidentes != null && filteredIncidentes.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 100px;">ID</th>
+                                        <th style="width: 250px;">Título</th>
+                                        <th style="width: 120px;">Estado</th>
+                                        <th style="width: 180px;">Asignado a</th>
+                                        <th style="width: 100px;">Prioridad</th>
+                                        <th style="width: 120px;">Fecha Creación</th>
+                                        <th style="width: 140px;">Última Actualización</th>
+                                        <th style="width: 120px;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var incidente in filteredIncidentes.OrderByDescending(i => i.FechaReporte))
+                                    {
+                                        <tr>
+                                            <!-- ID -->
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="@GetPriorityIcon(incidente.Prioridad) text-dark me-2"></i>
+                                                    <strong class="text-dark">#@incidente.NumeroIncidente</strong>
+                                                </div>
+                                            </td>
+                                            
+                                            <!-- Título -->
+                                            <td>
+                                                <div class="fw-semibold">@incidente.Titulo</div>
+                                                <small class="text-muted">@incidente.CategoriaNombre</small>
+                                            </td>
+                                            
+                                            <!-- Estado -->
+                                            <td>
+                                                <span class="badge rounded-pill @GetEstadoBadgeClass(incidente.Estado)">
+                                                    @GetEstadoDisplayName(incidente.Estado).ToUpper()
+                                                </span>
+                                            </td>
+                                            
+                                            <!-- Asignado a -->
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(incidente.AsignadoA))
+                                                {
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fas fa-user-check text-success me-2"></i>
+                                                        <span>@incidente.AsignadoA</span>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="d-flex align-items-center text-muted">
+                                                        <i class="fas fa-user-slash me-2"></i>
+                                                        <span>Sin asignar</span>
+                                                    </div>
+                                                }
+                                            </td>
+                                            
+                                            <!-- Prioridad -->
+                                            <td>
+                                                <span class="badge rounded-pill" style="@GetPriorityInlineStyle(incidente.Prioridad)">
+                                                    @GetPriorityDisplayName(incidente.Prioridad)
+                                                </span>
+                                            </td>
+                                            
+                                            <!-- Fecha Creación -->
+                                            <td>
+                                                <div class="small">
+                                                    <div>@incidente.FechaReporte.ToString("yyyy-MM-dd")</div>
+                                                    <div class="text-muted">@incidente.FechaReporte.ToString("HH:mm")</div>
+                                                </div>
+                                            </td>
+                                            
+                                            <!-- Última Actualización -->
+                                            <td>
+                                                <div class="small">
+                                                    @if (incidente.FechaResolucion.HasValue)
+                                                    {
+                                                        <div>@incidente.FechaResolucion.Value.ToString("yyyy-MM-dd")</div>
+                                                        <div class="text-muted">@incidente.FechaResolucion.Value.ToString("HH:mm")</div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">-</span>
+                                                    }
+                                                </div>
+                                            </td>
+                                            
+                                            <!-- Acciones -->
+                                            <td>
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                        <i class="fas fa-ellipsis-v"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li><a class="dropdown-item" href="#" @onclick="() => ViewIncidentDetails(incidente)" @onclick:preventDefault="true">
+                                                            <i class="fas fa-eye me-2"></i>Ver Detalles
+                                                        </a></li>
+                                                        
+                                                        @if (incidente.Estado != EstadoIncidente.Cerrado)
+                                                        {
+                                                            <li><a class="dropdown-item" href="#" @onclick="() => OpenEditIncidentModal(incidente)" @onclick:preventDefault="true">
+                                                                <i class="fas fa-edit me-2"></i>Editar
+                                                            </a></li>
+                                                        }
+                                                        
+                                                        @if (incidente.AsignadoA == null || string.IsNullOrEmpty(incidente.AsignadoA))
+                                                        {
+                                                            <li><a class="dropdown-item text-primary" href="#" @onclick="() => AsignarseIncidente(incidente)" @onclick:preventDefault="true">
+                                                                <i class="fas fa-user-plus me-2"></i>Asignarse
+                                                            </a></li>
+                                                        }
+                                                        
+                                                        @if (PuedeResolverIncidente(incidente) && incidente.Estado != EstadoIncidente.Resuelto && incidente.Estado != EstadoIncidente.Cerrado)
+                                                        {
+                                                            <li><a class="dropdown-item text-success" href="#" @onclick="() => OnResolveButtonClick(incidente)" @onclick:preventDefault="true">
+                                                                <i class="fas fa-check-circle me-2"></i>Resolver
+                                                            </a></li>
+                                                        }
+                                                        
+                                                        @if (incidente.Estado == EstadoIncidente.Resuelto)
+                                                        {
+                                                            <li><a class="dropdown-item text-warning" href="#" @onclick="() => ShowCloseModal(incidente)" @onclick:preventDefault="true">
+                                                                <i class="fas fa-times-circle me-2"></i>Cerrar
+                                                            </a></li>
+                                                        }
+                                                        
+                                                        @if (incidente.Estado == EstadoIncidente.Cerrado)
+                                                        {
+                                                            <li><a class="dropdown-item text-info" href="#" @onclick="() => ShowReopenModal(incidente)" @onclick:preventDefault="true">
+                                                                <i class="fas fa-redo me-2"></i>Reabrir
+                                                            </a></li>
+                                                        }
+                                                        
+                                                        @if (incidente.Estado != EstadoIncidente.Cerrado)
+                                                        {
+                                                            <li><hr class="dropdown-divider"></li>
+                                                            <li><a class="dropdown-item text-danger" href="#" @onclick="() => ShowDeleteConfirmation(incidente)" @onclick:preventDefault="true">
+                                                                <i class="fas fa-trash me-2"></i>Eliminar
+                                                            </a></li>
+                                                        }
+                                                    </ul>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else if (isLoadingIncidents)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando incidentes...</span>
+                            </div>
+                            <p class="mt-2">Cargando incidentes...</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <p class="text-muted">No se encontraron incidentes con los filtros seleccionados.</p>
+                            <button class="btn btn-outline-primary" @onclick="ResetFilterToAll">
+                                <i class="fas fa-filter me-2"></i>
+                                Ver Todos los Incidentes
+                            </button>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    
+    @if (currentView == "all-incidents")
+    {
+        <div class="module-full-view">
+            <div class="module-header-nav">
+                <button class="btn-back" @onclick="BackToDashboard">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Volver al Dashboard
+                </button>
+                <h1 class="module-title">
+                    <i class="fas fa-list me-2"></i>
+                    Todos los Incidentes
+                </h1>
+            </div>
+            
+            <div class="module-content-full">
+                <div class="content-section">
+                    <!-- Filtros y Controles -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="d-flex gap-3 align-items-center">
+                            <div>
+                                <select @bind="incidentFilter" @bind:after="FilterIncidentsChanged" class="form-select">
+                                    <option value="all">Todos los Estados</option>
+                                    <option value="abierto">Abiertos</option>
+                                    <option value="en-progreso">En Progreso</option>
+                                    <option value="en-espera">En Espera</option>
+                                    <option value="resuelto">Resueltos</option>
+                                    <option value="cerrado">Cerrados</option>
+                                    <option value="cancelado">Cancelados</option>
+                                    <option value="escalado">Escalados</option>
+                                </select>
+                            </div>
+                            <div>
+                                <select @bind="priorityFilter" @bind:after="FilterIncidentsChanged" class="form-select">
+                                    <option value="all">Todas las Prioridades</option>
+                                    <option value="critica">Crítica</option>
+                                    <option value="alta">Alta</option>
+                                    <option value="media">Media</option>
+                                    <option value="baja">Baja</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div>
+                            <button class="btn btn-primary" @onclick="ShowCreateIncidentModal">
+                                <i class="fas fa-plus me-2"></i>
+                                Nuevo Incidente
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Incidentes Completa -->
+                    @if (filteredIncidentes != null && filteredIncidentes.Any())
+                    {
+                        <div class="incidents-table">
+                            <div class="table-responsive">
+                                <table class="table table-hover">
+                                    <thead class="table-dark">
+                                        <tr>
+                                            <th>Número</th>
+                                            <th>Título</th>
+                                            <th>Estado</th>
+                                            <th>Prioridad</th>
+                                            <th>Reportado Por</th>
+                                            <th>Asignado A</th>
+                                            <th>Categoría</th>
+                                            <th>Fecha Reporte</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var incidente in filteredIncidentes)
+                                        {
+                                            <tr class="incident-row @GetPriorityClass(incidente.Prioridad)">
+                                                <td>
+                                                    <strong>#@incidente.NumeroIncidente</strong>
+                                                </td>
+                                                <td>
+                                                    <div class="incident-title">
+                                                        @incidente.Titulo
+                                                        @if (!string.IsNullOrEmpty(incidente.Descripcion) && incidente.Descripcion.Length > 50)
+                                                        {
+                                                            <br />
+                                                            <small class="text-muted">@(incidente.Descripcion.Substring(0, Math.Min(50, incidente.Descripcion.Length)))...</small>
+                                                        }
+                                                    </div>
+                                                </td>
+                                                <td>
+                                                    <span class="badge @GetEstadoBadgeClass(incidente.Estado)">
+                                                        @GetEstadoDisplayName(incidente.Estado)
+                                                    </span>
+                                                </td>
+                                                <td>
+                                                    <span class="badge @GetPriorityBadgeClass(incidente.Prioridad)">
+                                                        <i class="fas @GetIncidentIcon(incidente.Prioridad) me-1"></i>
+                                                        @GetPriorityDisplayName(incidente.Prioridad)
+                                                    </span>
+                                                </td>
+                                                <td>@incidente.ReportadoPor</td>
+                                                <td>
+                                                    @if (!string.IsNullOrEmpty(incidente.AsignadoA))
+                                                    {
+                                                        <span class="text-success">
+                                                            <i class="fas fa-user me-1"></i>@incidente.AsignadoA
+                                                        </span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="text-muted">
+                                                            <i class="fas fa-user-times me-1"></i>Sin asignar
+                                                        </span>
+                                                    }
+                                                </td>
+                                                <td>
+                                                    <span class="badge bg-info">@incidente.CategoriaNombre</span>
+                                                </td>
+                                                <td>
+                                                    <small>@incidente.FechaReporte.ToString("dd/MM/yyyy HH:mm")</small>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <button type="button" class="btn btn-sm btn-outline-primary" 
+                                                                title="Ver Detalles" 
+                                                                @onclick="() => ViewIncidentDetails(incidente.Id)">
+                                                            <i class="fas fa-eye"></i>
+                                                        </button>
+                                                        <button type="button" class="btn btn-sm btn-outline-warning" 
+                                                                title="Editar" 
+                                                                @onclick="() => EditIncident(incidente.Id)">
+                                                            <i class="fas fa-edit"></i>
+                                                        </button>
+                                                        @if (string.IsNullOrEmpty(incidente.AsignadoA))
+                                                        {
+                                                            <button type="button" class="btn btn-sm btn-outline-success" 
+                                                                    title="Asignar Técnico" 
+                                                                    @onclick="() => AssignTechnician(incidente.Id)">
+                                                                <i class="fas fa-user-plus"></i>
+                                                            </button>
+                                                        }
+                                                        @if (incidente.Estado != EstadoIncidente.Cerrado && incidente.Estado != EstadoIncidente.Cancelado)
+                                                        {
+                                                            <button type="button" class="btn btn-sm btn-outline-info" 
+                                                                    title="Cambiar Estado" 
+                                                                    @onclick="() => ChangeIncidentStatus(incidente.Id)">
+                                                                <i class="fas fa-exchange-alt"></i>
+                                                            </button>
+                                                        }
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                        
+                        <!-- Información de Paginación -->
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <small class="text-muted">
+                                Mostrando @filteredIncidentes.Count de @incidentes.Count incidentes
+                            </small>
+                            <div>
+                                <button class="btn btn-sm btn-outline-secondary me-2" @onclick="RefreshIncidents">
+                                    <i class="fas fa-sync-alt me-1"></i>
+                                    Actualizar
+                                </button>
+                            </div>
+                        </div>
+                    }
+                    else if (isLoadingIncidents)
+                    {
+                        <div class="text-center py-5">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando incidentes...</span>
+                            </div>
+                            <p class="mt-3">Cargando todos los incidentes...</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <div class="empty-state">
+                                <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                                <h5>No se encontraron incidentes</h5>
+                                <p class="text-muted">No hay incidentes que coincidan con los filtros seleccionados.</p>
+                                <button class="btn btn-primary" @onclick="ShowCreateIncidentModal">
+                                    <i class="fas fa-plus me-2"></i>
+                                    Crear Primer Incidente
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+    
+    @if (currentView == "settings")
+    {
+        <div class="module-full-view">
+            <div class="module-header-nav">
+                <button class="btn-back" @onclick="BackToDashboard">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Volver al Dashboard
+                </button>
+                <h1 class="module-title">
+                    <i class="fas fa-cogs me-2"></i>
+                    Configuración del Sistema
+                </h1>
+            </div>
+            
+            <div class="module-content-full">
+                <div class="content-section">
+                    <h4><i class="fas fa-cogs"></i> Configuración del Sistema</h4>
+                    <div class="settings-grid">
+                        <div class="setting-item">
+                            <div class="setting-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="setting-info">
+                                <h5>SLAs y Tiempos</h5>
+                                <p>Configurar acuerdos de nivel de servicio</p>
+                            </div>
+                            <button class="btn-config">Configurar</button>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-icon">
+                                <i class="fas fa-tags"></i>
+                            </div>
+                            <div class="setting-info">
+                                <h5>Categorías</h5>
+                                <p>Gestionar categorías de incidentes</p>
+                            </div>
+                            <button class="btn-config">Configurar</button>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-icon">
+                                <i class="fas fa-bell"></i>
+                            </div>
+                            <div class="setting-info">
+                                <h5>Notificaciones</h5>
+                                <p>Configurar alertas y notificaciones</p>
+                            </div>
+                            <button class="btn-config">Configurar</button>
+                        </div>
+                        <div class="setting-item">
+                            <div class="setting-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div class="setting-info">
+                                <h5>Seguridad</h5>
+                                <p>Políticas de seguridad y acceso</p>
+                            </div>
+                            <button class="btn-config">Configurar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    
+    @if (currentView == "reports")
+    {
+        <div class="module-full-view">
+            <div class="module-header-nav">
+                <button class="btn-back" @onclick="BackToDashboard">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Volver al Dashboard
+                </button>
+                <h1 class="module-title">
+                    <i class="fas fa-chart-bar me-2"></i>
+                    Reportes y Analytics
+                </h1>
+            </div>
+            
+            <div class="module-content-full">
+                <div class="content-section">
+                    <h4><i class="fas fa-chart-bar"></i> Reportes y Analytics</h4>
+                    <div class="reports-grid">
+                        <div class="report-card">
+                            <div class="report-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div class="report-info">
+                                <h5>Reporte de Rendimiento</h5>
+                                <p>Análisis de KPIs y métricas del sistema</p>
+                                <span class="report-status">Actualizado hoy</span>
+                            </div>
+                            <button class="btn-report">Ver Reporte</button>
+                        </div>
+                        <div class="report-card">
+                            <div class="report-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="report-info">
+                                <h5>Cumplimiento SLA</h5>
+                                <p>Seguimiento de acuerdos de nivel de servicio</p>
+                                <span class="report-status">94% cumplimiento</span>
+                            </div>
+                            <button class="btn-report">Ver Reporte</button>
+                        </div>
+                        <div class="report-card">
+                            <div class="report-icon">
+                                <i class="fas fa-users"></i>
+                            </div>
+                            <div class="report-info">
+                                <h5>Actividad de Usuarios</h5>
+                                <p>Estadísticas de uso y actividad del sistema</p>
+                                <span class="report-status">245 usuarios activos</span>
+                            </div>
+                            <button class="btn-report">Ver Reporte</button>
+                        </div>
+                        <div class="report-card">
+                            <div class="report-icon">
+                                <i class="fas fa-download"></i>
+                            </div>
+                            <div class="report-info">
+                                <h5>Exportar Datos</h5>
+                                <p>Descargar reportes en formato Excel/PDF</p>
+                                <span class="report-status">Múltiples formatos</span>
+                            </div>
+                            <button class="btn-report">Exportar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal para Agregar Usuario -->
+@if (showAddUserModal)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Agregar Nuevo Usuario
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseAddUserModal"></button>
+                </div>
+                <div class="modal-body">
+                    <form @onsubmit="CreateUser" @onsubmit:preventDefault="true">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Nombre *</label>
+                                    <input type="text" @bind="newUser.FirstName" class="form-control" placeholder="Ingrese el nombre" required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Apellido *</label>
+                                    <input type="text" @bind="newUser.LastName" class="form-control" placeholder="Ingrese el apellido" required />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Email *</label>
+                                    <input type="email" @bind="newUser.Email" class="form-control" placeholder="usuario@uta.edu.ec" required />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Teléfono</label>
+                                    <input type="tel" @bind="newUser.Phone" class="form-control" placeholder="0987654321" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Tipo de Usuario *</label>
+                                    <select @bind="newUser.TipoUsuario" class="form-select" required>
+                                        <option value="">Seleccione...</option>
+                                        <option value="@IncidentesFISEI.Domain.Enums.TipoUsuario.Usuario">Usuario Final</option>
+                                        <option value="@IncidentesFISEI.Domain.Enums.TipoUsuario.Tecnico">Técnico</option>
+                                        <option value="@IncidentesFISEI.Domain.Enums.TipoUsuario.Supervisor">Supervisor</option>
+                                        <option value="@IncidentesFISEI.Domain.Enums.TipoUsuario.Administrador">Administrador</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Departamento</label>
+                                    <input type="text" @bind="newUser.Department" class="form-control" placeholder="Ingeniería en Sistemas" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" @bind="newUser.IsActive" class="form-check-input" />
+                                        <label class="form-check-label">Usuario Activo</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" @bind="newUser.IsEmailConfirmed" class="form-check-input" />
+                                        <label class="form-check-label">Email Confirmado</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseAddUserModal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" disabled="@isProcessing">
+                                @if (isProcessing)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                }
+                                <i class="fas fa-save me-2"></i>
+                                Guardar Usuario
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- Modal para Editar Usuario -->
+@if (showEditUserModal && editingUser != null)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-user-edit me-2"></i>
+                        Editar Usuario - @editingUser.FirstName @editingUser.LastName
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseEditUserModal"></button>
+                </div>
+                <div class="modal-body">
+                    <form @onsubmit="UpdateUser" @onsubmit:preventDefault="true">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Nombre</label>
+                                    <input type="text" @bind="editUserDto.FirstName" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Apellido</label>
+                                    <input type="text" @bind="editUserDto.LastName" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Email</label>
+                                    <input type="email" @bind="editUserDto.Email" class="form-control" />
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Teléfono</label>
+                                    <input type="tel" @bind="editUserDto.Phone" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Tipo de Usuario</label>
+                                    <select @bind="editUserDto.TipoUsuario" class="form-select">
+                                        <option value="@IncidentesFISEI.Domain.Enums.TipoUsuario.Usuario">Usuario Final</option>
+                                        <option value="@IncidentesFISEI.Domain.Enums.TipoUsuario.Tecnico">Técnico</option>
+                                        <option value="@IncidentesFISEI.Domain.Enums.TipoUsuario.Supervisor">Supervisor</option>
+                                        <option value="@IncidentesFISEI.Domain.Enums.TipoUsuario.Administrador">Administrador</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Departamento</label>
+                                    <input type="text" @bind="editUserDto.Department" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12">
+                                <div class="mb-3">
+                                    <label class="form-label">Nueva Contraseña (dejar vacío para no cambiar)</label>
+                                    <input type="password" @bind="editUserDto.NewPassword" class="form-control" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" @bind="editUserDto.IsActive" class="form-check-input" />
+                                        <label class="form-check-label">Usuario Activo</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <div class="form-check">
+                                        <input type="checkbox" @bind="editUserDto.IsEmailConfirmed" class="form-check-input" />
+                                        <label class="form-check-label">Email Confirmado</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseEditUserModal">Cancelar</button>
+                            <button type="submit" class="btn btn-primary" disabled="@isProcessing">
+                                @if (isProcessing)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                }
+                                <i class="fas fa-save me-2"></i>
+                                Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- Modal para Crear Incidente -->
+@if (showCreateIncidentModal)
+{
+    <div class="modal fade show create-incident-modal" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-primary-gradient">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-plus-circle me-2"></i>
+                        Crear Nuevo Incidente
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseCreateIncidentModal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <form @onsubmit="CreateIncident" @onsubmit:preventDefault="true" class="incident-form">
+                        <!-- Sección Principal -->
+                        <div class="form-section">
+                            <div class="section-header">
+                                <i class="fas fa-clipboard-list me-2"></i>
+                                <h6>Información del Incidente</h6>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="mb-3">
+                                        <label class="form-label required">Título del Incidente</label>
+                                        <input type="text" @bind="newIncident.Titulo" 
+                                               class="form-control form-control-enhanced" 
+                                               placeholder="Ej: Error en sistema de login, Impresora no funciona..." 
+                                               required />
+                                        <small class="form-text text-muted">Sea específico y descriptivo</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="mb-3">
+                                        <label class="form-label required">Prioridad</label>
+                                        <select @bind="newIncident.Prioridad" class="form-select form-select-enhanced" required>
+                                            <option value="@PrioridadIncidente.Baja" class="priority-low">🟢 Baja</option>
+                                            <option value="@PrioridadIncidente.Media" class="priority-medium">🟡 Media</option>
+                                            <option value="@PrioridadIncidente.Alta" class="priority-high">🟠 Alta</option>
+                                            <option value="@PrioridadIncidente.Critica" class="priority-critical">🔴 Crítica</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label required">Categoría del Incidente</label>
+                                        <select @bind="newIncident.CategoriaId" @bind:after="OnCategoriaChangedAfter" class="form-select form-select-enhanced" required>
+                                            <option value="">-- Seleccione una categoría --</option>
+                                            @if (categorias.Any())
+                                            {
+                                                @foreach (var categoria in categorias)
+                                                {
+                                                    <option value="@categoria.Id">
+                                                        📁 @categoria.Nombre
+                                                        @if (!string.IsNullOrEmpty(categoria.Descripcion))
+                                                        {
+                                                            <text> - @categoria.Descripcion</text>
+                                                        }
+                                                    </option>
+                                                }
+                                            }
+                                            else
+                                            {
+                                                <option value="" disabled>⏳ Cargando categorías...</option>
+                                            }
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label">Servicio Específico</label>
+                                        <select @bind="newIncident.ServicioId" class="form-select form-select-enhanced">
+                                            <option value="">-- Seleccione un servicio --</option>
+                                            @if (filteredServicios.Any())
+                                            {
+                                                @foreach (var servicio in filteredServicios)
+                                                {
+                                                    <option value="@servicio.Id">
+                                                        🔧 @servicio.Nombre
+                                                        @if (!string.IsNullOrEmpty(servicio.ResponsableArea))
+                                                        {
+                                                            <text> (@servicio.ResponsableArea)</text>
+                                                        }
+                                                    </option>
+                                                }
+                                            }
+                                            else if (newIncident.CategoriaId > 0)
+                                            {
+                                                <option value="" disabled>⏳ Cargando servicios...</option>
+                                            }
+                                            else
+                                            {
+                                                <option value="" disabled>Primero seleccione una categoría</option>
+                                            }
+                                        </select>
+                                        <small class="form-text text-muted">Los servicios se filtran según la categoría seleccionada</small>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="mb-3">
+                                        <label class="form-label">Reportado Por</label>
+                                        <div class="form-control form-control-enhanced disabled-field">
+                                            <i class="fas fa-user me-2"></i>
+                                            <span>@GetCurrentUserName() (Usuario Actual)</span>
+                                        </div>
+                                        <small class="form-text text-muted">
+                                            El incidente será reportado automáticamente por el usuario actual
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección de Descripción -->
+                        <div class="form-section">
+                            <div class="section-header">
+                                <i class="fas fa-file-alt me-2"></i>
+                                <h6>Descripción Detallada</h6>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label required">Descripción del Problema</label>
+                                <textarea @bind="newIncident.Descripcion" 
+                                          class="form-control form-control-enhanced" 
+                                          rows="4" 
+                                          placeholder="Describa detalladamente el problema:&#10;• ¿Qué estaba intentando hacer?&#10;• ¿Qué error o problema encontró?&#10;• ¿Cuándo comenzó el problema?&#10;• ¿Ha intentado alguna solución?" 
+                                          required></textarea>
+                                <small class="form-text text-muted">
+                                    Proporcione tantos detalles como sea posible para una resolución más rápida
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Información de Proceso -->
+                        <div class="alert alert-info-custom">
+                            <div class="alert-icon">
+                                <i class="fas fa-info-circle"></i>
+                            </div>
+                            <div class="alert-content">
+                                <strong>Proceso de Creación:</strong>
+                                <ul class="mb-0 mt-1">
+                                    <li>El incidente será creado con estado <span class="badge bg-primary">Abierto</span></li>
+                                    <li>Se asignará automáticamente según la categoría y prioridad</li>
+                                    <li>Recibirá una notificación de confirmación por email</li>
+                                    <li>Podrá hacer seguimiento desde su panel de usuario</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer enhanced-footer">
+                    <button type="button" class="btn btn-secondary-enhanced" @onclick="CloseCreateIncidentModal">
+                        <i class="fas fa-times me-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="submit" class="btn btn-primary-enhanced" @onclick="CreateIncident" disabled="@isProcessing">
+                        @if (isProcessing)
+                        {
+                            <div class="spinner-border spinner-border-sm me-2" role="status">
+                                <span class="visually-hidden">Procesando...</span>
+                            </div>
+                            <span>Procesando...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-plus-circle me-2"></i>
+                            <span>Crear Incidente</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show enhanced-backdrop"></div>
+}
+
+<!-- Modal para Editar Incidente -->
+@if (showEditIncidentModal && editingIncident != null)
+{
+    <div class="modal fade show edit-incident-modal" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-warning-gradient">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-edit me-2"></i>
+                        Editar Incidente #@editingIncident.NumeroIncidente
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseEditIncidentModal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <EditForm Model="editIncident" OnValidSubmit="SaveIncidentChanges">
+                        <DataAnnotationsValidator />
+                        <ValidationSummary class="alert alert-danger" />
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Título</label>
+                                <InputText @bind-Value="editIncident.Titulo" class="form-control" placeholder="Título del incidente" />
+                                <ValidationMessage For="@(() => editIncident.Titulo)" class="text-danger" />
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Prioridad</label>
+                                <InputSelect @bind-Value="editIncident.Prioridad" class="form-select">
+                                    <option value="@PrioridadIncidente.Baja">Baja</option>
+                                    <option value="@PrioridadIncidente.Media">Media</option>
+                                    <option value="@PrioridadIncidente.Alta">Alta</option>
+                                    <option value="@PrioridadIncidente.Critica">Crítica</option>
+                                </InputSelect>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Estado</label>
+                                <InputSelect @bind-Value="editIncident.Estado" class="form-select">
+                                    <option value="@EstadoIncidente.Abierto">Abierto</option>
+                                    <option value="@EstadoIncidente.EnProgreso">En Progreso</option>
+                                    <option value="@EstadoIncidente.EnEspera">En Espera</option>
+                                    <option value="@EstadoIncidente.Resuelto">Resuelto</option>
+                                    <option value="@EstadoIncidente.Cerrado">Cerrado</option>
+                                    <option value="@EstadoIncidente.Cancelado">Cancelado</option>
+                                    <option value="@EstadoIncidente.Escalado">Escalado</option>
+                                </InputSelect>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Categoría</label>
+                                <InputSelect @bind-Value="editIncident.CategoriaId" @bind-Value:after="OnCategoriaChangedForEdit" class="form-select">
+                                    <option value="">Seleccione una categoría...</option>
+                                    @foreach (var categoria in categorias)
+                                    {
+                                        <option value="@categoria.Id">@categoria.Nombre</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Servicio (Opcional)</label>
+                                <InputSelect @bind-Value="editIncident.ServicioId" class="form-select">
+                                    <option value="">Seleccione un servicio...</option>
+                                    @foreach (var servicio in filteredServicios)
+                                    {
+                                        <option value="@servicio.Id">@servicio.Nombre</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-bold">Asignado a</label>
+                                <InputSelect @bind-Value="editIncident.AsignadoAId" class="form-select">
+                                    <option value="">No asignado</option>
+                                    @foreach (var user in availableAssignees)
+                                    {
+                                        <option value="@user.Id">@user.FirstName @user.LastName (@user.TipoUsuario)</option>
+                                    }
+                                </InputSelect>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Descripción</label>
+                            <InputTextArea @bind-Value="editIncident.Descripcion" class="form-control" rows="4" placeholder="Descripción detallada del incidente"></InputTextArea>
+                            <ValidationMessage For="@(() => editIncident.Descripcion)" class="text-danger" />
+                        </div>
+
+                        <div class="modal-footer border-0">
+                            <button type="button" class="btn btn-secondary" @onclick="CloseEditIncidentModal">
+                                <i class="fas fa-times me-2"></i>
+                                Cancelar
+                            </button>
+                            <button type="submit" class="btn btn-warning" disabled="@isProcessing">
+                                @if (isProcessing)
+                                {
+                                    <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                                    <span>Guardando...</span>
+                                }
+                                else
+                                {
+                                    <i class="fas fa-save me-2"></i>
+                                    <span>Guardar Cambios</span>
+                                }
+                            </button>
+                        </div>
+                    </EditForm>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show enhanced-backdrop"></div>
+}
+
+<!-- Modal para Ver Detalles del Incidente -->
+@if (showIncidentDetailsModal && selectedIncidentForDetails != null)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-info-gradient">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-eye me-2"></i>
+                        Detalles del Incidente #@selectedIncidentForDetails.NumeroIncidente
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseIncidentDetailsModal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Título</label>
+                            <p class="form-control-static border rounded p-2 bg-light">@selectedIncidentForDetails.Titulo</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Número de Incidente</label>
+                            <p class="form-control-static border rounded p-2 bg-light">#@selectedIncidentForDetails.NumeroIncidente</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Estado</label>
+                            <p class="form-control-static border rounded p-2 bg-light">
+                                <span class="badge bg-@(GetEstadoBadgeClass(selectedIncidentForDetails.Estado))">
+                                    @selectedIncidentForDetails.Estado
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Prioridad</label>
+                            <p class="form-control-static border rounded p-2 bg-light">
+                                <span class="badge bg-@(GetPrioridadBadgeClass(selectedIncidentForDetails.Prioridad))">
+                                    @selectedIncidentForDetails.Prioridad
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Categoría</label>
+                            <p class="form-control-static border rounded p-2 bg-light">@selectedIncidentForDetails.CategoriaNombre</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Servicio</label>
+                            <p class="form-control-static border rounded p-2 bg-light">@(selectedIncidentForDetails.ServicioNombre ?? "No especificado")</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Reportado por</label>
+                            <p class="form-control-static border rounded p-2 bg-light">@selectedIncidentForDetails.ReportadoPor</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Asignado a</label>
+                            <p class="form-control-static border rounded p-2 bg-light">@(selectedIncidentForDetails.AsignadoA ?? "No asignado")</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Fecha de Reporte</label>
+                            <p class="form-control-static border rounded p-2 bg-light">@selectedIncidentForDetails.FechaReporte.ToString("dd/MM/yyyy HH:mm")</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Fecha de Asignación</label>
+                            <p class="form-control-static border rounded p-2 bg-light">@(selectedIncidentForDetails.FechaAsignacion?.ToString("dd/MM/yyyy HH:mm") ?? "No asignado")</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Descripción</label>
+                        <div class="border rounded p-3 bg-light">
+                            <p class="mb-0">@selectedIncidentForDetails.Descripcion</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseIncidentDetailsModal">
+                        <i class="fas fa-times me-2"></i>
+                        Cerrar
+                    </button>
+                    <button type="button" class="btn btn-warning" @onclick="() => OpenEditIncidentModal(selectedIncidentForDetails)">
+                        <i class="fas fa-edit me-2"></i>
+                        Editar Incidente
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- Modal para Confirmar Eliminación del Incidente -->
+@if (showDeleteConfirmationModal && selectedIncidentForDelete != null)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-danger-gradient">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Confirmar Eliminación
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseDeleteConfirmationModal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-triangle text-danger" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                        <h5>¿Está seguro que desea eliminar este incidente?</h5>
+                        <p class="text-muted mb-3">Esta acción no se puede deshacer.</p>
+                        
+                        <div class="alert alert-warning">
+                            <strong>Incidente:</strong> #@selectedIncidentForDelete.NumeroIncidente<br />
+                            <strong>Título:</strong> @selectedIncidentForDelete.Titulo<br />
+                            <strong>Estado:</strong> @selectedIncidentForDelete.Estado
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseDeleteConfirmationModal">
+                        <i class="fas fa-times me-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger" @onclick="DeleteIncident" disabled="@isProcessing">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span>Eliminando...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-trash me-2"></i>
+                            <span>Eliminar Incidente</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- Modal para Resolver Incidente -->
+@if (showResolveModal && selectedIncidentForAction != null)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-success-gradient">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Resolver Incidente #@selectedIncidentForAction.NumeroIncidente
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseResolveModal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Título:</strong> @selectedIncidentForAction.Titulo<br />
+                        <strong>Estado Actual:</strong> @selectedIncidentForAction.Estado
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="resolveComment" class="form-label fw-bold">
+                            <i class="fas fa-comment me-2"></i>
+                            Comentario de Resolución *
+                        </label>
+                        <textarea class="form-control" id="resolveComment" rows="4" 
+                                @bind="solucionIncidente" 
+                                placeholder="Describa la solución implementada y los pasos realizados...">
+                        </textarea>
+                        <div class="form-text">Explique cómo se resolvió el incidente y qué acciones se tomaron.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseResolveModal">
+                        <i class="fas fa-times me-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" @onclick="ResolveIncident" 
+                            disabled="@(isProcessing || string.IsNullOrWhiteSpace(solucionIncidente))">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span>Resolviendo...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-check-circle me-2"></i>
+                            <span>Resolver Incidente</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- Modal para Cerrar Incidente -->
+@if (showCloseModal && selectedIncidentForAction != null)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-primary-gradient">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-lock me-2"></i>
+                        Cerrar Incidente #@selectedIncidentForAction.NumeroIncidente
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseCloseModal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Importante:</strong> Al cerrar el incidente, se confirmará que la solución fue satisfactoria y se completará el proceso ITIL.
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Título:</strong> @selectedIncidentForAction.Titulo<br />
+                        <strong>Estado Actual:</strong> @selectedIncidentForAction.Estado
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="closeComment" class="form-label fw-bold">
+                            <i class="fas fa-comment me-2"></i>
+                            Comentario de Cierre *
+                        </label>
+                        <textarea class="form-control" id="closeComment" rows="4" 
+                                @bind="comentarioCierre" 
+                                placeholder="Confirme que la solución fue satisfactoria y proporcione observaciones finales...">
+                        </textarea>
+                        <div class="form-text">Confirme la efectividad de la solución y cualquier observación adicional.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseCloseModal">
+                        <i class="fas fa-times me-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" @onclick="CloseIncident" 
+                            disabled="@(isProcessing || string.IsNullOrWhiteSpace(comentarioCierre))">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span>Cerrando...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-lock me-2"></i>
+                            <span>Cerrar Incidente</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- Modal para Reabrir Incidente -->
+@if (showReopenModal && selectedIncidentForAction != null)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-warning-gradient">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-undo me-2"></i>
+                        Reabrir Incidente #@selectedIncidentForAction.NumeroIncidente
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseReopenModal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Atención:</strong> Reabrir un incidente cerrado indica que la solución anterior no fue efectiva o se presentaron nuevos problemas relacionados.
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Título:</strong> @selectedIncidentForAction.Titulo<br />
+                        <strong>Estado Actual:</strong> @selectedIncidentForAction.Estado
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="reopenReason" class="form-label fw-bold">
+                            <i class="fas fa-comment-alt me-2"></i>
+                            Motivo de Reapertura *
+                        </label>
+                        <textarea class="form-control" id="reopenReason" rows="4" 
+                                @bind="motivoReapertura" 
+                                placeholder="Explique por qué es necesario reabrir este incidente...">
+                        </textarea>
+                        <div class="form-text">Detalle los motivos por los cuales la solución anterior no fue efectiva.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseReopenModal">
+                        <i class="fas fa-times me-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-warning" @onclick="ReopenIncident" 
+                            disabled="@(isProcessing || string.IsNullOrWhiteSpace(motivoReapertura))">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span>Reabriendo...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-undo me-2"></i>
+                            <span>Reabrir Incidente</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+@code {
+    // Data properties
+    private AdminDashboardStatsDto? dashboardStats;
+    private List<IncidentesFISEI.Application.DTOs.UsuarioListDto> usuarios = new();
+    private List<IncidenteListDto> incidentes = new();
+    private List<IncidenteListDto> filteredIncidentes = new();
+    private List<CategoriaIncidenteDto> categorias = new();
+    private List<ServicioListDto> servicios = new();
+    private List<ServicioListDto> filteredServicios = new();
+    
+    // Filters
+    private string incidentFilter = "all";
+    private string priorityFilter = "all";
+    
+    // Loading states
+    private bool isLoadingStats = true;
+    private bool isLoadingUsers = false;
+    private bool isLoadingIncidents = true;
+    
+    // Error states
+    private string? errorMessage;
+    private bool hasError = false;
+
+    // Estado para controlar la vista activa
+    private string currentView = "dashboard";
+    
+    // User management modal states
+    private bool showAddUserModal = false;
+    private bool showEditUserModal = false;
+    private bool isProcessing = false;
+    
+    // Incident management modal states
+    private bool showCreateIncidentModal = false;
+    private bool showEditIncidentModal = false;
+    private bool showAssignIncidentModal = false;
+    private bool showAllIncidentsModal = false;
+    private bool showIncidentDetailsModal = false;
+    private bool showDeleteConfirmationModal = false;
+    // ITIL workflow modal states (declared in ITIL section below)
+    
+    // User management objects
+    private UserFormModel newUser = new();
+    private UserFormModel editUserDto = new();
+    private IncidentesFISEI.Application.DTOs.UsuarioListDto? editingUser;
+    
+    // Incident management objects
+    private IncidentFormModel newIncident = new();
+    private IncidentFormModel editIncident = new();
+    private IncidenteListDto? editingIncident;
+    private IncidenteListDto? selectedIncidentForDetails;
+    private IncidenteListDto? selectedIncidentForDelete;
+    private IncidenteListDto? selectedIncidentForWorkflow;
+    private List<IncidentesFISEI.Application.DTOs.UsuarioListDto> availableAssignees = new();
+    
+    // ITIL Workflow models - Variables are defined in the ITIL section below
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserSession.InitializeAsync();
+        await LoadDashboardData();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        try
+        {
+            Console.WriteLine("Iniciando carga de datos del dashboard...");
+            
+            // Load dashboard statistics
+            Console.WriteLine("Cargando estadísticas del dashboard...");
+            var statsResponse = await Http.GetFromJsonAsync<AdminDashboardStatsDto>("/api/dashboard/admin-stats");
+            dashboardStats = statsResponse;
+            isLoadingStats = false;
+            Console.WriteLine($"Estadísticas cargadas: {dashboardStats?.TotalUsuarios} usuarios totales");
+
+            // Load all incidents
+            Console.WriteLine("Cargando todos los incidentes...");
+            var incidentsResponse = await Http.GetFromJsonAsync<List<IncidenteListDto>>("/api/incidentes");
+            incidentes = incidentsResponse ?? new List<IncidenteListDto>();
+            isLoadingIncidents = false;
+            Console.WriteLine($"Incidentes cargados: {incidentes.Count} incidentes");
+
+            // Apply initial filters
+            ApplyFilters();
+
+            StateHasChanged();
+            Console.WriteLine("Datos del dashboard cargados exitosamente");
+        }
+        catch (HttpRequestException httpEx)
+        {
+            errorMessage = $"Error de conexión: {httpEx.Message}. Verifique que el API esté ejecutándose en {Http.BaseAddress}";
+            hasError = true;
+            Console.WriteLine($"Error de HTTP al cargar datos del dashboard: {httpEx.Message}");
+            Console.WriteLine($"URL base del HttpClient: {Http.BaseAddress}");
+            isLoadingStats = false;
+            isLoadingIncidents = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error inesperado: {ex.Message}";
+            hasError = true;
+            Console.WriteLine($"Error general al cargar datos del dashboard: {ex.Message}");
+            Console.WriteLine($"Tipo de excepción: {ex.GetType().Name}");
+            Console.WriteLine($"Stack trace: {ex.StackTrace}");
+            isLoadingStats = false;
+            isLoadingIncidents = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadUsers(bool forceReload = false)
+    {
+        if (usuarios.Any() && !forceReload) return; // Ya cargados y no forzar recarga
+        
+        try
+        {
+            isLoadingUsers = true;
+            StateHasChanged();
+            
+            var response = await Http.GetFromJsonAsync<List<IncidentesFISEI.Application.DTOs.UsuarioListDto>>("/api/dashboard/users");
+            usuarios = response ?? new List<UsuarioListDto>();
+            
+            Console.WriteLine($"Usuarios cargados: {usuarios.Count}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading users: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingUsers = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task LoadIncidentes(bool forceReload = false)
+    {
+        if (incidentes.Any() && !forceReload) return; // Ya cargados y no forzar recarga
+        
+        try
+        {
+            Console.WriteLine("Cargando incidentes desde la API...");
+            var response = await Http.GetFromJsonAsync<List<IncidenteListDto>>("/api/incidentes");
+            incidentes = response ?? new List<IncidenteListDto>();
+            
+            Console.WriteLine($"Incidentes cargados: {incidentes.Count}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar incidentes: {ex.Message}");
+            incidentes = new List<IncidenteListDto>();
+        }
+        finally
+        {
+            StateHasChanged();
+        }
+    }
+
+    // Métodos para cambiar vistas
+    private async Task ShowUserManagement()
+    {
+        currentView = "users";
+        await LoadUsers(forceReload: true); // Siempre recargar cuando se abre la gestión
+    }
+
+    private async Task ShowIncidentManagement()
+    {
+        currentView = "incidents";
+        await LoadIncidentes(forceReload: true); // Siempre recargar cuando se abre la gestión
+    }
+
+    private void ShowSystemSettings()
+    {
+        currentView = "settings";
+    }
+
+    private void ShowReports()
+    {
+        currentView = "reports";
+    }
+
+    private void BackToDashboard()
+    {
+        currentView = "dashboard";
+    }
+
+    private async Task RetryLoadData()
+    {
+        hasError = false;
+        errorMessage = null;
+        isLoadingStats = true;
+        isLoadingIncidents = true;
+        await LoadDashboardData();
+    }
+
+    // Helper methods for user display
+    private string GetRoleCssClass(IncidentesFISEI.Domain.Enums.TipoUsuario tipo)
+    {
+        return tipo switch
+        {
+            IncidentesFISEI.Domain.Enums.TipoUsuario.Administrador => "badge bg-danger",
+            IncidentesFISEI.Domain.Enums.TipoUsuario.Tecnico => "badge bg-primary",
+            IncidentesFISEI.Domain.Enums.TipoUsuario.Supervisor => "badge bg-warning",
+            IncidentesFISEI.Domain.Enums.TipoUsuario.Usuario => "badge bg-secondary",
+            _ => "badge bg-secondary"
+        };
+    }
+
+    private string GetRoleDisplayName(IncidentesFISEI.Domain.Enums.TipoUsuario tipo)
+    {
+        return tipo switch
+        {
+            IncidentesFISEI.Domain.Enums.TipoUsuario.Administrador => "Administrador",
+            IncidentesFISEI.Domain.Enums.TipoUsuario.Tecnico => "Técnico",
+            IncidentesFISEI.Domain.Enums.TipoUsuario.Supervisor => "Supervisor",
+            IncidentesFISEI.Domain.Enums.TipoUsuario.Usuario => "Usuario",
+            _ => "Sin Rol"
+        };
+    }
+
+    // Helper methods for incidents display
+    private string GetPriorityClass(PrioridadIncidente prioridad)
+    {
+        return prioridad switch
+        {
+            PrioridadIncidente.Critica => "critical",
+            PrioridadIncidente.Alta => "high",
+            PrioridadIncidente.Media => "medium",
+            PrioridadIncidente.Baja => "low",
+            _ => "low"
+        };
+    }
+
+    private string GetIncidentIcon(PrioridadIncidente prioridad)
+    {
+        return prioridad switch
+        {
+            PrioridadIncidente.Critica => "fa-fire",
+            PrioridadIncidente.Alta => "fa-exclamation-triangle",
+            PrioridadIncidente.Media => "fa-info-circle",
+            PrioridadIncidente.Baja => "fa-check-circle",
+            _ => "fa-question-circle"
+        };
+    }
+
+    private string GetPriorityIcon(PrioridadIncidente prioridad)
+    {
+        return prioridad switch
+        {
+            PrioridadIncidente.Critica => "fas fa-exclamation-triangle",
+            PrioridadIncidente.Alta => "fas fa-exclamation-circle",
+            PrioridadIncidente.Media => "fas fa-info-circle", 
+            PrioridadIncidente.Baja => "fas fa-check-circle",
+            _ => "fas fa-hashtag"
+        };
+    }
+
+    private string GetPriorityInlineStyle(PrioridadIncidente prioridad)
+    {
+        return prioridad switch
+        {
+            PrioridadIncidente.Critica => "background-color: #dc3545; color: white; border: none;",
+            PrioridadIncidente.Alta => "background-color: #fd7e14; color: white; border: none;",
+            PrioridadIncidente.Media => "background-color: #ffc107; color: #212529; border: none;",
+            PrioridadIncidente.Baja => "background-color: #28a745; color: white; border: none;",
+            _ => "background-color: #6c757d; color: white; border: none;"
+        };
+    }
+
+    private string GetEstadoClass(EstadoIncidente estado)
+    {
+        return estado switch
+        {
+            EstadoIncidente.Abierto => "estado-abierto",
+            EstadoIncidente.EnProgreso => "estado-progreso",
+            EstadoIncidente.EnEspera => "estado-espera",
+            EstadoIncidente.Resuelto => "estado-resuelto",
+            EstadoIncidente.Cerrado => "estado-cerrado",
+            EstadoIncidente.Cancelado => "estado-cancelado",
+            EstadoIncidente.Escalado => "estado-escalado",
+            _ => "estado-abierto"
+        };
+    }
+
+    private string GetPriorityDisplayName(PrioridadIncidente prioridad)
+    {
+        return prioridad switch
+        {
+            PrioridadIncidente.Critica => "CRÍTICA",
+            PrioridadIncidente.Alta => "ALTA",
+            PrioridadIncidente.Media => "MEDIA",
+            PrioridadIncidente.Baja => "BAJA",
+            _ => "SIN PRIORIDAD"
+        };
+    }
+
+    private string GetEstadoDisplayName(EstadoIncidente estado)
+    {
+        return estado switch
+        {
+            EstadoIncidente.Abierto => "Abierto",
+            EstadoIncidente.EnProgreso => "En Progreso",
+            EstadoIncidente.EnEspera => "En Espera",
+            EstadoIncidente.Resuelto => "Resuelto",
+            EstadoIncidente.Cerrado => "Cerrado",
+            EstadoIncidente.Cancelado => "Cancelado",
+            EstadoIncidente.Escalado => "Escalado",
+            _ => "Sin Estado"
+        };
+    }
+
+    private string GetTimeAgo(DateTime fecha)
+    {
+        var timeSpan = DateTime.Now - fecha;
+        
+        if (timeSpan.TotalMinutes < 1)
+            return "Hace unos segundos";
+        if (timeSpan.TotalMinutes < 60)
+            return $"Hace {(int)timeSpan.TotalMinutes} minutos";
+        if (timeSpan.TotalHours < 24)
+            return $"Hace {(int)timeSpan.TotalHours} horas";
+        if (timeSpan.TotalDays < 7)
+            return $"Hace {(int)timeSpan.TotalDays} días";
+        
+        return fecha.ToString("dd/MM/yyyy");
+    }
+    
+    // Helper methods for Bootstrap badges in table
+    private string GetEstadoBadgeClass(EstadoIncidente estado)
+    {
+        return estado switch
+        {
+            EstadoIncidente.Abierto => "bg-primary",
+            EstadoIncidente.EnProgreso => "bg-warning text-dark",
+            EstadoIncidente.EnEspera => "bg-secondary",
+            EstadoIncidente.Resuelto => "bg-success",
+            EstadoIncidente.Cerrado => "bg-dark text-white",
+            EstadoIncidente.Cancelado => "bg-danger",
+            EstadoIncidente.Escalado => "bg-info",
+            _ => "bg-light text-dark"
+        };
+    }
+
+    private string GetPriorityBadgeClass(PrioridadIncidente prioridad)
+    {
+        return prioridad switch
+        {
+            PrioridadIncidente.Critica => "badge-prioridad-critica",
+            PrioridadIncidente.Alta => "badge-prioridad-alta",
+            PrioridadIncidente.Media => "badge-prioridad-media",
+            PrioridadIncidente.Baja => "badge-prioridad-baja",
+            _ => "bg-light text-dark"
+        };
+    }
+
+    // Helper methods for styling badges and classes
+    
+    // User Management Methods
+    private void ShowAddUserModal()
+    {
+        newUser = new UserFormModel
+        {
+            IsActive = true,
+            IsEmailConfirmed = false
+        };
+        showAddUserModal = true;
+        StateHasChanged();
+    }
+    
+    private void CloseAddUserModal()
+    {
+        showAddUserModal = false;
+        newUser = new UserFormModel();
+        StateHasChanged();
+    }
+    
+    private void ShowEditUserModal(IncidentesFISEI.Application.DTOs.UsuarioListDto user)
+    {
+        editingUser = user;
+        editUserDto = new UserFormModel
+        {
+            FirstName = user.FirstName,
+            LastName = user.LastName,
+            Email = user.Email,
+            Phone = user.Phone,
+            TipoUsuario = user.TipoUsuario,
+            Department = user.Department,
+            IsActive = user.IsActive,
+            IsEmailConfirmed = user.IsEmailConfirmed
+        };
+        showEditUserModal = true;
+        StateHasChanged();
+    }
+    
+    private void CloseEditUserModal()
+    {
+        showEditUserModal = false;
+        editingUser = null;
+        editUserDto = new UserFormModel();
+        StateHasChanged();
+    }
+    
+    private async Task CreateUser()
+    {
+        if (isProcessing) return;
+        
+        try
+        {
+            isProcessing = true;
+            StateHasChanged();
+            
+            // Validate required fields
+            if (string.IsNullOrWhiteSpace(newUser.FirstName) ||
+                string.IsNullOrWhiteSpace(newUser.LastName) ||
+                string.IsNullOrWhiteSpace(newUser.Email))
+            {
+                Console.WriteLine("Error: Campos requeridos no completados");
+                return;
+            }
+            
+            var response = await Http.PostAsJsonAsync("/api/users", newUser);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine("Usuario creado exitosamente");
+                CloseAddUserModal();
+                
+                // Forzar recarga de datos
+                usuarios.Clear();
+                await LoadUsers(forceReload: true); // Reload users
+                await LoadDashboardData(); // Refresh stats
+                StateHasChanged(); // Force UI update
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error al crear usuario: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al crear usuario: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task UpdateUser()
+    {
+        if (isProcessing || editingUser == null) return;
+        
+        try
+        {
+            isProcessing = true;
+            StateHasChanged();
+            
+            var response = await Http.PutAsJsonAsync($"/api/users/{editingUser.Id}", editUserDto);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine("Usuario actualizado exitosamente");
+                CloseEditUserModal();
+                
+                // Forzar recarga de datos
+                usuarios.Clear();
+                await LoadUsers(forceReload: true); // Reload users
+                await LoadDashboardData(); // Refresh stats
+                StateHasChanged(); // Force UI update
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error al actualizar usuario: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al actualizar usuario: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+            StateHasChanged();
+        }
+    }
+    
+    private async Task ApproveUser(int userId)
+    {
+        try
+        {
+            var response = await Http.PatchAsync($"/api/users/{userId}/approve", null);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine("Usuario aprobado exitosamente");
+                
+                // Forzar recarga de datos
+                usuarios.Clear();
+                await LoadUsers(forceReload: true); // Reload users
+                await LoadDashboardData(); // Refresh stats
+                StateHasChanged(); // Force UI update
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error al aprobar usuario: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al aprobar usuario: {ex.Message}");
+        }
+    }
+    
+    private async Task DeleteUser(int userId)
+    {
+        // Confirm deletion
+        if (!await JSRuntime.InvokeAsync<bool>("confirm", "¿Está seguro que desea eliminar este usuario?"))
+            return;
+            
+        try
+        {
+            var response = await Http.DeleteAsync($"/api/users/{userId}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine("Usuario eliminado exitosamente");
+                
+                // Forzar recarga de datos
+                usuarios.Clear();
+                await LoadUsers(forceReload: true); // Reload users
+                await LoadDashboardData(); // Refresh stats
+                StateHasChanged(); // Force UI update
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error al eliminar usuario: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al eliminar usuario: {ex.Message}");
+        }
+    }
+    
+    private async Task ToggleUserStatus(int userId)
+    {
+        try
+        {
+            Console.WriteLine($"Intentando cambiar estado del usuario ID: {userId}");
+            var url = $"/api/users/{userId}/toggle-status";
+            Console.WriteLine($"URL de la solicitud: {url}");
+            
+            var response = await Http.PatchAsync(url, null);
+            
+            Console.WriteLine($"Status Code: {response.StatusCode}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Respuesta exitosa: {result}");
+                Console.WriteLine("Estado del usuario cambiado exitosamente");
+                
+                // Forzar recarga de datos
+                usuarios.Clear();
+                await LoadUsers(forceReload: true); // Reload users
+                await LoadDashboardData(); // Refresh stats
+                StateHasChanged(); // Force UI update
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error al cambiar estado del usuario. Status: {response.StatusCode}, Error: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cambiar estado del usuario: {ex.Message}");
+        }
+    }
+    
+    // Incident Management Methods
+    private async Task ShowCreateIncidentModal()
+    {
+        await LoadCategorias(); // Cargar categorías disponibles
+        await LoadAllServicios(); // Cargar servicios disponibles
+        
+        var currentUserId = GetCurrentUserId();
+        Console.WriteLine($"Usuario actual ID: {currentUserId}");
+        Console.WriteLine($"UserSession IsLoggedIn: {UserSession?.IsLoggedIn}");
+        Console.WriteLine($"UserSession UserId: {UserSession?.UserId}");
+        Console.WriteLine($"UserSession FullName: {UserSession?.FullName}");
+        
+        newIncident = new IncidentFormModel
+        {
+            Prioridad = PrioridadIncidente.Media,
+            ReportadoPor = currentUserId // Usuario logueado actual
+        };
+        showCreateIncidentModal = true;
+        StateHasChanged();
+    }
+    
+    private void CloseCreateIncidentModal()
+    {
+        showCreateIncidentModal = false;
+        newIncident = new IncidentFormModel();
+        StateHasChanged();
+    }
+    
+    private async Task ShowAllIncidentsView()
+    {
+        currentView = "all-incidents";
+        await LoadIncidentes(forceReload: true);
+        ApplyFilters();
+    }
+    
+    // Filtros para incidentes
+    private void FilterIncidentsChanged()
+    {
+        ApplyFilters();
+    }
+    
+    private void ApplyFilters()
+    {
+        filteredIncidentes = incidentes.ToList();
+        
+        // Filtro por estado
+        if (incidentFilter != "all")
+        {
+            var estado = incidentFilter switch
+            {
+                "abierto" => EstadoIncidente.Abierto,
+                "en-progreso" => EstadoIncidente.EnProgreso,
+                "en-espera" => EstadoIncidente.EnEspera,
+                "resuelto" => EstadoIncidente.Resuelto,
+                "cerrado" => EstadoIncidente.Cerrado,
+                "cancelado" => EstadoIncidente.Cancelado,
+                "escalado" => EstadoIncidente.Escalado,
+                _ => (EstadoIncidente?)null
+            };
+            
+            if (estado.HasValue)
+            {
+                filteredIncidentes = filteredIncidentes.Where(i => i.Estado == estado).ToList();
+            }
+        }
+        
+        // Filtro por prioridad
+        if (priorityFilter != "all")
+        {
+            var prioridad = priorityFilter switch
+            {
+                "critica" => PrioridadIncidente.Critica,
+                "alta" => PrioridadIncidente.Alta,
+                "media" => PrioridadIncidente.Media,
+                "baja" => PrioridadIncidente.Baja,
+                _ => (PrioridadIncidente?)null
+            };
+            
+            if (prioridad.HasValue)
+            {
+                filteredIncidentes = filteredIncidentes.Where(i => i.Prioridad == prioridad).ToList();
+            }
+        }
+        
+        StateHasChanged();
+    }
+    
+    // Acciones sobre incidentes individuales
+    private void ViewIncidentDetails(int incidentId)
+    {
+        Console.WriteLine($"Ver detalles del incidente: {incidentId}");
+        // TODO: Implementar modal de detalles
+    }
+    
+    private void EditIncident(int incidentId)
+    {
+        Console.WriteLine($"Editar incidente: {incidentId}");
+        // TODO: Implementar modal de edición
+    }
+    
+    private void AssignTechnician(int incidentId)
+    {
+        Console.WriteLine($"Asignar técnico al incidente: {incidentId}");
+        // TODO: Implementar modal de asignación de técnicos
+    }
+    
+    private void ChangeIncidentStatus(int incidentId)
+    {
+        Console.WriteLine($"Cambiar estado del incidente: {incidentId}");
+        // TODO: Implementar modal de cambio de estado
+    }
+    
+    private async Task RefreshIncidents()
+    {
+        await LoadIncidentes(forceReload: true);
+        ApplyFilters();
+    }
+    
+    private async Task LoadCategorias()
+    {
+        try
+        {
+            Console.WriteLine("Cargando categorías desde la API...");
+            var response = await Http.GetFromJsonAsync<List<CategoriaIncidenteDto>>("/api/categorias");
+            categorias = response ?? new List<CategoriaIncidenteDto>();
+            
+            Console.WriteLine($"Categorías cargadas: {categorias.Count}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar categorías: {ex.Message}");
+            categorias = new List<CategoriaIncidenteDto>();
+        }
+    }
+    
+    private void OnCategoriaChangedAfter()
+    {
+        if (newIncident.CategoriaId > 0)
+        {
+            Console.WriteLine($"Filtrando servicios para categoría: {newIncident.CategoriaId}");
+            filteredServicios = servicios.Where(s => s.CategoriaId == newIncident.CategoriaId && s.IsActive).ToList();
+            Console.WriteLine($"Servicios filtrados: {filteredServicios.Count}");
+        }
+        else
+        {
+            filteredServicios.Clear();
+        }
+        
+        // Limpiar la selección de servicio cuando cambia la categoría
+        newIncident.ServicioId = null;
+        StateHasChanged();
+    }
+    
+    private string GetCurrentUserName()
+    {
+        return UserSession?.FullName ?? "Usuario Desconocido";
+    }
+    
+    private int GetCurrentUserId()
+    {
+        var userId = UserSession?.UserId ?? 0;
+        Console.WriteLine($"UserSession.IsLoggedIn: {UserSession?.IsLoggedIn}");
+        Console.WriteLine($"UserSession.UserId: {userId}");
+        Console.WriteLine($"UserSession.FullName: {UserSession?.FullName}");
+        
+        // Si hay una sesión activa y válida, usar el usuario logueado
+        if (UserSession?.IsLoggedIn == true && userId > 0)
+        {
+            Console.WriteLine($"Usando usuario logueado: {userId} ({UserSession.FullName})");
+            return userId;
+        }
+        
+        // Solo usar fallback si realmente no hay sesión activa
+        Console.WriteLine("No hay sesión activa, usando ID por defecto: 2 (Carlos Mendoza)");
+        return 2; // Carlos Mendoza (supervisor1) como último recurso
+    }
+    
+    private async Task CreateIncident()
+    {
+        if (isProcessing) return;
+        
+        try
+        {
+            isProcessing = true;
+            Console.WriteLine("Creando nuevo incidente...");
+            
+            // Validaciones básicas
+            if (string.IsNullOrWhiteSpace(newIncident.Titulo))
+            {
+                Console.WriteLine("Error: El título es requerido");
+                return;
+            }
+            
+            if (string.IsNullOrWhiteSpace(newIncident.Descripcion))
+            {
+                Console.WriteLine("Error: La descripción es requerida");
+                return;
+            }
+            
+            if (newIncident.CategoriaId <= 0)
+            {
+                Console.WriteLine("Error: Debe seleccionar una categoría");
+                return;
+            }
+            
+            // Crear el DTO para enviar a la API
+            var createDto = new
+            {
+                Titulo = newIncident.Titulo,
+                Descripcion = newIncident.Descripcion,
+                Prioridad = newIncident.Prioridad,
+                CategoriaId = newIncident.CategoriaId,
+                ServicioId = newIncident.ServicioId,
+                ReportadoPor = newIncident.ReportadoPor
+            };
+            
+            Console.WriteLine($"Enviando incidente: ReportadoPor={createDto.ReportadoPor}, CategoriaId={createDto.CategoriaId}, ServicioId={createDto.ServicioId}");
+            
+            var response = await Http.PostAsJsonAsync("/api/incidentes", createDto);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine("Incidente creado exitosamente");
+                
+                // Cerrar modal y limpiar formulario
+                CloseCreateIncidentModal();
+                
+                // Recargar datos
+                await LoadIncidentes(forceReload: true);
+                await LoadDashboardData();
+                
+                StateHasChanged();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error al crear incidente: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al crear incidente: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    // Simple model class for user forms
+    public class UserFormModel
+    {
+        public string FirstName { get; set; } = string.Empty;
+        public string LastName { get; set; } = string.Empty;
+        public string Email { get; set; } = string.Empty;
+        public string? Phone { get; set; }
+        public IncidentesFISEI.Domain.Enums.TipoUsuario TipoUsuario { get; set; } = IncidentesFISEI.Domain.Enums.TipoUsuario.Usuario;
+        public string? Department { get; set; }
+        public bool IsActive { get; set; } = true;
+        public bool IsEmailConfirmed { get; set; } = false;
+        public string? NewPassword { get; set; }
+    }
+
+    private void ResetFilterToAll()
+    {
+        incidentFilter = "all";
+        FilterIncidentsChanged();
+    }
+
+    // Incident management functions
+    private void ViewIncidentDetails(IncidenteListDto incidente)
+    {
+        selectedIncidentForDetails = incidente;
+        showIncidentDetailsModal = true;
+        StateHasChanged();
+    }
+    
+    private void CloseIncidentDetailsModal()
+    {
+        showIncidentDetailsModal = false;
+        selectedIncidentForDetails = null;
+        StateHasChanged();
+    }
+    
+    private void ShowDeleteConfirmation(IncidenteListDto incidente)
+    {
+        selectedIncidentForDelete = incidente;
+        showDeleteConfirmationModal = true;
+        StateHasChanged();
+    }
+    
+    private void CloseDeleteConfirmation()
+    {
+        showDeleteConfirmationModal = false;
+        selectedIncidentForDelete = null;
+        StateHasChanged();
+    }
+    
+    private async Task DeleteIncident()
+    {
+        if (selectedIncidentForDelete == null) return;
+        
+        try
+        {
+            isProcessing = true;
+            var response = await Http.DeleteAsync($"/api/incidentes/{selectedIncidentForDelete.Id}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"Incidente {selectedIncidentForDelete.NumeroIncidente} eliminado exitosamente");
+                
+                // Recargar datos automáticamente
+                await LoadIncidentes(forceReload: true);
+                await LoadDashboardData();
+                
+                CloseDeleteConfirmation();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error al eliminar incidente: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al eliminar incidente: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task OpenEditIncidentModal(IncidenteListDto incidente)
+    {
+        // Cerrar el modal de detalles si está abierto
+        if (showIncidentDetailsModal)
+        {
+            showIncidentDetailsModal = false;
+            selectedIncidentForDetails = null;
+        }
+        
+        editingIncident = incidente;
+        editIncident = new IncidentFormModel
+        {
+            Id = incidente.Id,
+            Titulo = incidente.Titulo,
+            Descripcion = incidente.Descripcion,
+            Estado = incidente.Estado,
+            Prioridad = incidente.Prioridad,
+            CategoriaId = incidente.CategoriaId,
+            ServicioId = incidente.ServicioId,
+            AsignadoAId = incidente.AsignadoAId,
+            ReportadoPor = incidente.ReportadoPorId
+        };
+        
+        // Load required data for the modal
+        await LoadCategorias(); // Cargar categorías disponibles
+        await LoadAvailableAssignees(); // Cargar usuarios asignables
+        await LoadAllServicios(); // Cargar todos los servicios
+        
+        // Load services for the selected category
+        await OnCategoriaChangedForEdit();
+        
+        showEditIncidentModal = true;
+        StateHasChanged();
+    }
+
+    private void CloseEditIncidentModal()
+    {
+        showEditIncidentModal = false;
+        editingIncident = null;
+        editIncident = new IncidentFormModel();
+        StateHasChanged();
+    }
+
+    private async Task SaveIncidentChanges()
+    {
+        if (editingIncident == null) return;
+        
+        isProcessing = true;
+        try
+        {
+            var updateData = new
+            {
+                titulo = editIncident.Titulo,
+                descripcion = editIncident.Descripcion,
+                estado = editIncident.Estado,
+                prioridad = editIncident.Prioridad,
+                categoriaId = editIncident.CategoriaId,
+                servicioId = editIncident.ServicioId,
+                asignadoAId = editIncident.AsignadoAId
+            };
+
+            var response = await Http.PutAsJsonAsync($"/api/incidentes/{editIncident.Id}", updateData);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine("Incidente actualizado correctamente");
+                
+                // Recargar la lista de incidentes y aplicar filtros
+                Console.WriteLine("Recargando lista de incidentes...");
+                await RefreshIncidents();
+                Console.WriteLine("Lista de incidentes recargada");
+                
+                // Luego cerrar el modal
+                CloseEditIncidentModal();
+                
+                // Forzar actualización de la UI
+                StateHasChanged();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error al actualizar incidente: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al actualizar incidente: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private async Task OnCategoriaChangedForEdit()
+    {
+        if (editIncident.CategoriaId > 0)
+        {
+            try
+            {
+                // Filter services from the loaded list instead of making a new API call
+                filteredServicios = servicios.Where(s => s.CategoriaId == editIncident.CategoriaId).ToList();
+                
+                // If no services found for category, try API call as fallback
+                if (!filteredServicios.Any())
+                {
+                    var response = await Http.GetFromJsonAsync<List<ServicioListDto>>($"/api/servicios/categoria/{editIncident.CategoriaId}");
+                    filteredServicios = response ?? new List<ServicioListDto>();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al cargar servicios: {ex.Message}");
+                filteredServicios = new List<ServicioListDto>();
+            }
+        }
+        else
+        {
+            filteredServicios = new List<ServicioListDto>();
+        }
+        StateHasChanged();
+    }
+
+    private async Task LoadAvailableAssignees()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<List<IncidentesFISEI.Application.DTOs.UsuarioListDto>>("/api/users/assignable");
+            if (response != null)
+            {
+                // Filter only technicians and supervisors
+                availableAssignees = response.Where(u => u.TipoUsuario == IncidentesFISEI.Domain.Enums.TipoUsuario.Tecnico || u.TipoUsuario == IncidentesFISEI.Domain.Enums.TipoUsuario.Supervisor).ToList();
+            }
+            else
+            {
+                availableAssignees = new List<IncidentesFISEI.Application.DTOs.UsuarioListDto>();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar usuarios asignables: {ex.Message}");
+            availableAssignees = new List<IncidentesFISEI.Application.DTOs.UsuarioListDto>();
+        }
+    }
+
+    private async Task LoadAllServicios()
+    {
+        try
+        {
+            Console.WriteLine("Cargando servicios desde la API...");
+            var response = await Http.GetFromJsonAsync<List<ServicioListDto>>("/api/servicios");
+            servicios = response ?? new List<ServicioListDto>();
+            Console.WriteLine($"Servicios cargados: {servicios.Count}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar servicios: {ex.Message}");
+            servicios = new List<ServicioListDto>();
+        }
+    }
+
+    private async Task OpenAssignIncidentModal(IncidenteListDto incidente)
+    {
+        editingIncident = incidente;
+        await LoadAvailableAssignees();
+        showAssignIncidentModal = true;
+        StateHasChanged();
+    }
+
+    private async Task CloseIncident(int incidentId)
+    {
+        try
+        {
+            var response = await Http.PutAsync($"/api/incidentes/{incidentId}/close", null);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine("Incidente cerrado correctamente");
+                await LoadIncidentes(forceReload: true);
+                StateHasChanged();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error al cerrar incidente: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cerrar incidente: {ex.Message}");
+        }
+    }
+
+    private async Task ReopenIncident(int incidentId)
+    {
+        try
+        {
+            var response = await Http.PutAsync($"/api/incidentes/{incidentId}/reopen", null);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine("Incidente reabierto correctamente");
+                await LoadIncidentes(forceReload: true);
+                StateHasChanged();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error al reabrir incidente: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al reabrir incidente: {ex.Message}");
+        }
+    }
+    
+    // Model class for incident forms
+    public class IncidentFormModel
+    {
+        public int Id { get; set; }
+        public string Titulo { get; set; } = string.Empty;
+        public string Descripcion { get; set; } = string.Empty;
+        public EstadoIncidente Estado { get; set; } = EstadoIncidente.Abierto;
+        public PrioridadIncidente Prioridad { get; set; } = PrioridadIncidente.Media;
+        public int CategoriaId { get; set; }
+        public int? ServicioId { get; set; }
+        public int ReportadoPor { get; set; } = 1;
+        public int? AsignadoAId { get; set; }
+    }
+
+    // Helper method for priority badge classes
+    private string GetPrioridadBadgeClass(PrioridadIncidente prioridad)
+    {
+        return prioridad switch
+        {
+            PrioridadIncidente.Baja => "success",
+            PrioridadIncidente.Media => "warning",
+            PrioridadIncidente.Alta => "danger",
+            PrioridadIncidente.Critica => "dark",
+            _ => "secondary"
+        };
+    }
+
+    // Close delete confirmation modal
+    private void CloseDeleteConfirmationModal()
+    {
+        showDeleteConfirmationModal = false;
+        selectedIncidentForDelete = null;
+    }
+
+    // =================== MÉTODOS PARA FLUJO ITIL V3 ===================
+    
+    // Variables para modales de resolución/cierre
+    private bool showResolveModal = false;
+    private bool showCloseModal = false;
+    private bool showReopenModal = false;
+    private IncidenteListDto? selectedIncidentForAction = null;
+    private string solucionIncidente = "";
+    private string comentarioCierre = "";
+    private string motivoReapertura = "";
+
+    /// <summary>
+    /// Handler del botón resolver - debug
+    /// </summary>
+    private void OnResolveButtonClick(IncidenteListDto incidente)
+    {
+        Console.WriteLine($"Button clicked for incident {incidente.Id}");
+        ShowResolveModal(incidente);
+    }
+
+    /// <summary>
+    /// Asignar incidente al admin actual
+    /// </summary>
+    private async Task AsignarseIncidente(IncidenteListDto incidente)
+    {
+        try
+        {
+            var currentUser = UserSession.CurrentUser;
+            if (currentUser == null)
+            {
+                Console.WriteLine("No se pudo obtener el usuario actual");
+                return;
+            }
+
+            var assignRequest = new 
+            { 
+                AsignadoAId = currentUser.Id 
+            };
+
+            var json = System.Text.Json.JsonSerializer.Serialize(assignRequest);
+            var content = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+
+            var response = await Http.PutAsync($"http://localhost:7001/api/incidentes/{incidente.Id}/asignar", content);
+
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine("Incidente asignado correctamente");
+                await RefreshIncidents(); // Recargar la lista con filtros
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error al asignar incidente: {errorContent}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al asignar incidente: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Verificar si el usuario actual puede resolver el incidente (sin verificar el estado)
+    /// </summary>
+    private bool PuedeResolverIncidente(IncidenteListDto incidente)
+    {
+        var currentUser = UserSession.CurrentUser;
+        if (currentUser == null) return false;
+
+        // El administrador puede resolver cualquier incidente (esté asignado o no)
+        if (currentUser.TipoUsuario == incidentesFISEI.Services.TipoUsuario.Administrador)
+            return true;
+
+        // Los técnicos solo pueden resolver incidentes asignados a ellos
+        if (currentUser.TipoUsuario == incidentesFISEI.Services.TipoUsuario.Tecnico)
+        {
+            return !string.IsNullOrEmpty(incidente.AsignadoA) && 
+                   incidente.AsignadoAId == currentUser.Id;
+        }
+
+        // Supervisores pueden resolver cualquier incidente de su área
+        if (currentUser.TipoUsuario == incidentesFISEI.Services.TipoUsuario.Supervisor)
+            return true;
+
+        return false;
+    }
+
+    /// <summary>
+    /// Mostrar modal para resolver incidente (solo técnicos asignados)
+    /// </summary>
+    private void ShowResolveModal(IncidenteListDto incidente)
+    {
+        Console.WriteLine($"ShowResolveModal called for incident {incidente.Id} - {incidente.Titulo}");
+        selectedIncidentForAction = incidente;
+        solucionIncidente = "";
+        showResolveModal = true;
+        Console.WriteLine($"Modal should be visible now: {showResolveModal}");
+        StateHasChanged(); // Force UI update
+    }
+
+    /// <summary>
+    /// Resolver incidente - marcar como resuelto con solución
+    /// </summary>
+    private async Task ResolveIncident()
+    {
+        if (selectedIncidentForAction == null || string.IsNullOrWhiteSpace(solucionIncidente))
+        {
+            return;
+        }
+
+        try
+        {
+            var request = new { Solucion = solucionIncidente };
+            var response = await Http.PatchAsync($"/api/incidentes/{selectedIncidentForAction.Id}/resolver", 
+                JsonContent.Create(request));
+
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"Incidente {selectedIncidentForAction.Id} resuelto exitosamente");
+                showResolveModal = false;
+                selectedIncidentForAction = null;
+                solucionIncidente = "";
+                await RefreshIncidents();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error al resolver incidente: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al resolver incidente: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Mostrar modal para cerrar incidente (solo supervisores y admin)
+    /// </summary>
+    private void ShowCloseModal(IncidenteListDto incidente)
+    {
+        selectedIncidentForAction = incidente;
+        comentarioCierre = "";
+        showCloseModal = true;
+    }
+
+    /// <summary>
+    /// Cerrar incidente definitivamente
+    /// </summary>
+    private async Task CloseIncident()
+    {
+        if (selectedIncidentForAction == null)
+        {
+            return;
+        }
+
+        try
+        {
+            var request = new { ComentarioCierre = comentarioCierre };
+            var response = await Http.PatchAsync($"/api/incidentes/{selectedIncidentForAction.Id}/cerrar", 
+                JsonContent.Create(request));
+
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"Incidente {selectedIncidentForAction.Id} cerrado exitosamente");
+                showCloseModal = false;
+                selectedIncidentForAction = null;
+                comentarioCierre = "";
+                await RefreshIncidents();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error al cerrar incidente: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cerrar incidente: {ex.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Mostrar modal para reabrir incidente (solo administradores)
+    /// </summary>
+    private void ShowReopenModal(IncidenteListDto incidente)
+    {
+        selectedIncidentForAction = incidente;
+        motivoReapertura = "";
+        showReopenModal = true;
+    }
+
+    /// <summary>
+    /// Reabrir incidente cerrado
+    /// </summary>
+    private async Task ReopenIncident()
+    {
+        if (selectedIncidentForAction == null || string.IsNullOrWhiteSpace(motivoReapertura))
+        {
+            return;
+        }
+
+        try
+        {
+            var request = new { Motivo = motivoReapertura };
+            var response = await Http.PatchAsync($"/api/incidentes/{selectedIncidentForAction.Id}/reabrir", 
+                JsonContent.Create(request));
+
+            if (response.IsSuccessStatusCode)
+            {
+                Console.WriteLine($"Incidente {selectedIncidentForAction.Id} reabierto exitosamente");
+                showReopenModal = false;
+                selectedIncidentForAction = null;
+                motivoReapertura = "";
+                await RefreshIncidents();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error al reabrir incidente: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al reabrir incidente: {ex.Message}");
+        }
+    }
+
+    // Métodos para cerrar modales
+    private void CloseResolveModal()
+    {
+        showResolveModal = false;
+        selectedIncidentForAction = null;
+        solucionIncidente = "";
+    }
+
+    private void CloseCloseModal()
+    {
+        showCloseModal = false;
+        selectedIncidentForAction = null;
+        comentarioCierre = "";
+    }
+
+    private void CloseReopenModal()
+    {
+        showReopenModal = false;
+        selectedIncidentForAction = null;
+        motivoReapertura = "";
+    }
+}
+
+<style>
+    /* Estilos para la tabla de incidentes */
+    .table-responsive {
+        border-radius: 0.375rem;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .table th {
+        background-color: #f8f9fa;
+        border-top: none;
+        font-weight: 600;
+        color: #495057;
+        white-space: nowrap;
+    }
+
+    .table td {
+        vertical-align: middle;
+        border-color: #dee2e6;
+    }
+
+    .table tbody tr:hover {
+        background-color: #f5f5f5;
+    }
+
+    .badge {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+        font-weight: 500;
+    }
+
+    .dropdown-menu {
+        border-radius: 0.375rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        border: 1px solid rgba(0, 0, 0, 0.15);
+    }
+
+    .dropdown-item {
+        padding: 0.5rem 1rem;
+        font-size: 0.875rem;
+    }
+
+    .dropdown-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .text-muted {
+        color: #6c757d !important;
+    }
+
+    .fw-semibold {
+        font-weight: 600 !important;
+    }
+
+    .small {
+        font-size: 0.875rem;
+    }
+    /* Badges redondeados */\n    .badge.rounded-pill {\n        padding: 0.4rem 0.8rem;\n        font-size: 0.7rem;\n        font-weight: 600;\n        letter-spacing: 0.5px;\n    }\n\n    /* Colores de prioridad personalizados según la imagen */\n    .badge.badge-prioridad-baja {\n        background-color: #28a745 !important; /* Verde */\n        color: white !important;\n        border: none !important;\n    }\n\n    .badge.badge-prioridad-media {\n        background-color: #ffc107 !important; /* Amarillo/Naranja */\n        color: #212529 !important; /* Texto oscuro para mejor contraste */\n        border: none !important;\n    }\n\n    .badge.badge-prioridad-alta {\n        background-color: #fd7e14 !important; /* Naranja */\n        color: white !important;\n        border: none !important;\n    }\n\n    .badge.badge-prioridad-critica {\n        background-color: #dc3545 !important; /* Rojo */\n        color: white !important;\n        border: none !important;\n    }\n</style>

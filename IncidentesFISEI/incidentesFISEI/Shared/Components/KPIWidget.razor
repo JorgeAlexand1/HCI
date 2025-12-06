@@ -1,0 +1,132 @@
+<div class="kpi-widget @Size @Theme">
+    <div class="widget-header">
+        <div class="widget-icon @IconColor">
+            <i class="@Icon"></i>
+        </div>
+        @if (!string.IsNullOrEmpty(Title))
+        {
+            <h6 class="widget-title">@Title</h6>
+        }
+    </div>
+    
+    <div class="widget-content">
+        <div class="main-value">
+            @if (IsLoading)
+            {
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                </div>
+            }
+            else
+            {
+                <span class="value">@FormattedValue</span>
+                @if (!string.IsNullOrEmpty(Unit))
+                {
+                    <span class="unit">@Unit</span>
+                }
+            }
+        </div>
+        
+        @if (!string.IsNullOrEmpty(Subtitle))
+        {
+            <div class="subtitle">@Subtitle</div>
+        }
+        
+        @if (ShowTrend && TrendPercentage.HasValue)
+        {
+            <div class="trend @GetTrendClass()">
+                <i class="@GetTrendIcon()"></i>
+                <span>@Math.Abs(TrendPercentage.Value)% @GetTrendText()</span>
+            </div>
+        }
+        
+        @if (ShowProgress && ProgressPercentage.HasValue)
+        {
+            <div class="progress-bar">
+                <div class="progress-fill" style="width: @(ProgressPercentage.Value)%"></div>
+            </div>
+            <small class="progress-text">@ProgressPercentage% completado</small>
+        }
+    </div>
+    
+    @if (ShowAction && !string.IsNullOrEmpty(ActionText))
+    {
+        <div class="widget-footer">
+            <button class="btn btn-sm btn-link" @onclick="OnActionClick">
+                @ActionText <i class="fas fa-arrow-right"></i>
+            </button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public string Title { get; set; } = "";
+    [Parameter] public string Subtitle { get; set; } = "";
+    [Parameter] public object Value { get; set; } = 0;
+    [Parameter] public string Unit { get; set; } = "";
+    [Parameter] public string Icon { get; set; } = "fas fa-chart-line";
+    [Parameter] public string IconColor { get; set; } = "primary";
+    [Parameter] public string Size { get; set; } = "medium";
+    [Parameter] public string Theme { get; set; } = "default";
+    [Parameter] public bool IsLoading { get; set; } = false;
+    [Parameter] public bool ShowTrend { get; set; } = false;
+    [Parameter] public double? TrendPercentage { get; set; }
+    [Parameter] public bool ShowProgress { get; set; } = false;
+    [Parameter] public double? ProgressPercentage { get; set; }
+    [Parameter] public bool ShowAction { get; set; } = false;
+    [Parameter] public string ActionText { get; set; } = "";
+    [Parameter] public EventCallback OnActionClick { get; set; }
+    [Parameter] public string Format { get; set; } = "N0";
+
+    private string FormattedValue
+    {
+        get
+        {
+            if (Value == null) return "0";
+            
+            return Value switch
+            {
+                int intValue => intValue.ToString(Format),
+                double doubleValue => doubleValue.ToString(Format),
+                decimal decimalValue => decimalValue.ToString(Format),
+                float floatValue => floatValue.ToString(Format),
+                TimeSpan timeSpan => FormatTimeSpan(timeSpan),
+                _ => Value.ToString() ?? "0"
+            };
+        }
+    }
+
+    private string GetTrendClass()
+    {
+        if (!TrendPercentage.HasValue) return "";
+        
+        return TrendPercentage.Value > 0 ? "trend-up" : 
+               TrendPercentage.Value < 0 ? "trend-down" : "trend-neutral";
+    }
+
+    private string GetTrendIcon()
+    {
+        if (!TrendPercentage.HasValue) return "fas fa-minus";
+        
+        return TrendPercentage.Value > 0 ? "fas fa-arrow-up" : 
+               TrendPercentage.Value < 0 ? "fas fa-arrow-down" : "fas fa-minus";
+    }
+
+    private string GetTrendText()
+    {
+        if (!TrendPercentage.HasValue) return "";
+        
+        return TrendPercentage.Value > 0 ? "más que el período anterior" : 
+               TrendPercentage.Value < 0 ? "menos que el período anterior" : "sin cambios";
+    }
+
+    private string FormatTimeSpan(TimeSpan timeSpan)
+    {
+        if (timeSpan.TotalDays >= 1)
+            return $"{(int)timeSpan.TotalDays}d {timeSpan.Hours}h";
+        if (timeSpan.TotalHours >= 1)
+            return $"{(int)timeSpan.TotalHours}h {timeSpan.Minutes}m";
+        
+        return $"{(int)timeSpan.TotalMinutes}m";
+    }
+}

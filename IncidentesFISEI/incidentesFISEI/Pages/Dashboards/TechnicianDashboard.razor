@@ -1,0 +1,506 @@
+@page "/technician-dashboard"
+@using Microsoft.AspNetCore.Authorization
+@using incidentesFISEI.Shared.Components
+@attribute [Authorize(Roles = "Tecnico")]
+@layout DashboardLayout
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<div class="technician-dashboard">
+    <!-- Quick Actions Header -->
+    <section class="dashboard-section">
+        <div class="quick-actions-header">
+            <h2>Panel de Trabajo - Técnico</h2>
+            <div class="technician-status">
+                <div class="status-indicator @GetStatusClass()">
+                    <i class="fas fa-circle"></i>
+                    <span>@GetStatusText()</span>
+                </div>
+                <button class="btn btn-outline-primary" @onclick="ToggleAvailability">
+                    <i class="fas fa-@(dashboardData.IsAvailable ? "pause" : "play")"></i>
+                    @(dashboardData.IsAvailable ? "Pausar" : "Activar")
+                </button>
+            </div>
+        </div>
+
+        <!-- Current KPIs -->
+        <div class="technician-kpis">
+            <incidentesFISEI.Shared.Components.KPIWidget Title="Asignados" 
+                      Value="@dashboardData.AssignedIncidents" 
+                      Icon="fas fa-tasks" 
+                      IconColor="primary" />
+            
+            <incidentesFISEI.Shared.Components.KPIWidget Title="Resueltos Hoy" 
+                      Value="@dashboardData.ResolvedToday" 
+                      Icon="fas fa-check-circle" 
+                      IconColor="success" />
+            
+            <incidentesFISEI.Shared.Components.KPIWidget Title="Tiempo Promedio" 
+                      Value="@FormatTimeSpan(dashboardData.AvgResolutionTime)" 
+                      Icon="fas fa-clock" 
+                      IconColor="info" />
+            
+            <incidentesFISEI.Shared.Components.KPIWidget Title="SLA Cumplido" 
+                      Value="@dashboardData.SlaCompliance" 
+                      Unit="%" 
+                      Icon="fas fa-tachometer-alt" 
+                      IconColor="@GetSlaColor(dashboardData.SlaCompliance)" />
+        </div>
+    </section>
+
+    <!-- Work Queue Section -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h3><i class="fas fa-list-ul"></i> Cola de Trabajo</h3>
+            <div class="queue-filters">
+                <button class="filter-btn @(selectedFilter == "all" ? "active" : "")" 
+                        @onclick="@(() => FilterIncidents("all"))">
+                    Todos (@dashboardData.WorkQueue?.Count ?? 0)
+                </button>
+                <button class="filter-btn @(selectedFilter == "high" ? "active" : "")" 
+                        @onclick="@(() => FilterIncidents("high"))">
+                    Alta Prioridad (@dashboardData.WorkQueue?.Count(x => x.Priority == Priority.High) ?? 0)
+                </button>
+                <button class="filter-btn @(selectedFilter == "escalated" ? "active" : "")" 
+                        @onclick="@(() => FilterIncidents("escalated"))">
+                    Escalados (@dashboardData.WorkQueue?.Count(x => x.IsEscalated) ?? 0)
+                </button>
+            </div>
+        </div>
+
+        <div class="work-queue">
+            @if (filteredIncidents?.Any() == true)
+            {
+                @foreach (var incident in filteredIncidents.Take(10))
+                {
+                    <div class="incident-card @GetPriorityClass(incident.Priority) @(incident.IsEscalated ? "escalated" : "")">
+                        <div class="incident-header">
+                            <div class="incident-info">
+                                <h5 class="incident-title">
+                                    @incident.TicketNumber
+                                    @if (incident.IsEscalated)
+                                    {
+                                        <span class="escalated-badge">
+                                            <i class="fas fa-arrow-up"></i> Escalado
+                                        </span>
+                                    }
+                                </h5>
+                                <p class="incident-description">@incident.Description</p>
+                            </div>
+                            <div class="incident-priority">
+                                <span class="priority-badge @GetPriorityClass(incident.Priority)">
+                                    @GetPriorityText(incident.Priority)
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="incident-details">
+                            <div class="detail-item">
+                                <i class="fas fa-user"></i>
+                                <span>@incident.ReportedBy</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>@incident.Location</span>
+                            </div>
+                            <div class="detail-item">
+                                <i class="fas fa-clock"></i>
+                                <span class="@GetSlaClass(incident.SlaDeadline)">
+                                    SLA: @FormatSlaTime(incident.SlaDeadline)
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="incident-actions">
+                            <button class="btn btn-primary btn-sm" @onclick="@(() => StartWork(incident.Id))">
+                                <i class="fas fa-play"></i> Iniciar
+                            </button>
+                            <button class="btn btn-info btn-sm" @onclick="@(() => ViewDetails(incident.Id))">
+                                <i class="fas fa-eye"></i> Ver
+                            </button>
+                            <button class="btn btn-warning btn-sm" @onclick="@(() => RequestEscalation(incident.Id))">
+                                <i class="fas fa-level-up-alt"></i> Escalar
+                            </button>
+                            <div class="dropdown">
+                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" 
+                                        @onclick="@(() => ToggleDropdown(incident.Id))">
+                                    <i class="fas fa-ellipsis-h"></i>
+                                </button>
+                                <div class="dropdown-menu @(activeDropdown == incident.Id ? "show" : "")">
+                                    <button class="dropdown-item" @onclick="@(() => TransferIncident(incident.Id))">
+                                        <i class="fas fa-exchange-alt"></i> Transferir
+                                    </button>
+                                    <button class="dropdown-item" @onclick="@(() => RequestInformation(incident.Id))">
+                                        <i class="fas fa-question-circle"></i> Solicitar Info
+                                    </button>
+                                    <button class="dropdown-item" @onclick="@(() => AddNote(incident.Id))">
+                                        <i class="fas fa-sticky-note"></i> Agregar Nota
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-queue">
+                    <i class="fas fa-inbox"></i>
+                    <h4>No hay incidentes en la cola</h4>
+                    <p>¡Excelente trabajo! Tu cola de trabajo está vacía.</p>
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- Active Work Section -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h3><i class="fas fa-cog fa-spin"></i> Trabajo Activo</h3>
+            <div class="active-work-timer">
+                @if (dashboardData.CurrentWork != null)
+                {
+                    <span class="timer">
+                        <i class="fas fa-clock"></i>
+                        @FormatWorkingTime(dashboardData.CurrentWork.StartTime)
+                    </span>
+                }
+            </div>
+        </div>
+
+        @if (dashboardData.CurrentWork != null)
+        {
+            <div class="active-work-card">
+                <div class="work-header">
+                    <h4>@dashboardData.CurrentWork.TicketNumber</h4>
+                    <div class="work-controls">
+                        <button class="btn btn-warning" @onclick="PauseWork">
+                            <i class="fas fa-pause"></i> Pausar
+                        </button>
+                        <button class="btn btn-success" @onclick="CompleteWork">
+                            <i class="fas fa-check"></i> Completar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="work-content">
+                    <p><strong>Descripción:</strong> @dashboardData.CurrentWork.Description</p>
+                    <p><strong>Usuario:</strong> @dashboardData.CurrentWork.ReportedBy</p>
+                    <p><strong>Ubicación:</strong> @dashboardData.CurrentWork.Location</p>
+                </div>
+
+                <div class="work-tools">
+                    <h5>Herramientas de Diagnóstico</h5>
+                    <div class="tools-grid">
+                        <button class="tool-btn" @onclick="OpenRemoteDesktop">
+                            <i class="fas fa-desktop"></i>
+                            <span>Escritorio Remoto</span>
+                        </button>
+                        <button class="tool-btn" @onclick="RunNetworkDiag">
+                            <i class="fas fa-network-wired"></i>
+                            <span>Diagnóstico Red</span>
+                        </button>
+                        <button class="tool-btn" @onclick="CheckSystemLogs">
+                            <i class="fas fa-file-alt"></i>
+                            <span>Logs del Sistema</span>
+                        </button>
+                        <button class="tool-btn" @onclick="OpenKnowledgeBase">
+                            <i class="fas fa-book"></i>
+                            <span>Base Conocimiento</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="work-progress">
+                    <h5>Progreso de Resolución</h5>
+                    <div class="progress-steps">
+                        <div class="step completed">
+                            <i class="fas fa-check"></i>
+                            <span>Asignado</span>
+                        </div>
+                        <div class="step completed">
+                            <i class="fas fa-check"></i>
+                            <span>En Progreso</span>
+                        </div>
+                        <div class="step active">
+                            <i class="fas fa-cog"></i>
+                            <span>Diagnosticando</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-wrench"></i>
+                            <span>Implementando</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Resuelto</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="no-active-work">
+                <i class="fas fa-coffee"></i>
+                <h4>Sin trabajo activo</h4>
+                <p>Selecciona un incidente de tu cola de trabajo para comenzar.</p>
+            </div>
+        }
+    </section>
+
+    <!-- Team Collaboration Section -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h3><i class="fas fa-users"></i> Colaboración en Equipo</h3>
+            <button class="btn btn-outline-primary" @onclick="RequestHelp">
+                <i class="fas fa-hands-helping"></i> Solicitar Ayuda
+            </button>
+        </div>
+
+        <div class="collaboration-content">
+            <div class="online-colleagues">
+                <h5>Colegas En Línea</h5>
+                <div class="colleagues-list">
+                    @if (dashboardData.OnlineColleagues?.Any() == true)
+                    {
+                        @foreach (var colleague in dashboardData.OnlineColleagues)
+                        {
+                            <div class="colleague-card">
+                                <div class="colleague-info">
+                                    <div class="colleague-avatar">
+                                        @colleague.Name.Substring(0, 1)
+                                    </div>
+                                    <div class="colleague-details">
+                                        <span class="name">@colleague.Name</span>
+                                        <span class="specialty">@colleague.Specialty</span>
+                                    </div>
+                                </div>
+                                <div class="colleague-status">
+                                    <span class="status @GetColleagueStatusClass(colleague.Status)">
+                                        @GetColleagueStatusText(colleague.Status)
+                                    </span>
+                                    <div class="colleague-actions">
+                                        <button class="btn btn-sm btn-outline-primary" 
+                                                @onclick="@(() => SendMessage(colleague.Id))">
+                                            <i class="fas fa-comment"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-success" 
+                                                @onclick="@(() => RequestCollaboration(colleague.Id))">
+                                            <i class="fas fa-handshake"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="recent-solutions">
+                <h5>Soluciones Recientes del Equipo</h5>
+                <div class="solutions-list">
+                    @if (dashboardData.RecentTeamSolutions?.Any() == true)
+                    {
+                        @foreach (var solution in dashboardData.RecentTeamSolutions)
+                        {
+                            <div class="solution-card">
+                                <div class="solution-header">
+                                    <h6>@solution.Title</h6>
+                                    <span class="solution-time">@FormatRelativeTime(solution.CreatedAt)</span>
+                                </div>
+                                <p class="solution-summary">@solution.Summary</p>
+                                <div class="solution-meta">
+                                    <span class="solved-by">Por: @solution.SolvedBy</span>
+                                    <button class="btn btn-sm btn-link" @onclick="@(() => ViewSolution(solution.Id))">
+                                        Ver detalles
+                                    </button>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+@code {
+    private TechnicianDashboardData dashboardData = new();
+    private List<WorkItem>? filteredIncidents;
+    private string selectedFilter = "all";
+    private int? activeDropdown = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+        FilterIncidents("all");
+        await StartTimer();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        // TODO: Replace with actual API calls
+        dashboardData = new TechnicianDashboardData
+        {
+            IsAvailable = true,
+            AssignedIncidents = 8,
+            ResolvedToday = 3,
+            AvgResolutionTime = TimeSpan.FromHours(2.5),
+            SlaCompliance = 92.5,
+            WorkQueue = new List<WorkItem>
+            {
+                new() { Id = 1, TicketNumber = "INC-001234", Description = "Equipo no enciende en laboratorio A", 
+                        ReportedBy = "Dr. María González", Location = "Lab A-101", Priority = Priority.High, 
+                        SlaDeadline = DateTime.Now.AddHours(2), IsEscalated = false },
+                new() { Id = 2, TicketNumber = "INC-001235", Description = "Internet lento en oficinas administrativas", 
+                        ReportedBy = "Sec. Carmen López", Location = "Piso 2", Priority = Priority.Medium, 
+                        SlaDeadline = DateTime.Now.AddHours(4), IsEscalated = true }
+            },
+            CurrentWork = new WorkItem 
+            { 
+                Id = 3, TicketNumber = "INC-001230", Description = "Configurar nuevo servidor", 
+                ReportedBy = "Admin. TI", Location = "Datacenter", StartTime = DateTime.Now.AddMinutes(-45) 
+            },
+            OnlineColleagues = new List<Colleague>
+            {
+                new() { Id = 1, Name = "Ana García", Specialty = "Redes", Status = ColleagueStatus.Available },
+                new() { Id = 2, Name = "Luis Morales", Specialty = "Hardware", Status = ColleagueStatus.Busy }
+            },
+            RecentTeamSolutions = new List<TeamSolution>
+            {
+                new() { Id = 1, Title = "Problema de impresión masiva", Summary = "Solucionado reiniciando el spooler", 
+                        SolvedBy = "Carlos Pérez", CreatedAt = DateTime.Now.AddHours(-2) }
+            }
+        };
+    }
+
+    private async Task StartTimer()
+    {
+        // Update timer every minute
+        await JSRuntime.InvokeVoidAsync("setInterval", DotNetObjectReference.Create(this), "updateTimer", 60000);
+    }
+
+    // Filter methods
+    private void FilterIncidents(string filter)
+    {
+        selectedFilter = filter;
+        filteredIncidents = dashboardData.WorkQueue?.Where(x => filter switch
+        {
+            "high" => x.Priority == Priority.High,
+            "escalated" => x.IsEscalated,
+            _ => true
+        }).ToList() ?? new List<WorkItem>();
+    }
+
+    // Action methods
+    private async Task ToggleAvailability()
+    {
+        dashboardData.IsAvailable = !dashboardData.IsAvailable;
+        await JSRuntime.InvokeVoidAsync("updateTechnicianStatus", dashboardData.IsAvailable);
+    }
+
+    private async Task StartWork(int incidentId) => await JSRuntime.InvokeVoidAsync("startWork", incidentId);
+    private async Task ViewDetails(int incidentId) => await JSRuntime.InvokeVoidAsync("navigateTo", $"/incidents/{incidentId}");
+    private async Task RequestEscalation(int incidentId) => await JSRuntime.InvokeVoidAsync("requestEscalation", incidentId);
+    private async Task TransferIncident(int incidentId) => await JSRuntime.InvokeVoidAsync("showTransferModal", incidentId);
+    private async Task RequestInformation(int incidentId) => await JSRuntime.InvokeVoidAsync("requestInformation", incidentId);
+    private async Task AddNote(int incidentId) => await JSRuntime.InvokeVoidAsync("showNoteModal", incidentId);
+    private async Task PauseWork() => await JSRuntime.InvokeVoidAsync("pauseWork");
+    private async Task CompleteWork() => await JSRuntime.InvokeVoidAsync("showCompletionModal");
+    private async Task OpenRemoteDesktop() => await JSRuntime.InvokeVoidAsync("openRemoteDesktop");
+    private async Task RunNetworkDiag() => await JSRuntime.InvokeVoidAsync("runNetworkDiagnostics");
+    private async Task CheckSystemLogs() => await JSRuntime.InvokeVoidAsync("openSystemLogs");
+    private async Task OpenKnowledgeBase() => await JSRuntime.InvokeVoidAsync("navigateTo", "/knowledge-base");
+    private async Task RequestHelp() => await JSRuntime.InvokeVoidAsync("showHelpRequestModal");
+    private async Task SendMessage(int colleagueId) => await JSRuntime.InvokeVoidAsync("openChat", colleagueId);
+    private async Task RequestCollaboration(int colleagueId) => await JSRuntime.InvokeVoidAsync("requestCollaboration", colleagueId);
+    private async Task ViewSolution(int solutionId) => await JSRuntime.InvokeVoidAsync("navigateTo", $"/solutions/{solutionId}");
+
+    // UI methods
+    private void ToggleDropdown(int incidentId)
+    {
+        activeDropdown = activeDropdown == incidentId ? null : incidentId;
+    }
+
+    // Helper methods
+    private string GetStatusClass() => dashboardData.IsAvailable ? "available" : "unavailable";
+    private string GetStatusText() => dashboardData.IsAvailable ? "Disponible" : "No Disponible";
+    private string GetSlaColor(double compliance) => compliance >= 95 ? "success" : compliance >= 85 ? "warning" : "danger";
+    private string GetPriorityClass(Priority priority) => priority.ToString().ToLower();
+    private string GetPriorityText(Priority priority) => priority switch
+    {
+        Priority.Critical => "Crítica",
+        Priority.High => "Alta",
+        Priority.Medium => "Media",
+        Priority.Low => "Baja",
+        _ => "Normal"
+    };
+    private string GetSlaClass(DateTime deadline) => deadline < DateTime.Now ? "overdue" : deadline < DateTime.Now.AddHours(1) ? "critical" : "normal";
+    private string GetColleagueStatusClass(ColleagueStatus status) => status.ToString().ToLower();
+    private string GetColleagueStatusText(ColleagueStatus status) => status switch
+    {
+        ColleagueStatus.Available => "Disponible",
+        ColleagueStatus.Busy => "Ocupado",
+        ColleagueStatus.Away => "Ausente",
+        _ => "Desconectado"
+    };
+    private string FormatTimeSpan(TimeSpan time) => $"{(int)time.TotalHours}h {time.Minutes}m";
+    private string FormatWorkingTime(DateTime startTime) => FormatTimeSpan(DateTime.Now - startTime);
+    private string FormatSlaTime(DateTime deadline)
+    {
+        var remaining = deadline - DateTime.Now;
+        return remaining.TotalHours < 0 ? "VENCIDO" : $"{(int)remaining.TotalHours}h {remaining.Minutes}m";
+    }
+    private string FormatRelativeTime(DateTime date)
+    {
+        var diff = DateTime.Now - date;
+        return diff.TotalHours < 1 ? $"Hace {(int)diff.TotalMinutes}m" : $"Hace {(int)diff.TotalHours}h";
+    }
+
+    // Data classes
+    public class TechnicianDashboardData
+    {
+        public bool IsAvailable { get; set; }
+        public int AssignedIncidents { get; set; }
+        public int ResolvedToday { get; set; }
+        public TimeSpan AvgResolutionTime { get; set; }
+        public double SlaCompliance { get; set; }
+        public List<WorkItem>? WorkQueue { get; set; }
+        public WorkItem? CurrentWork { get; set; }
+        public List<Colleague>? OnlineColleagues { get; set; }
+        public List<TeamSolution>? RecentTeamSolutions { get; set; }
+    }
+
+    public class WorkItem
+    {
+        public int Id { get; set; }
+        public string TicketNumber { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string ReportedBy { get; set; } = "";
+        public string Location { get; set; } = "";
+        public Priority Priority { get; set; }
+        public DateTime SlaDeadline { get; set; }
+        public bool IsEscalated { get; set; }
+        public DateTime StartTime { get; set; }
+    }
+
+    public class Colleague
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Specialty { get; set; } = "";
+        public ColleagueStatus Status { get; set; }
+    }
+
+    public class TeamSolution
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Summary { get; set; } = "";
+        public string SolvedBy { get; set; } = "";
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public enum Priority { Critical, High, Medium, Low }
+    public enum ColleagueStatus { Available, Busy, Away, Offline }
+}

@@ -1,0 +1,541 @@
+@page "/teacher-dashboard"
+@using Microsoft.AspNetCore.Authorization
+@using incidentesFISEI.Shared.Components
+@attribute [Authorize(Roles = "Docente")]
+@layout DashboardLayout
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<div class="teacher-dashboard">
+    <!-- Welcome Section -->
+    <section class="dashboard-section">
+        <div class="teacher-welcome">
+            <div class="welcome-content">
+                <h2>Bienvenido, @dashboardData.TeacherName</h2>
+                <p class="welcome-subtitle">@dashboardData.Department - @dashboardData.Faculty</p>
+                <div class="quick-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">@dashboardData.ActiveTickets</span>
+                        <span class="stat-label">Tickets Activos</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">@dashboardData.PendingRequests</span>
+                        <span class="stat-label">Solicitudes Pendientes</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-number">@dashboardData.ResolvedThisWeek</span>
+                        <span class="stat-label">Resueltos esta Semana</span>
+                    </div>
+                </div>
+            </div>
+            <div class="welcome-actions">
+                <button class="btn btn-primary btn-lg" @onclick="CreateNewTicket">
+                    <i class="fas fa-plus"></i>
+                    Nuevo Ticket
+                </button>
+                <button class="btn btn-outline-primary" @onclick="ViewMyTickets">
+                    <i class="fas fa-list"></i>
+                    Mis Tickets
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Actions Grid -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h3><i class="fas fa-bolt"></i> Acciones Rápidas</h3>
+            <p class="section-subtitle">Servicios más utilizados para docentes</p>
+        </div>
+        
+        <div class="quick-actions-grid">
+            <div class="action-card hardware" @onclick="@(() => QuickTicket("hardware"))">
+                <div class="action-icon">
+                    <i class="fas fa-laptop"></i>
+                </div>
+                <div class="action-content">
+                    <h4>Problemas de Hardware</h4>
+                    <p>Computadoras, proyectores, impresoras</p>
+                    <span class="action-badge">Más común</span>
+                </div>
+            </div>
+
+            <div class="action-card software" @onclick="@(() => QuickTicket("software"))">
+                <div class="action-icon">
+                    <i class="fas fa-code"></i>
+                </div>
+                <div class="action-content">
+                    <h4>Software Académico</h4>
+                    <p>Moodle, Office, aplicaciones especializadas</p>
+                </div>
+            </div>
+
+            <div class="action-card network" @onclick="@(() => QuickTicket("network"))">
+                <div class="action-icon">
+                    <i class="fas fa-wifi"></i>
+                </div>
+                <div class="action-content">
+                    <h4>Conectividad</h4>
+                    <p>Internet, WiFi, acceso remoto</p>
+                </div>
+            </div>
+
+            <div class="action-card account" @onclick="@(() => QuickTicket("account"))">
+                <div class="action-icon">
+                    <i class="fas fa-user-cog"></i>
+                </div>
+                <div class="action-content">
+                    <h4>Cuentas y Accesos</h4>
+                    <p>Contraseñas, permisos, nuevas cuentas</p>
+                </div>
+            </div>
+
+            <div class="action-card classroom" @onclick="@(() => QuickTicket("classroom"))">
+                <div class="action-icon">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <div class="action-content">
+                    <h4>Aula Virtual</h4>
+                    <p>Configuración de clases, grabaciones</p>
+                </div>
+            </div>
+
+            <div class="action-card support" @onclick="@(() => QuickTicket("support"))">
+                <div class="action-icon">
+                    <i class="fas fa-hands-helping"></i>
+                </div>
+                <div class="action-content">
+                    <h4>Soporte Técnico</h4>
+                    <p>Capacitación, asistencia personalizada</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- My Tickets Section -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h3><i class="fas fa-ticket-alt"></i> Mis Tickets Recientes</h3>
+            <button class="btn btn-outline-primary" @onclick="ViewAllTickets">
+                Ver Todos
+            </button>
+        </div>
+        
+        <div class="tickets-list">
+            @if (dashboardData.RecentTickets?.Any() == true)
+            {
+                @foreach (var ticket in dashboardData.RecentTickets.Take(5))
+                {
+                    <div class="ticket-card @GetTicketStatusClass(ticket.Status)">
+                        <div class="ticket-header">
+                            <div class="ticket-info">
+                                <h5>@ticket.Title</h5>
+                                <span class="ticket-number">@ticket.TicketNumber</span>
+                            </div>
+                            <div class="ticket-status">
+                                <span class="status-badge @GetTicketStatusClass(ticket.Status)">
+                                    @GetTicketStatusText(ticket.Status)
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <p class="ticket-description">@ticket.Description</p>
+                        
+                        <div class="ticket-meta">
+                            <div class="meta-item">
+                                <i class="fas fa-calendar"></i>
+                                <span>@ticket.CreatedAt.ToString("dd/MM/yyyy")</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-user"></i>
+                                <span>@ticket.AssignedTo</span>
+                            </div>
+                            <div class="meta-item">
+                                <i class="fas fa-flag"></i>
+                                <span class="priority-@ticket.Priority.ToString().ToLower()">
+                                    @GetPriorityText(ticket.Priority)
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="ticket-actions">
+                            <button class="btn btn-sm btn-outline-primary" @onclick="@(() => ViewTicketDetails(ticket.Id))">
+                                Ver Detalles
+                            </button>
+                            @if (ticket.Status == TicketStatus.WaitingForUser)
+                            {
+                                <button class="btn btn-sm btn-success" @onclick="@(() => ProvideInformation(ticket.Id))">
+                                    Proporcionar Info
+                                </button>
+                            }
+                            @if (ticket.Status == TicketStatus.Resolved)
+                            {
+                                <button class="btn btn-sm btn-outline-success" @onclick="@(() => ConfirmResolution(ticket.Id))">
+                                    Confirmar Resolución
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-tickets">
+                    <i class="fas fa-inbox"></i>
+                    <h4>No tienes tickets recientes</h4>
+                    <p>Cuando reportes un problema, aparecerá aquí para seguimiento.</p>
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- Knowledge Base Section -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h3><i class="fas fa-graduation-cap"></i> Base de Conocimiento Académica</h3>
+            <button class="btn btn-outline-primary" @onclick="ViewAllArticles">
+                Ver Todo
+            </button>
+        </div>
+        
+        <div class="knowledge-grid">
+            <div class="knowledge-category popular">
+                <div class="category-header">
+                    <i class="fas fa-fire"></i>
+                    <h4>Más Consultados</h4>
+                </div>
+                <div class="articles-list">
+                    @if (dashboardData.PopularArticles?.Any() == true)
+                    {
+                        @foreach (var article in dashboardData.PopularArticles.Take(4))
+                        {
+                            <div class="article-item" @onclick="@(() => ViewArticle(article.Id))">
+                                <span class="article-title">@article.Title</span>
+                                <div class="article-meta">
+                                    <span class="views">@article.Views vistas</span>
+                                    <span class="rating">
+                                        @for (int i = 0; i < (int)article.Rating; i++)
+                                        {
+                                            <i class="fas fa-star"></i>
+                                        }
+                                    </span>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="knowledge-category recent">
+                <div class="category-header">
+                    <i class="fas fa-clock"></i>
+                    <h4>Actualizaciones Recientes</h4>
+                </div>
+                <div class="articles-list">
+                    @if (dashboardData.RecentArticles?.Any() == true)
+                    {
+                        @foreach (var article in dashboardData.RecentArticles.Take(4))
+                        {
+                            <div class="article-item" @onclick="@(() => ViewArticle(article.Id))">
+                                <span class="article-title">@article.Title</span>
+                                <div class="article-meta">
+                                    <span class="date">@FormatDate(article.UpdatedAt)</span>
+                                    <span class="new-badge">Nuevo</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+
+            <div class="knowledge-category academic">
+                <div class="category-header">
+                    <i class="fas fa-university"></i>
+                    <h4>Herramientas Académicas</h4>
+                </div>
+                <div class="articles-list">
+                    @if (dashboardData.AcademicArticles?.Any() == true)
+                    {
+                        @foreach (var article in dashboardData.AcademicArticles.Take(4))
+                        {
+                            <div class="article-item" @onclick="@(() => ViewArticle(article.Id))">
+                                <span class="article-title">@article.Title</span>
+                                <div class="article-meta">
+                                    <span class="category">@article.Category</span>
+                                </div>
+                            </div>
+                        }
+                    }
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- FAQ Section -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h3><i class="fas fa-question-circle"></i> Preguntas Frecuentes - Docentes</h3>
+            <div class="search-box">
+                <input type="text" @bind="searchTerm" @oninput="FilterFAQs" 
+                       placeholder="Buscar en preguntas frecuentes..." class="search-input">
+                <i class="fas fa-search search-icon"></i>
+            </div>
+        </div>
+        
+        <div class="faq-list">
+            @if (filteredFAQs?.Any() == true)
+            {
+                @foreach (var faq in filteredFAQs.Take(6))
+                {
+                    <div class="faq-item @(expandedFAQ == faq.Id ? "expanded" : "")">
+                        <div class="faq-question" @onclick="@(() => ToggleFAQ(faq.Id))">
+                            <span>@faq.Question</span>
+                            <i class="fas fa-@(expandedFAQ == faq.Id ? "minus" : "plus")"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p>@faq.Answer</p>
+                            @if (!string.IsNullOrEmpty(faq.RelatedArticleUrl))
+                            {
+                                <a href="@faq.RelatedArticleUrl" class="related-link">
+                                    <i class="fas fa-external-link-alt"></i>
+                                    Ver artículo relacionado
+                                </a>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="no-faqs">
+                    <i class="fas fa-search"></i>
+                    <p>No se encontraron preguntas frecuentes que coincidan con tu búsqueda.</p>
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- Contact and Support -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h3><i class="fas fa-headset"></i> Contacto y Soporte</h3>
+        </div>
+        
+        <div class="contact-grid">
+            <div class="contact-card emergency">
+                <div class="contact-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <div class="contact-content">
+                    <h4>Soporte Urgente</h4>
+                    <p>Para problemas críticos durante clases</p>
+                    <div class="contact-info">
+                        <span><i class="fas fa-phone"></i> Ext: 2100</span>
+                        <span><i class="fas fa-clock"></i> 24/7</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="contact-card help-desk">
+                <div class="contact-icon">
+                    <i class="fas fa-life-ring"></i>
+                </div>
+                <div class="contact-content">
+                    <h4>Mesa de Ayuda</h4>
+                    <p>Soporte técnico general</p>
+                    <div class="contact-info">
+                        <span><i class="fas fa-envelope"></i> help@fisei.edu.ec</span>
+                        <span><i class="fas fa-clock"></i> L-V 8:00-17:00</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="contact-card training">
+                <div class="contact-icon">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </div>
+                <div class="contact-content">
+                    <h4>Capacitación</h4>
+                    <p>Entrenamiento en herramientas</p>
+                    <div class="contact-info">
+                        <span><i class="fas fa-calendar"></i> Solicitar sesión</span>
+                        <button class="btn btn-sm btn-outline-primary" @onclick="RequestTraining">
+                            Agendar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+@code {
+    private TeacherDashboardData dashboardData = new();
+    private string searchTerm = "";
+    private List<FAQ>? filteredFAQs;
+    private int? expandedFAQ = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+        FilterFAQs();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        // TODO: Replace with actual API calls
+        dashboardData = new TeacherDashboardData
+        {
+            TeacherName = "Dr. María González",
+            Department = "Ingeniería en Sistemas",
+            Faculty = "FISEI",
+            ActiveTickets = 2,
+            PendingRequests = 1,
+            ResolvedThisWeek = 4,
+            RecentTickets = new List<Ticket>
+            {
+                new() { Id = 1, TicketNumber = "TKT-2024-001", Title = "Problema con proyector Aula A-101", 
+                        Description = "El proyector no enciende para la clase de programación", 
+                        Status = TicketStatus.InProgress, Priority = TicketPriority.High, 
+                        CreatedAt = DateTime.Now.AddDays(-1), AssignedTo = "Carlos Pérez" },
+                new() { Id = 2, TicketNumber = "TKT-2024-002", Title = "Acceso a plataforma Moodle", 
+                        Description = "No puedo acceder a mi curso de Bases de Datos", 
+                        Status = TicketStatus.WaitingForUser, Priority = TicketPriority.Medium, 
+                        CreatedAt = DateTime.Now.AddDays(-3), AssignedTo = "Ana García" }
+            },
+            PopularArticles = new List<KnowledgeArticle>
+            {
+                new() { Id = 1, Title = "Configurar Moodle para nuevos cursos", Views = 245, Rating = 4.5f },
+                new() { Id = 2, Title = "Solucionar problemas de proyector", Views = 189, Rating = 4.2f }
+            },
+            RecentArticles = new List<KnowledgeArticle>
+            {
+                new() { Id = 3, Title = "Nueva versión de Office 365", UpdatedAt = DateTime.Now.AddDays(-2) },
+                new() { Id = 4, Title = "Guía de videoconferencias Teams", UpdatedAt = DateTime.Now.AddDays(-5) }
+            },
+            AcademicArticles = new List<KnowledgeArticle>
+            {
+                new() { Id = 5, Title = "Crear exámenes en línea", Category = "Evaluación" },
+                new() { Id = 6, Title = "Gestionar calificaciones", Category = "Académico" }
+            },
+            FAQs = new List<FAQ>
+            {
+                new() { Id = 1, Question = "¿Cómo resetear mi contraseña de Moodle?", 
+                        Answer = "Puedes resetear tu contraseña desde la página de login usando la opción 'Olvidé mi contraseña' o contactando a soporte técnico." },
+                new() { Id = 2, Question = "¿Qué hacer si el proyector no funciona?", 
+                        Answer = "Verifica que esté conectado y encendido. Si persiste, reporta un ticket de soporte urgente." },
+                new() { Id = 3, Question = "¿Cómo subir contenido a mi aula virtual?", 
+                        Answer = "Desde tu curso en Moodle, usa la opción 'Añadir actividad o recurso' para cargar archivos o crear actividades." }
+            }
+        };
+
+        filteredFAQs = dashboardData.FAQs;
+    }
+
+    // Action methods
+    private async Task CreateNewTicket() => await JSRuntime.InvokeVoidAsync("navigateTo", "/tickets/create");
+    private async Task ViewMyTickets() => await JSRuntime.InvokeVoidAsync("navigateTo", "/tickets/my-tickets");
+    private async Task QuickTicket(string category) => await JSRuntime.InvokeVoidAsync("navigateTo", $"/tickets/create?category={category}");
+    private async Task ViewAllTickets() => await JSRuntime.InvokeVoidAsync("navigateTo", "/tickets");
+    private async Task ViewTicketDetails(int ticketId) => await JSRuntime.InvokeVoidAsync("navigateTo", $"/tickets/{ticketId}");
+    private async Task ProvideInformation(int ticketId) => await JSRuntime.InvokeVoidAsync("showInformationModal", ticketId);
+    private async Task ConfirmResolution(int ticketId) => await JSRuntime.InvokeVoidAsync("confirmResolution", ticketId);
+    private async Task ViewAllArticles() => await JSRuntime.InvokeVoidAsync("navigateTo", "/knowledge-base");
+    private async Task ViewArticle(int articleId) => await JSRuntime.InvokeVoidAsync("navigateTo", $"/knowledge-base/{articleId}");
+    private async Task RequestTraining() => await JSRuntime.InvokeVoidAsync("showTrainingModal");
+
+    // UI methods
+    private void FilterFAQs()
+    {
+        if (string.IsNullOrEmpty(searchTerm))
+        {
+            filteredFAQs = dashboardData.FAQs;
+        }
+        else
+        {
+            filteredFAQs = dashboardData.FAQs?.Where(f => 
+                f.Question.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
+                f.Answer.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList() ?? new List<FAQ>();
+        }
+    }
+
+    private void ToggleFAQ(int faqId)
+    {
+        expandedFAQ = expandedFAQ == faqId ? null : faqId;
+    }
+
+    // Helper methods
+    private string GetTicketStatusClass(TicketStatus status) => status.ToString().ToLower().Replace("waitingforuser", "waiting");
+    private string GetTicketStatusText(TicketStatus status) => status switch
+    {
+        TicketStatus.Open => "Abierto",
+        TicketStatus.InProgress => "En Progreso", 
+        TicketStatus.WaitingForUser => "Esperando Información",
+        TicketStatus.Resolved => "Resuelto",
+        TicketStatus.Closed => "Cerrado",
+        _ => "Desconocido"
+    };
+    private string GetPriorityText(TicketPriority priority) => priority switch
+    {
+        TicketPriority.Critical => "Crítica",
+        TicketPriority.High => "Alta",
+        TicketPriority.Medium => "Media", 
+        TicketPriority.Low => "Baja",
+        _ => "Normal"
+    };
+    private string FormatDate(DateTime date)
+    {
+        var diff = DateTime.Now - date;
+        return diff.TotalDays < 1 ? "Hoy" : diff.TotalDays < 7 ? $"Hace {(int)diff.TotalDays}d" : date.ToString("dd/MM");
+    }
+
+    // Data classes
+    public class TeacherDashboardData
+    {
+        public string TeacherName { get; set; } = "";
+        public string Department { get; set; } = "";
+        public string Faculty { get; set; } = "";
+        public int ActiveTickets { get; set; }
+        public int PendingRequests { get; set; }
+        public int ResolvedThisWeek { get; set; }
+        public List<Ticket>? RecentTickets { get; set; }
+        public List<KnowledgeArticle>? PopularArticles { get; set; }
+        public List<KnowledgeArticle>? RecentArticles { get; set; }
+        public List<KnowledgeArticle>? AcademicArticles { get; set; }
+        public List<FAQ>? FAQs { get; set; }
+    }
+
+    public class Ticket
+    {
+        public int Id { get; set; }
+        public string TicketNumber { get; set; } = "";
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public TicketStatus Status { get; set; }
+        public TicketPriority Priority { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string AssignedTo { get; set; } = "";
+    }
+
+    public class KnowledgeArticle
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public int Views { get; set; }
+        public float Rating { get; set; }
+        public DateTime UpdatedAt { get; set; }
+        public string Category { get; set; } = "";
+    }
+
+    public class FAQ
+    {
+        public int Id { get; set; }
+        public string Question { get; set; } = "";
+        public string Answer { get; set; } = "";
+        public string? RelatedArticleUrl { get; set; }
+    }
+
+    public enum TicketStatus { Open, InProgress, WaitingForUser, Resolved, Closed }
+    public enum TicketPriority { Critical, High, Medium, Low }
+}

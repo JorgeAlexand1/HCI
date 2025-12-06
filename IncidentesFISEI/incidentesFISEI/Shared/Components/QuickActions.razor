@@ -1,0 +1,97 @@
+<div class="quick-actions">
+    @if (actions?.Any() == true)
+    {
+        @foreach (var action in actions)
+        {
+            <button class="quick-action-btn @action.Style" 
+                    @onclick="() => action.OnClick?.Invoke()" 
+                    title="@action.Description">
+                <i class="@action.Icon"></i>
+                <span class="action-text">@action.Text</span>
+                @if (action.Badge > 0)
+                {
+                    <span class="action-badge">@action.Badge</span>
+                }
+            </button>
+        }
+    }
+</div>
+
+@code {
+    [Parameter] public string UserRole { get; set; } = "";
+    
+    private List<QuickAction> actions = new();
+
+    protected override void OnParametersSet()
+    {
+        actions = GetActionsForRole(UserRole);
+    }
+
+    private List<QuickAction> GetActionsForRole(string role)
+    {
+        return role.ToLower() switch
+        {
+            "administrador" => new List<QuickAction>
+            {
+                new() { Text = "Nuevo Usuario", Icon = "fas fa-user-plus", Style = "primary", OnClick = () => NavigateToCreateUser() },
+                new() { Text = "Configuración", Icon = "fas fa-cog", Style = "secondary", OnClick = () => NavigateToSettings() },
+                new() { Text = "Reportes", Icon = "fas fa-chart-bar", Style = "info", OnClick = () => NavigateToReports() }
+            },
+            "supervisor" => new List<QuickAction>
+            {
+                new() { Text = "Asignar Incidente", Icon = "fas fa-hand-point-right", Style = "primary", OnClick = () => NavigateToAssign() },
+                new() { Text = "Escalaciones", Icon = "fas fa-exclamation-triangle", Style = "warning", Badge = GetEscalationCount(), OnClick = () => NavigateToEscalations() },
+                new() { Text = "Equipo", Icon = "fas fa-users", Style = "info", OnClick = () => NavigateToTeam() }
+            },
+            "tecnico" => new List<QuickAction>
+            {
+                new() { Text = "Tomar Incidente", Icon = "fas fa-hand-paper", Style = "success", OnClick = () => TakeIncident() },
+                new() { Text = "Base Conocimiento", Icon = "fas fa-book", Style = "info", OnClick = () => NavigateToKnowledgeBase() },
+                new() { Text = "Escalar", Icon = "fas fa-level-up-alt", Style = "warning", OnClick = () => EscalateIncident() }
+            },
+            "docente" => new List<QuickAction>
+            {
+                new() { Text = "Reportar Problema", Icon = "fas fa-plus-circle", Style = "primary", OnClick = () => CreateIncident() },
+                new() { Text = "Mis Incidentes", Icon = "fas fa-list", Style = "secondary", OnClick = () => NavigateToMyIncidents() },
+                new() { Text = "Ayuda", Icon = "fas fa-question-circle", Style = "info", OnClick = () => NavigateToHelp() }
+            },
+            "estudiante" or "usuario" => new List<QuickAction>
+            {
+                new() { Text = "Reportar Problema", Icon = "fas fa-plus", Style = "primary", OnClick = () => CreateIncident() },
+                new() { Text = "FAQ", Icon = "fas fa-question", Style = "info", OnClick = () => NavigateToFAQ() }
+            },
+            _ => new List<QuickAction>()
+        };
+    }
+
+    // Navigation methods
+    private void NavigateToCreateUser() => Console.WriteLine("Navigate to create user");
+    private void NavigateToSettings() => Console.WriteLine("Navigate to settings");
+    private void NavigateToReports() => Console.WriteLine("Navigate to reports");
+    private void NavigateToAssign() => Console.WriteLine("Navigate to assign");
+    private void NavigateToEscalations() => Console.WriteLine("Navigate to escalations");
+    private void NavigateToTeam() => Console.WriteLine("Navigate to team");
+    private void TakeIncident() => Console.WriteLine("Take incident");
+    private void NavigateToKnowledgeBase() => Console.WriteLine("Navigate to knowledge base");
+    private void EscalateIncident() => Console.WriteLine("Escalate incident");
+    private void CreateIncident() => Console.WriteLine("Create incident");
+    private void NavigateToMyIncidents() => Console.WriteLine("Navigate to my incidents");
+    private void NavigateToHelp() => Console.WriteLine("Navigate to help");
+    private void NavigateToFAQ() => Console.WriteLine("Navigate to FAQ");
+
+    private int GetEscalationCount()
+    {
+        // TODO: Implement actual escalation count logic
+        return 3;
+    }
+
+    public class QuickAction
+    {
+        public string Text { get; set; } = "";
+        public string Icon { get; set; } = "";
+        public string Style { get; set; } = "";
+        public string Description { get; set; } = "";
+        public int Badge { get; set; } = 0;
+        public Action? OnClick { get; set; }
+    }
+}

@@ -1,0 +1,544 @@
+@page "/student-dashboard"
+@using Microsoft.AspNetCore.Authorization
+@using incidentesFISEI.Shared.Components
+@attribute [Authorize(Roles = "Estudiante")]
+@layout DashboardLayout
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<div class="student-dashboard">
+    <!-- Welcome Section -->
+    <section class="dashboard-section">
+        <div class="student-welcome">
+            <div class="welcome-content">
+                <div class="student-avatar">
+                    <i class="fas fa-user-graduate"></i>
+                </div>
+                <div class="welcome-text">
+                    <h2>¡Hola, @dashboardData.StudentName!</h2>
+                    <p class="welcome-subtitle">@dashboardData.Career - @dashboardData.Semester</p>
+                    <div class="student-stats">
+                        <div class="stat-bubble">
+                            <span class="stat-number">@dashboardData.ActiveTickets</span>
+                            <span class="stat-label">Tickets Activos</span>
+                        </div>
+                        <div class="stat-bubble">
+                            <span class="stat-number">@dashboardData.ResolvedTickets</span>
+                            <span class="stat-label">Resueltos</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="welcome-actions">
+                <button class="btn btn-primary btn-lg" @onclick="CreateTicket">
+                    <i class="fas fa-plus-circle"></i>
+                    Reportar Problema
+                </button>
+                <button class="btn btn-outline-primary" @onclick="ViewMyTickets">
+                    <i class="fas fa-list-ul"></i>
+                    Mis Reportes
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <!-- Quick Help Section -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h3><i class="fas fa-magic"></i> Ayuda Rápida</h3>
+            <p class="section-subtitle">Soluciones comunes para estudiantes</p>
+        </div>
+        
+        <div class="quick-help-grid">
+            <div class="help-card wifi" @onclick="@(() => ShowSolution("wifi"))">
+                <div class="help-icon">
+                    <i class="fas fa-wifi"></i>
+                </div>
+                <div class="help-content">
+                    <h4>WiFi FISEI</h4>
+                    <p>Conectarse a la red universitaria</p>
+                    <span class="help-tag">Guía rápida</span>
+                </div>
+                <div class="help-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </div>
+
+            <div class="help-card email" @onclick="@(() => ShowSolution("email"))">
+                <div class="help-icon">
+                    <i class="fas fa-envelope"></i>
+                </div>
+                <div class="help-content">
+                    <h4>Email Institucional</h4>
+                    <p>Configurar correo estudiantil</p>
+                    <span class="help-tag">Paso a paso</span>
+                </div>
+                <div class="help-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </div>
+
+            <div class="help-card moodle" @onclick="@(() => ShowSolution("moodle"))">
+                <div class="help-icon">
+                    <i class="fas fa-graduation-cap"></i>
+                </div>
+                <div class="help-content">
+                    <h4>Plataforma Moodle</h4>
+                    <p>Acceder a cursos y tareas</p>
+                    <span class="help-tag">Tutorial</span>
+                </div>
+                <div class="help-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </div>
+
+            <div class="help-card password" @onclick="@(() => ShowSolution("password"))">
+                <div class="help-icon">
+                    <i class="fas fa-key"></i>
+                </div>
+                <div class="help-content">
+                    <h4>Restablecer Contraseña</h4>
+                    <p>Recuperar acceso a cuentas</p>
+                    <span class="help-tag">Autoservicio</span>
+                </div>
+                <div class="help-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </div>
+
+            <div class="help-card lab" @onclick="@(() => ShowSolution("lab"))">
+                <div class="help-icon">
+                    <i class="fas fa-desktop"></i>
+                </div>
+                <div class="help-content">
+                    <h4>Laboratorios</h4>
+                    <p>Reservar equipos y software</p>
+                    <span class="help-tag">Disponibilidad</span>
+                </div>
+                <div class="help-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </div>
+
+            <div class="help-card printing" @onclick="@(() => ShowSolution("printing"))">
+                <div class="help-icon">
+                    <i class="fas fa-print"></i>
+                </div>
+                <div class="help-content">
+                    <h4>Impresión</h4>
+                    <p>Imprimir documentos</p>
+                    <span class="help-tag">Saldo y cuotas</span>
+                </div>
+                <div class="help-arrow">
+                    <i class="fas fa-arrow-right"></i>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- My Tickets Section -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h3><i class="fas fa-clipboard-list"></i> Mis Reportes</h3>
+            <div class="ticket-filters">
+                <button class="filter-btn @(selectedFilter == "all" ? "active" : "")" @onclick="@(() => FilterTickets("all"))">
+                    Todos
+                </button>
+                <button class="filter-btn @(selectedFilter == "pending" ? "active" : "")" @onclick="@(() => FilterTickets("pending"))">
+                    Pendientes
+                </button>
+                <button class="filter-btn @(selectedFilter == "resolved" ? "active" : "")" @onclick="@(() => FilterTickets("resolved"))">
+                    Resueltos
+                </button>
+            </div>
+        </div>
+        
+        <div class="tickets-container">
+            @if (filteredTickets?.Any() == true)
+            {
+                @foreach (var ticket in filteredTickets.Take(4))
+                {
+                    <div class="student-ticket-card @GetStatusClass(ticket.Status)">
+                        <div class="ticket-status-indicator"></div>
+                        <div class="ticket-main">
+                            <div class="ticket-info">
+                                <h5>@ticket.Title</h5>
+                                <p class="ticket-description">@ticket.Description</p>
+                            </div>
+                            <div class="ticket-meta">
+                                <div class="meta-row">
+                                    <span class="ticket-id">@ticket.TicketNumber</span>
+                                    <span class="status-badge @GetStatusClass(ticket.Status)">
+                                        @GetStatusText(ticket.Status)
+                                    </span>
+                                </div>
+                                <div class="meta-row">
+                                    <span class="ticket-date">
+                                        <i class="fas fa-calendar-alt"></i>
+                                        @FormatDate(ticket.CreatedAt)
+                                    </span>
+                                    <span class="priority-indicator priority-@ticket.Priority.ToString().ToLower()">
+                                        <i class="fas fa-flag"></i>
+                                        @GetPriorityText(ticket.Priority)
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="ticket-actions">
+                            <button class="btn btn-sm btn-outline-primary" @onclick="@(() => ViewDetails(ticket.Id))">
+                                <i class="fas fa-eye"></i>
+                                Ver
+                            </button>
+                            @if (ticket.Status == TicketStatus.WaitingForUser)
+                            {
+                                <button class="btn btn-sm btn-success" @onclick="@(() => RespondTicket(ticket.Id))">
+                                    <i class="fas fa-reply"></i>
+                                    Responder
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+                @if (filteredTickets.Count() > 4)
+                {
+                    <div class="show-more">
+                        <button class="btn btn-outline-secondary" @onclick="ViewAllTickets">
+                            Ver todos mis reportes (@filteredTickets.Count())
+                        </button>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="empty-state">
+                    <div class="empty-icon">
+                        <i class="fas fa-@(selectedFilter == "all" ? "inbox" : selectedFilter == "pending" ? "hourglass-half" : "check-circle")"></i>
+                    </div>
+                    <h4>@GetEmptyMessage()</h4>
+                    <p>@GetEmptyDescription()</p>
+                    @if (selectedFilter == "all")
+                    {
+                        <button class="btn btn-primary" @onclick="CreateTicket">
+                            Reportar mi primer problema
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- Popular Resources -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h3><i class="fas fa-star"></i> Recursos Populares</h3>
+            <button class="btn btn-outline-primary btn-sm" @onclick="ViewAllResources">
+                Ver más recursos
+            </button>
+        </div>
+        
+        <div class="resources-grid">
+            @if (dashboardData.PopularResources?.Any() == true)
+            {
+                @foreach (var resource in dashboardData.PopularResources)
+                {
+                    <div class="resource-card" @onclick="@(() => OpenResource(resource.Url))">
+                        <div class="resource-icon">
+                            <i class="fas fa-@resource.Icon"></i>
+                        </div>
+                        <div class="resource-content">
+                            <h5>@resource.Title</h5>
+                            <p>@resource.Description</p>
+                            <div class="resource-stats">
+                                <span class="views">
+                                    <i class="fas fa-eye"></i>
+                                    @resource.Views
+                                </span>
+                                <span class="rating">
+                                    <i class="fas fa-thumbs-up"></i>
+                                    @resource.Likes
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </section>
+
+    <!-- Quick FAQ -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h3><i class="fas fa-question-circle"></i> Preguntas Frecuentes</h3>
+            <div class="faq-search">
+                <input type="text" @bind="faqSearch" @oninput="FilterFAQ" 
+                       placeholder="Buscar pregunta..." class="search-input">
+                <i class="fas fa-search"></i>
+            </div>
+        </div>
+        
+        <div class="faq-container">
+            @if (filteredFAQ?.Any() == true)
+            {
+                @foreach (var faq in filteredFAQ.Take(5))
+                {
+                    <div class="faq-item @(expandedFAQ == faq.Id ? "expanded" : "")">
+                        <div class="faq-question" @onclick="@(() => ToggleFAQ(faq.Id))">
+                            <span>@faq.Question</span>
+                            <i class="fas fa-chevron-@(expandedFAQ == faq.Id ? "up" : "down")"></i>
+                        </div>
+                        <div class="faq-answer">
+                            <p>@faq.Answer</p>
+                            @if (faq.HasVideo)
+                            {
+                                <button class="btn btn-sm btn-outline-info video-btn">
+                                    <i class="fas fa-play"></i>
+                                    Ver video tutorial
+                                </button>
+                            }
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="no-results">
+                    <i class="fas fa-search"></i>
+                    <p>No encontramos preguntas que coincidan con tu búsqueda</p>
+                </div>
+            }
+        </div>
+    </section>
+
+    <!-- Contact Support -->
+    <section class="dashboard-section">
+        <div class="support-banner">
+            <div class="support-content">
+                <div class="support-icon">
+                    <i class="fas fa-headset"></i>
+                </div>
+                <div class="support-text">
+                    <h4>¿Necesitas más ayuda?</h4>
+                    <p>Nuestro equipo de soporte está aquí para ayudarte</p>
+                </div>
+            </div>
+            <div class="support-actions">
+                <div class="contact-methods">
+                    <div class="contact-method">
+                        <i class="fas fa-envelope"></i>
+                        <span>soporte@fisei.edu.ec</span>
+                    </div>
+                    <div class="contact-method">
+                        <i class="fas fa-phone"></i>
+                        <span>Ext: 2100</span>
+                    </div>
+                    <div class="contact-method">
+                        <i class="fas fa-clock"></i>
+                        <span>L-V 8:00-17:00</span>
+                    </div>
+                </div>
+                <button class="btn btn-success" @onclick="CreateTicket">
+                    <i class="fas fa-ticket-alt"></i>
+                    Crear Ticket
+                </button>
+            </div>
+        </div>
+    </section>
+</div>
+
+@code {
+    private StudentDashboardData dashboardData = new();
+    private string selectedFilter = "all";
+    private string faqSearch = "";
+    private List<StudentTicket>? filteredTickets;
+    private List<FAQ>? filteredFAQ;
+    private int? expandedFAQ = null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+        FilterTickets("all");
+        FilterFAQ();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        // TODO: Replace with actual API calls
+        dashboardData = new StudentDashboardData
+        {
+            StudentName = "Ana María López",
+            Career = "Ingeniería en Sistemas",
+            Semester = "8vo Semestre",
+            ActiveTickets = 1,
+            ResolvedTickets = 3,
+            Tickets = new List<StudentTicket>
+            {
+                new() { Id = 1, TicketNumber = "STU-2024-001", Title = "No puedo acceder a Moodle", 
+                        Description = "Mi contraseña no funciona en la plataforma", Status = TicketStatus.InProgress, 
+                        Priority = TicketPriority.Medium, CreatedAt = DateTime.Now.AddDays(-1) },
+                new() { Id = 2, TicketNumber = "STU-2024-002", Title = "Problema con email institucional", 
+                        Description = "No recibo correos en mi cuenta @est.fisei.edu.ec", Status = TicketStatus.WaitingForUser, 
+                        Priority = TicketPriority.Low, CreatedAt = DateTime.Now.AddDays(-3) },
+                new() { Id = 3, TicketNumber = "STU-2024-003", Title = "Error en laboratorio de programación", 
+                        Description = "El IDE no abre en las computadoras del lab", Status = TicketStatus.Resolved, 
+                        Priority = TicketPriority.High, CreatedAt = DateTime.Now.AddDays(-7) }
+            },
+            PopularResources = new List<StudentResource>
+            {
+                new() { Title = "Guía de Moodle", Description = "Cómo usar la plataforma educativa", Icon = "book-open", Views = 1250, Likes = 98, Url = "/resources/moodle-guide" },
+                new() { Title = "Configurar Email", Description = "Configura tu correo institucional", Icon = "envelope-open", Views = 890, Likes = 76, Url = "/resources/email-setup" },
+                new() { Title = "WiFi FISEI", Description = "Conectarse a la red universitaria", Icon = "wifi", Views = 2100, Likes = 145, Url = "/resources/wifi-guide" },
+                new() { Title = "Laboratorios", Description = "Horarios y reservas de equipos", Icon = "desktop", Views = 670, Likes = 54, Url = "/resources/labs" }
+            },
+            FAQs = new List<FAQ>
+            {
+                new() { Id = 1, Question = "¿Cómo reseteo mi contraseña de Moodle?", Answer = "Usa la opción 'Olvidé mi contraseña' en la página de login o contacta a soporte.", HasVideo = true },
+                new() { Id = 2, Question = "¿Dónde encuentro mis horarios de clase?", Answer = "Los horarios están disponibles en el portal estudiantil y en Moodle.", HasVideo = false },
+                new() { Id = 3, Question = "¿Cómo reservo tiempo en el laboratorio?", Answer = "Puedes reservar a través del sistema online o solicitando en recepción.", HasVideo = true },
+                new() { Id = 4, Question = "¿Qué hago si no funciona mi email institucional?", Answer = "Verifica tu configuración o reporta un ticket de soporte técnico.", HasVideo = false }
+            }
+        };
+
+        filteredTickets = dashboardData.Tickets;
+        filteredFAQ = dashboardData.FAQs;
+    }
+
+    // Navigation methods
+    private async Task CreateTicket() => await JSRuntime.InvokeVoidAsync("navigateTo", "/tickets/create");
+    private async Task ViewMyTickets() => await JSRuntime.InvokeVoidAsync("navigateTo", "/tickets/my-tickets");
+    private async Task ViewAllTickets() => await JSRuntime.InvokeVoidAsync("navigateTo", "/tickets");
+    private async Task ViewDetails(int ticketId) => await JSRuntime.InvokeVoidAsync("navigateTo", $"/tickets/{ticketId}");
+    private async Task RespondTicket(int ticketId) => await JSRuntime.InvokeVoidAsync("showResponseModal", ticketId);
+    private async Task ViewAllResources() => await JSRuntime.InvokeVoidAsync("navigateTo", "/resources");
+    private async Task OpenResource(string url) => await JSRuntime.InvokeVoidAsync("navigateTo", url);
+
+    // Solution methods
+    private async Task ShowSolution(string type)
+    {
+        var urls = new Dictionary<string, string>
+        {
+            {"wifi", "/resources/wifi-guide"},
+            {"email", "/resources/email-setup"},
+            {"moodle", "/resources/moodle-guide"},
+            {"password", "/resources/password-reset"},
+            {"lab", "/resources/labs"},
+            {"printing", "/resources/printing"}
+        };
+        
+        if (urls.ContainsKey(type))
+            await JSRuntime.InvokeVoidAsync("navigateTo", urls[type]);
+    }
+
+    // Filter methods
+    private void FilterTickets(string filter)
+    {
+        selectedFilter = filter;
+        filteredTickets = filter switch
+        {
+            "pending" => dashboardData.Tickets?.Where(t => t.Status != TicketStatus.Resolved && t.Status != TicketStatus.Closed).ToList(),
+            "resolved" => dashboardData.Tickets?.Where(t => t.Status == TicketStatus.Resolved || t.Status == TicketStatus.Closed).ToList(),
+            _ => dashboardData.Tickets
+        };
+    }
+
+    private void FilterFAQ()
+    {
+        if (string.IsNullOrEmpty(faqSearch))
+        {
+            filteredFAQ = dashboardData.FAQs;
+        }
+        else
+        {
+            filteredFAQ = dashboardData.FAQs?.Where(f => 
+                f.Question.Contains(faqSearch, StringComparison.OrdinalIgnoreCase) ||
+                f.Answer.Contains(faqSearch, StringComparison.OrdinalIgnoreCase))
+                .ToList() ?? new List<FAQ>();
+        }
+    }
+
+    private void ToggleFAQ(int faqId)
+    {
+        expandedFAQ = expandedFAQ == faqId ? null : faqId;
+    }
+
+    // Helper methods
+    private string GetStatusClass(TicketStatus status) => status.ToString().ToLower().Replace("waitingforuser", "waiting");
+    private string GetStatusText(TicketStatus status) => status switch
+    {
+        TicketStatus.Open => "Abierto",
+        TicketStatus.InProgress => "En Proceso",
+        TicketStatus.WaitingForUser => "Esperando Respuesta",
+        TicketStatus.Resolved => "Resuelto",
+        TicketStatus.Closed => "Cerrado",
+        _ => "Desconocido"
+    };
+    private string GetPriorityText(TicketPriority priority) => priority switch
+    {
+        TicketPriority.Critical => "Urgente",
+        TicketPriority.High => "Alto",
+        TicketPriority.Medium => "Medio",
+        TicketPriority.Low => "Bajo",
+        _ => "Normal"
+    };
+    private string FormatDate(DateTime date)
+    {
+        var diff = DateTime.Now - date;
+        return diff.TotalDays < 1 ? "Hoy" : diff.TotalDays < 7 ? $"Hace {(int)diff.TotalDays} días" : date.ToString("dd/MM/yyyy");
+    }
+    private string GetEmptyMessage() => selectedFilter switch
+    {
+        "pending" => "No tienes reportes pendientes",
+        "resolved" => "No tienes reportes resueltos aún",
+        _ => "No has reportado ningún problema"
+    };
+    private string GetEmptyDescription() => selectedFilter switch
+    {
+        "pending" => "Todos tus reportes han sido atendidos.",
+        "resolved" => "Cuando tus problemas sean resueltos aparecerán aquí.",
+        _ => "Cuando reportes un problema técnico aparecerá aquí para seguimiento."
+    };
+
+    // Data classes
+    public class StudentDashboardData
+    {
+        public string StudentName { get; set; } = "";
+        public string Career { get; set; } = "";
+        public string Semester { get; set; } = "";
+        public int ActiveTickets { get; set; }
+        public int ResolvedTickets { get; set; }
+        public List<StudentTicket>? Tickets { get; set; }
+        public List<StudentResource>? PopularResources { get; set; }
+        public List<FAQ>? FAQs { get; set; }
+    }
+
+    public class StudentTicket
+    {
+        public int Id { get; set; }
+        public string TicketNumber { get; set; } = "";
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public TicketStatus Status { get; set; }
+        public TicketPriority Priority { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class StudentResource
+    {
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string Icon { get; set; } = "";
+        public int Views { get; set; }
+        public int Likes { get; set; }
+        public string Url { get; set; } = "";
+    }
+
+    public class FAQ
+    {
+        public int Id { get; set; }
+        public string Question { get; set; } = "";
+        public string Answer { get; set; } = "";
+        public bool HasVideo { get; set; }
+    }
+
+    public enum TicketStatus { Open, InProgress, WaitingForUser, Resolved, Closed }
+    public enum TicketPriority { Critical, High, Medium, Low }
+}

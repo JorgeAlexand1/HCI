@@ -95,19 +95,19 @@
                 <div class="credentials-grid">
                     <div class="credential-item">
                         <strong>Administrador:</strong>
-                        <small>admin@fisei.uta.edu.ec / Admin123!</small>
+                        <small>admin@1001@uta.edu.ec / TempPass123!</small>
                     </div>
                     <div class="credential-item">
                         <strong>Supervisor:</strong>
-                        <small>supervisor@fisei.uta.edu.ec / Supervisor123!</small>
+                        <small>supervisor2001@uta.edu.ec / TempPass123!</small>
                     </div>
                     <div class="credential-item">
                         <strong>Técnico:</strong>
-                        <small>tecnico1@fisei.uta.edu.ec / Tecnico123!</small>
+                        <small>tecnico3001@uta.edu.ec / TempPass123!</small>
                     </div>
                     <div class="credential-item">
                         <strong>Docente:</strong>
-                        <small>docente1@fisei.uta.edu.ec / Docente123!</small>
+                        <small>docente4001@uta.edu.ec / TempPass123!</small>
                     </div>
                 </div>
             </div>
@@ -175,6 +175,8 @@
             isLoading = true;
             errorMessage = "";
             successMessage = "";
+            
+            Console.WriteLine($"[LOGIN] Iniciando proceso de login para: {loginModel.Email}");
 
             var loginDto = new LoginDto
             {
@@ -183,11 +185,17 @@
             };
 
             // Configurar la URL base para la API
-            var apiBaseUrl = "https://localhost:7001"; // Puerto típico de la API
+            var apiBaseUrl = "http://localhost:7001"; // Cambiar a HTTP que es como está corriendo la API
             var loginUrl = $"{apiBaseUrl}/api/auth/login";
+            
+            Console.WriteLine($"[LOGIN] URL de login: {loginUrl}");
+            Console.WriteLine($"[LOGIN] Datos a enviar: Email={loginDto.Email}");
 
             var response = await Http.PostAsJsonAsync(loginUrl, loginDto);
             var responseContent = await response.Content.ReadAsStringAsync();
+            
+            Console.WriteLine($"[LOGIN] Status Code: {response.StatusCode}");
+            Console.WriteLine($"[LOGIN] Response Content: {responseContent}");
 
             if (response.IsSuccessStatusCode)
             {
@@ -206,22 +214,30 @@
                     // Actualizar el estado de la sesión
                     var user = new incidentesFISEI.Services.Usuario 
                     { 
+                        Id = apiResponse.Data.Usuario.Id, // ¡IMPORTANTE! Asignar el ID del usuario
                         FirstName = apiResponse.Data.Usuario.NombreCompleto.Split(' ')[0],
                         LastName = apiResponse.Data.Usuario.NombreCompleto.Contains(' ') ? apiResponse.Data.Usuario.NombreCompleto.Substring(apiResponse.Data.Usuario.NombreCompleto.IndexOf(' ') + 1) : "",
                         Email = apiResponse.Data.Usuario.Email,
-                        TipoUsuario = apiResponse.Data.Usuario.Rol.ToLower() == "administrador" ? incidentesFISEI.Services.TipoUsuario.Administrador : 
-                                     apiResponse.Data.Usuario.Rol.ToLower() == "tecnico" ? incidentesFISEI.Services.TipoUsuario.Tecnico : 
-                                     incidentesFISEI.Services.TipoUsuario.UsuarioFinal
+                        TipoUsuario = apiResponse.Data.Usuario.Rol.ToLower() switch
+                        {
+                            "administrador" => incidentesFISEI.Services.TipoUsuario.Administrador,
+                            "supervisor" => incidentesFISEI.Services.TipoUsuario.Supervisor,
+                            "tecnico" => incidentesFISEI.Services.TipoUsuario.Tecnico,
+                            "docente" => incidentesFISEI.Services.TipoUsuario.Docente,
+                            "estudiante" => incidentesFISEI.Services.TipoUsuario.UsuarioFinal,
+                            _ => incidentesFISEI.Services.TipoUsuario.UsuarioFinal
+                        }
                     };
                     await UserSession.SetUserSessionAsync(user, apiResponse.Data.Token);
 
-                    successMessage = $"¡Bienvenido {apiResponse.Data.Usuario.NombreCompleto}!";
+                    successMessage = $"¡Bienvenido {apiResponse.Data.Usuario.NombreCompleto}! Login exitoso.";
                     
                     // Esperar un momento para mostrar el mensaje
                     await Task.Delay(1500);
 
-                    // No redirigir automáticamente, mostrar mensaje de éxito
-                    successMessage = $"¡Bienvenido {apiResponse.Data.Usuario.NombreCompleto}! Login exitoso.";
+                    // Redirigir al dashboard apropiado según el rol
+                    var dashboardRoute = GetDashboardRoute(apiResponse.Data.Usuario.Rol);
+                    Navigation.NavigateTo(dashboardRoute);
                 }
                 else
                 {
@@ -251,12 +267,16 @@
                 }
             }
         }
-        catch (HttpRequestException)
+        catch (HttpRequestException ex)
         {
+            Console.WriteLine($"[LOGIN] Error de conexión HTTP: {ex.Message}");
+            Console.WriteLine($"[LOGIN] Stack trace: {ex.StackTrace}");
             errorMessage = "No se puede conectar con el servidor. Verifique que la API esté ejecutándose.";
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"[LOGIN] Error inesperado: {ex.Message}");
+            Console.WriteLine($"[LOGIN] Stack trace: {ex.StackTrace}");
             errorMessage = $"Error inesperado: {ex.Message}";
         }
         finally
@@ -271,6 +291,19 @@
         errorMessage = "";
         successMessage = "Sesión cerrada exitosamente. Puedes iniciar sesión nuevamente.";
         StateHasChanged();
+    }
+
+    private string GetDashboardRoute(string role)
+    {
+        return role.ToLower() switch
+        {
+            "administrador" => "/admin-dashboard",
+            "supervisor" => "/supervisor-dashboard", 
+            "tecnico" => "/technician-dashboard",
+            "docente" => "/teacher-dashboard",
+            "estudiante" => "/student-dashboard",
+            _ => "/dashboard" // Ruta por defecto
+        };
     }
 
     protected override async Task OnInitializedAsync()

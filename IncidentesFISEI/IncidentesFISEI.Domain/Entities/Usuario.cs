@@ -25,4 +25,8 @@ public class Usuario : BaseEntity
     public ICollection<Incidente> IncidentesAsignados { get; set; } = new List<Incidente>();
     public ICollection<ComentarioIncidente> Comentarios { get; set; } = new List<ComentarioIncidente>();
     public ICollection<ArticuloConocimiento> ArticulosCreados { get; set; } = new List<ArticuloConocimiento>();
+    
+    // Sistema de Notificaciones ITIL v3
+    public ICollection<Notificacion> Notificaciones { get; set; } = new List<Notificacion>();
+    public ICollection<ConfiguracionNotificacion> ConfiguracionesNotificacion { get; set; } = new List<ConfiguracionNotificacion>();
 }

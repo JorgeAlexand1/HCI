@@ -142,6 +142,19 @@ public class AuthService : IAuthService
         }
     }
 
+    public async Task<bool> CheckEmailExists(string email)
+    {
+        try
+        {
+            var usuario = await _usuarioRepository.GetByEmailAsync(email);
+            return usuario != null;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
     public bool ValidateToken(string token)
     {
         try

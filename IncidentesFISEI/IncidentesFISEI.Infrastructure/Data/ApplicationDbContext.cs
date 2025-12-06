@@ -14,6 +14,7 @@ public class ApplicationDbContext : DbContext
     public DbSet<Usuario> Usuarios { get; set; }
     public DbSet<Incidente> Incidentes { get; set; }
     public DbSet<CategoriaIncidente> Categorias { get; set; }
+    public DbSet<Servicio> Servicios { get; set; }
     public DbSet<ArticuloConocimiento> ArticulosConocimiento { get; set; }
     public DbSet<ComentarioIncidente> ComentariosIncidente { get; set; }
     public DbSet<ComentarioArticulo> ComentariosArticulo { get; set; }
@@ -23,6 +24,12 @@ public class ApplicationDbContext : DbContext
     public DbSet<RegistroTiempo> RegistrosTiempo { get; set; }
     public DbSet<SLA> SLAs { get; set; }
     public DbSet<EscalacionSLA> EscalacionesSLA { get; set; }
+    
+    // Sistema de Notificaciones ITIL v3
+    public DbSet<Notificacion> Notificaciones { get; set; }
+    public DbSet<ConfiguracionNotificacion> ConfiguracionesNotificacion { get; set; }
+    public DbSet<PlantillaNotificacion> PlantillasNotificacion { get; set; }
+    public DbSet<LogNotificacion> LogsNotificacion { get; set; }
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
@@ -35,6 +42,9 @@ public class ApplicationDbContext : DbContext
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
+
+        // Configuración global para usar UTF-8 con collation española
+        modelBuilder.UseCollation("Modern_Spanish_CI_AS");
 
         // Configuración de Usuario
         modelBuilder.Entity<Usuario>(entity =>
@@ -88,6 +98,43 @@ public class ApplicationDbContext : DbContext
                 .WithMany(a => a.IncidentesRelacionados)
                 .HasForeignKey(e => e.ArticuloConocimientoId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasOne(e => e.Servicio)
+                .WithMany(s => s.Incidentes)
+                .HasForeignKey(e => e.ServicioId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            // Configurar relaciones ITIL v3 para workflow de cierre
+            entity.HasOne(e => e.CerradoPor)
+                .WithMany()
+                .HasForeignKey(e => e.CerradoPorId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            entity.HasOne(e => e.ReabiertoPor)
+                .WithMany()
+                .HasForeignKey(e => e.ReabiertoPorId)
+                .OnDelete(DeleteBehavior.NoAction);
+        });
+
+        // Configuración de Servicio
+        modelBuilder.Entity<Servicio>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Nombre).IsRequired().HasMaxLength(100).UseCollation("Modern_Spanish_CI_AS");
+            entity.Property(e => e.Descripcion).IsRequired().HasMaxLength(500).UseCollation("Modern_Spanish_CI_AS");
+            entity.Property(e => e.Codigo).HasMaxLength(20);
+            entity.Property(e => e.ResponsableArea).HasMaxLength(100).UseCollation("Modern_Spanish_CI_AS");
+            entity.Property(e => e.ContactoTecnico).HasMaxLength(100);
+            entity.Property(e => e.Instrucciones).HasMaxLength(2000).UseCollation("Modern_Spanish_CI_AS");
+            entity.Property(e => e.EscalacionProcedure).HasMaxLength(1000).UseCollation("Modern_Spanish_CI_AS");
+
+            entity.HasIndex(e => e.Codigo).IsUnique();
+
+            // Relación con Categoría
+            entity.HasOne(e => e.Categoria)
+                .WithMany(c => c.Servicios)
+                .HasForeignKey(e => e.CategoriaId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         // Configuración de CategoriaIncidente
@@ -276,6 +323,80 @@ public class ApplicationDbContext : DbContext
                 .WithMany()
                 .HasForeignKey(e => e.IncidenteId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        // CONFIGURACIÓN DEL SISTEMA DE NOTIFICACIONES ITIL v3
+
+        // Configuración de Notificacion
+        modelBuilder.Entity<Notificacion>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Titulo).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.Mensaje).IsRequired().HasMaxLength(2000);
+            entity.Property(e => e.Leida).HasDefaultValue(false);
+            entity.Property(e => e.NotificadoPorEmail).HasDefaultValue(false);
+            entity.Property(e => e.NotificadoPorSMS).HasDefaultValue(false);
+
+            entity.HasOne(e => e.Usuario)
+                .WithMany(u => u.Notificaciones)
+                .HasForeignKey(e => e.UsuarioId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasOne(e => e.Incidente)
+                .WithMany()
+                .HasForeignKey(e => e.IncidenteId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            entity.HasIndex(e => e.UsuarioId);
+            entity.HasIndex(e => new { e.UsuarioId, e.Leida });
+        });
+
+        // Configuración de ConfiguracionNotificacion
+        modelBuilder.Entity<ConfiguracionNotificacion>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.NotificarEnSistema).HasDefaultValue(true);
+            entity.Property(e => e.NotificarPorEmail).HasDefaultValue(true);
+            entity.Property(e => e.NotificarPorSMS).HasDefaultValue(false);
+            entity.Property(e => e.NotificacionInmediata).HasDefaultValue(true);
+
+            entity.HasOne(e => e.Usuario)
+                .WithMany(u => u.ConfiguracionesNotificacion)
+                .HasForeignKey(e => e.UsuarioId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            // Un usuario solo puede tener una configuración por tipo de evento
+            entity.HasIndex(e => new { e.UsuarioId, e.TipoEvento }).IsUnique();
+        });
+
+        // Configuración de PlantillaNotificacion
+        modelBuilder.Entity<PlantillaNotificacion>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Nombre).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.PlantillaTitulo).IsRequired().HasMaxLength(200);
+            entity.Property(e => e.PlantillaMensaje).IsRequired().HasMaxLength(3000);
+            entity.Property(e => e.IsActive).HasDefaultValue(true);
+
+            // Solo una plantilla activa por tipo de notificación
+            entity.HasIndex(e => new { e.TipoNotificacion, e.IsActive })
+                .HasFilter("[IsActive] = 1");
+        });
+
+        // Configuración de LogNotificacion
+        modelBuilder.Entity<LogNotificacion>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.DireccionDestino).HasMaxLength(255);
+            entity.Property(e => e.ErrorDetalle).HasMaxLength(1000);
+
+            entity.HasOne(e => e.Notificacion)
+                .WithMany(n => n.LogsEnvio)
+                .HasForeignKey(e => e.NotificacionId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            entity.HasIndex(e => e.NotificacionId);
+            entity.HasIndex(e => new { e.Estado, e.FechaIntento });
         });
 
         // Datos iniciales (Seeds)

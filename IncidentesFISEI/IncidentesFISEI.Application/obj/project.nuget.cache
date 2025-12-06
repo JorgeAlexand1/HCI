@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "J/GUnl4wGno=",
+  "dgSpecHash": "u+uhoTBjbFE=",
   "success": true,
-  "projectFilePath": "C:\\Users\\USUARIO\\Documents\\IHC\\proyecto\\IncidentesFISEI\\IncidentesFISEI.Application\\IncidentesFISEI.Application.csproj",
+  "projectFilePath": "C:\\Users\\USUARIO\\Documents\\IHC\\proyecto\\HCI\\IncidentesFISEI\\IncidentesFISEI.Application\\IncidentesFISEI.Application.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\USUARIO\\.nuget\\packages\\automapper\\12.0.1\\automapper.12.0.1.nupkg.sha512",
     "C:\\Users\\USUARIO\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",

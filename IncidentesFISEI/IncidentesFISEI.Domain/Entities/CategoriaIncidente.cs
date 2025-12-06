@@ -16,6 +16,7 @@ public class CategoriaIncidente : BaseEntity
     // Navegación
     public CategoriaIncidente? ParentCategory { get; set; }
     public ICollection<CategoriaIncidente> SubCategorias { get; set; } = new List<CategoriaIncidente>();
+    public ICollection<Servicio> Servicios { get; set; } = new List<Servicio>();
     public ICollection<Incidente> Incidentes { get; set; } = new List<Incidente>();
     public ICollection<ArticuloConocimiento> ArticulosConocimiento { get; set; } = new List<ArticuloConocimiento>();
 }

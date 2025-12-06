@@ -1,0 +1,375 @@
+@page "/supervisor-dashboard"
+@using Microsoft.AspNetCore.Authorization
+@using incidentesFISEI.Shared.Components
+@attribute [Authorize(Roles = "Supervisor")]
+@layout DashboardLayout
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<div class="supervisor-dashboard">
+    <!-- Critical Alerts Section -->
+    <section class="dashboard-section">
+        <div class="alert-header">
+            <h2>Alertas Críticas</h2>
+            <div class="alert-summary">
+                <span class="critical-count">@dashboardData.CriticalIncidents</span>
+                <span class="alert-label">Requieren atención inmediata</span>
+            </div>
+        </div>
+        
+        @if (dashboardData.CriticalAlerts?.Any() == true)
+        {
+            <div class="critical-alerts">
+                @foreach (var alert in dashboardData.CriticalAlerts)
+                {
+                    <div class="alert-card critical">
+                        <div class="alert-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="alert-content">
+                            <h5>@alert.Title</h5>
+                            <p>@alert.Description</p>
+                            <div class="alert-meta">
+                                <span class="time-remaining @GetSlaClass(alert.TimeRemaining)">
+                                    SLA: @FormatTimeRemaining(alert.TimeRemaining)
+                                </span>
+                                <span class="assigned-to">@alert.AssignedTo</span>
+                            </div>
+                        </div>
+                        <div class="alert-actions">
+                            <button class="btn btn-sm btn-warning" @onclick="() => EscalateIncident(alert.Id)">
+                                <i class="fas fa-level-up-alt"></i> Escalar
+                            </button>
+                            <button class="btn btn-sm btn-primary" @onclick="() => ReassignIncident(alert.Id)">
+                                <i class="fas fa-user-cog"></i> Reasignar
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        }
+        else
+        {
+            <div class="no-critical-alerts">
+                <i class="fas fa-check-circle text-success"></i>
+                <p>No hay alertas críticas en este momento</p>
+            </div>
+        }
+    </section>
+
+    <!-- Team Performance Section -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h3>Rendimiento del Equipo</h3>
+            <div class="team-stats">
+                <span class="stat">@dashboardData.ActiveTechnicians técnicos activos</span>
+                <span class="stat">@dashboardData.TotalWorkload incidentes asignados</span>
+            </div>
+        </div>
+        
+        <div class="team-grid">
+            @if (dashboardData.TeamMembers?.Any() == true)
+            {
+                @foreach (var member in dashboardData.TeamMembers)
+                {
+                    <div class="team-card">
+                        <div class="member-header">
+                            <div class="member-avatar @GetStatusClass(member.Status)">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="member-info">
+                                <h5>@member.Name</h5>
+                                <span class="speciality">@member.Specialty</span>
+                                <span class="status @member.Status.ToString().ToLower()">@GetStatusText(member.Status)</span>
+                            </div>
+                        </div>
+                        
+                        <div class="member-metrics">
+                            <div class="metric">
+                                <span class="metric-value">@member.AssignedIncidents</span>
+                                <span class="metric-label">Asignados</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-value">@member.ResolvedToday</span>
+                                <span class="metric-label">Resueltos hoy</span>
+                            </div>
+                            <div class="metric">
+                                <span class="metric-value">@member.AvgResolutionTime.ToString(@"h\hmm\m")</span>
+                                <span class="metric-label">Tiempo promedio</span>
+                            </div>
+                        </div>
+                        
+                        <div class="member-actions">
+                            <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewMemberDetails(member.Id)">
+                                Ver Detalle
+                            </button>
+                            <button class="btn btn-sm btn-outline-success" @onclick="() => AssignToMember(member.Id)">
+                                Asignar
+                            </button>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </section>
+
+    <!-- SLA Monitoring Section -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h3>Monitoreo SLA</h3>
+            <div class="sla-overview">
+                <incidentesFISEI.Shared.Components.KPIWidget Title="Cumplimiento Global" 
+                          Value="@dashboardData.OverallSlaCompliance" 
+                          Unit="%" 
+                          Icon="fas fa-tachometer-alt" 
+                          IconColor="@GetSlaComplianceColor(dashboardData.OverallSlaCompliance)"
+                          ShowProgress="true" 
+                          ProgressPercentage="@dashboardData.OverallSlaCompliance" />
+            </div>
+        </div>
+        
+        <div class="sla-categories">
+            @if (dashboardData.SlaByCategory?.Any() == true)
+            {
+                @foreach (var category in dashboardData.SlaByCategory)
+                {
+                    <div class="sla-category-card">
+                        <div class="category-header">
+                            <h5>@category.Name</h5>
+                            <span class="sla-percentage @GetSlaComplianceClass(category.Compliance)">
+                                @category.Compliance.ToString("F1")%
+                            </span>
+                        </div>
+                        <div class="category-details">
+                            <div class="detail-item">
+                                <span class="label">En tiempo:</span>
+                                <span class="value">@category.OnTime</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Vencidos:</span>
+                                <span class="value text-danger">@category.Overdue</span>
+                            </div>
+                            <div class="detail-item">
+                                <span class="label">Próximos a vencer:</span>
+                                <span class="value text-warning">@category.NearDeadline</span>
+                            </div>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill" style="width: @(category.Compliance)%"></div>
+                        </div>
+                    </div>
+                }
+            }
+        </div>
+    </section>
+
+    <!-- Workload Distribution Section -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h3>Distribución de Carga de Trabajo</h3>
+            <button class="btn btn-primary" @onclick="AutoBalanceWorkload">
+                <i class="fas fa-balance-scale"></i> Auto-Balancear
+            </button>
+        </div>
+        
+        <div class="workload-chart">
+            <canvas id="workloadChart"></canvas>
+        </div>
+        
+        <div class="workload-actions">
+            <div class="action-card" @onclick="ShowReassignmentModal">
+                <div class="action-icon">
+                    <i class="fas fa-exchange-alt"></i>
+                </div>
+                <div class="action-content">
+                    <h5>Reasignación Masiva</h5>
+                    <p>Redistribuir incidentes entre técnicos</p>
+                </div>
+            </div>
+            
+            <div class="action-card" @onclick="ShowEscalationRules">
+                <div class="action-icon">
+                    <i class="fas fa-arrow-up"></i>
+                </div>
+                <div class="action-content">
+                    <h5>Reglas de Escalación</h5>
+                    <p>Configurar escalación automática</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Approval Queue Section -->
+    <section class="dashboard-section">
+        <div class="section-header">
+            <h3>Cola de Aprobaciones</h3>
+            <span class="pending-count">@dashboardData.PendingApprovals pendientes</span>
+        </div>
+        
+        <div class="approval-list">
+            @if (dashboardData.PendingApprovalItems?.Any() == true)
+            {
+                @foreach (var approval in dashboardData.PendingApprovalItems)
+                {
+                    <div class="approval-item">
+                        <div class="approval-icon @approval.Type.ToString().ToLower()">
+                            <i class="@GetApprovalIcon(approval.Type)"></i>
+                        </div>
+                        <div class="approval-content">
+                            <h5>@approval.Title</h5>
+                            <p>@approval.Description</p>
+                            <small>Solicitado por: @approval.RequestedBy - @FormatDate(approval.RequestedAt)</small>
+                        </div>
+                        <div class="approval-actions">
+                            <button class="btn btn-sm btn-success" @onclick="() => ApproveRequest(approval.Id)">
+                                <i class="fas fa-check"></i> Aprobar
+                            </button>
+                            <button class="btn btn-sm btn-danger" @onclick="() => RejectRequest(approval.Id)">
+                                <i class="fas fa-times"></i> Rechazar
+                            </button>
+                            <button class="btn btn-sm btn-info" @onclick="() => ViewApprovalDetails(approval.Id)">
+                                <i class="fas fa-eye"></i> Detalle
+                            </button>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="no-approvals">
+                    <i class="fas fa-clipboard-check"></i>
+                    <p>No hay aprobaciones pendientes</p>
+                </div>
+            }
+        </div>
+    </section>
+</div>
+
+@code {
+    private SupervisorDashboardData dashboardData = new();
+    
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadDashboardData();
+        await InitializeCharts();
+    }
+
+    private async Task LoadDashboardData()
+    {
+        // TODO: Replace with actual API calls
+        dashboardData = new SupervisorDashboardData
+        {
+            CriticalIncidents = 3,
+            ActiveTechnicians = 6,
+            TotalWorkload = 24,
+            OverallSlaCompliance = 89.5,
+            PendingApprovals = 2,
+            // Sample data...
+            CriticalAlerts = new List<CriticalAlert>
+            {
+                new() { Id = 1, Title = "INC-001234", Description = "Servidor de correo caído", TimeRemaining = TimeSpan.FromMinutes(15), AssignedTo = "Carlos Pérez" },
+                new() { Id = 2, Title = "INC-001235", Description = "Falla red edificio principal", TimeRemaining = TimeSpan.FromHours(-0.5), AssignedTo = "Ana García" }
+            },
+            TeamMembers = new List<TeamMember>
+            {
+                new() { Id = 1, Name = "Carlos Pérez", Specialty = "Redes", Status = TechnicianStatus.Available, AssignedIncidents = 4, ResolvedToday = 2, AvgResolutionTime = TimeSpan.FromHours(2.5) },
+                new() { Id = 2, Name = "Ana García", Specialty = "Sistemas", Status = TechnicianStatus.Busy, AssignedIncidents = 6, ResolvedToday = 1, AvgResolutionTime = TimeSpan.FromHours(3.2) }
+            }
+        };
+    }
+
+    private async Task InitializeCharts()
+    {
+        await JSRuntime.InvokeVoidAsync("initializeSupervisorCharts");
+    }
+
+    // Action methods
+    private async Task EscalateIncident(int incidentId) => await JSRuntime.InvokeVoidAsync("escalateIncident", incidentId);
+    private async Task ReassignIncident(int incidentId) => await JSRuntime.InvokeVoidAsync("showReassignModal", incidentId);
+    private async Task ViewMemberDetails(int memberId) => await JSRuntime.InvokeVoidAsync("navigateTo", $"/supervisor/team/{memberId}");
+    private async Task AssignToMember(int memberId) => await JSRuntime.InvokeVoidAsync("showAssignModal", memberId);
+    private async Task AutoBalanceWorkload() => await JSRuntime.InvokeVoidAsync("autoBalanceWorkload");
+    private async Task ShowReassignmentModal() => await JSRuntime.InvokeVoidAsync("showReassignmentModal");
+    private async Task ShowEscalationRules() => await JSRuntime.InvokeVoidAsync("navigateTo", "/supervisor/escalation-rules");
+    private async Task ApproveRequest(int approvalId) => await JSRuntime.InvokeVoidAsync("approveRequest", approvalId);
+    private async Task RejectRequest(int approvalId) => await JSRuntime.InvokeVoidAsync("rejectRequest", approvalId);
+    private async Task ViewApprovalDetails(int approvalId) => await JSRuntime.InvokeVoidAsync("navigateTo", $"/supervisor/approvals/{approvalId}");
+
+    // Helper methods
+    private string GetSlaClass(TimeSpan timeRemaining) => timeRemaining.TotalHours < 0 ? "overdue" : timeRemaining.TotalHours < 1 ? "critical" : "warning";
+    private string GetSlaComplianceColor(double compliance) => compliance >= 95 ? "success" : compliance >= 85 ? "warning" : "danger";
+    private string GetSlaComplianceClass(double compliance) => compliance >= 95 ? "excellent" : compliance >= 85 ? "good" : "poor";
+    private string GetStatusClass(TechnicianStatus status) => status.ToString().ToLower();
+    private string GetStatusText(TechnicianStatus status) => status switch
+    {
+        TechnicianStatus.Available => "Disponible",
+        TechnicianStatus.Busy => "Ocupado",
+        TechnicianStatus.Offline => "Desconectado",
+        _ => "Desconocido"
+    };
+    private string GetApprovalIcon(ApprovalType type) => type switch
+    {
+        ApprovalType.Escalation => "fas fa-level-up-alt",
+        ApprovalType.PriorityChange => "fas fa-exclamation-triangle",
+        ApprovalType.Closure => "fas fa-check-circle",
+        _ => "fas fa-question"
+    };
+    private string FormatTimeRemaining(TimeSpan timeRemaining) => timeRemaining.TotalHours < 0 ? "VENCIDO" : $"{(int)timeRemaining.TotalHours}h {timeRemaining.Minutes}m";
+    private string FormatDate(DateTime date) => (DateTime.Now - date).TotalDays < 1 ? "Hoy" : $"Hace {(int)(DateTime.Now - date).TotalDays}d";
+
+    // Data classes
+    public class SupervisorDashboardData
+    {
+        public int CriticalIncidents { get; set; }
+        public int ActiveTechnicians { get; set; }
+        public int TotalWorkload { get; set; }
+        public double OverallSlaCompliance { get; set; }
+        public int PendingApprovals { get; set; }
+        public List<CriticalAlert>? CriticalAlerts { get; set; }
+        public List<TeamMember>? TeamMembers { get; set; }
+        public List<SlaCategory>? SlaByCategory { get; set; }
+        public List<ApprovalItem>? PendingApprovalItems { get; set; }
+    }
+
+    public class CriticalAlert
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public TimeSpan TimeRemaining { get; set; }
+        public string AssignedTo { get; set; } = "";
+    }
+
+    public class TeamMember
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Specialty { get; set; } = "";
+        public TechnicianStatus Status { get; set; }
+        public int AssignedIncidents { get; set; }
+        public int ResolvedToday { get; set; }
+        public TimeSpan AvgResolutionTime { get; set; }
+    }
+
+    public class SlaCategory
+    {
+        public string Name { get; set; } = "";
+        public double Compliance { get; set; }
+        public int OnTime { get; set; }
+        public int Overdue { get; set; }
+        public int NearDeadline { get; set; }
+    }
+
+    public class ApprovalItem
+    {
+        public int Id { get; set; }
+        public string Title { get; set; } = "";
+        public string Description { get; set; } = "";
+        public string RequestedBy { get; set; } = "";
+        public DateTime RequestedAt { get; set; }
+        public ApprovalType Type { get; set; }
+    }
+
+    public enum TechnicianStatus { Available, Busy, Offline }
+    public enum ApprovalType { Escalation, PriorityChange, Closure }
+}

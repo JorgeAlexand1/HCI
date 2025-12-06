@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "xJGCggrRfbw=",
+  "dgSpecHash": "GgNf6pS1kG0=",
   "success": true,
-  "projectFilePath": "C:\\Users\\USUARIO\\Documents\\IHC\\proyecto\\IncidentesFISEI\\IncidentesFISEI.Infrastructure\\IncidentesFISEI.Infrastructure.csproj",
+  "projectFilePath": "c:\\Users\\USUARIO\\Documents\\IHC\\proyecto\\HCI\\IncidentesFISEI\\IncidentesFISEI.Infrastructure\\IncidentesFISEI.Infrastructure.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\USUARIO\\.nuget\\packages\\automapper\\12.0.1\\automapper.12.0.1.nupkg.sha512",
     "C:\\Users\\USUARIO\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",

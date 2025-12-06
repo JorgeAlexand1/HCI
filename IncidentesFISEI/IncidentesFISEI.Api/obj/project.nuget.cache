@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "J7ZrQI5IWc8=",
+  "dgSpecHash": "ZxODQCRE6AE=",
   "success": true,
-  "projectFilePath": "C:\\Users\\USUARIO\\Documents\\IHC\\proyecto\\IncidentesFISEI\\IncidentesFISEI.Api\\IncidentesFISEI.Api.csproj",
+  "projectFilePath": "c:\\Users\\USUARIO\\Documents\\IHC\\proyecto\\HCI\\IncidentesFISEI\\IncidentesFISEI.Api\\IncidentesFISEI.Api.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\USUARIO\\.nuget\\packages\\automapper\\12.0.1\\automapper.12.0.1.nupkg.sha512",
     "C:\\Users\\USUARIO\\.nuget\\packages\\automapper.extensions.microsoft.dependencyinjection\\12.0.1\\automapper.extensions.microsoft.dependencyinjection.12.0.1.nupkg.sha512",
