@@ -201,7 +201,7 @@
 }
 
 .action-card.account {
-    --card-color: #fd7e14;
+    --card-color: #5a252b;
 }
 
 .action-card.classroom {
@@ -279,11 +279,11 @@
 }
 
 .ticket-card.inprogress {
-    --status-color: #fd7e14;
+    --status-color: #5a252b;
 }
 
 .ticket-card.waiting {
-    --status-color: #ffc107;
+    --status-color: #722f37;
 }
 
 .ticket-card.resolved {
@@ -354,8 +354,8 @@
 }
 
 .priority-critical { color: #dc3545 !important; font-weight: 600; }
-.priority-high { color: #fd7e14 !important; font-weight: 600; }
-.priority-medium { color: #ffc107 !important; }
+.priority-high { color: #5a252b !important; font-weight: 600; }
+.priority-medium { color: #722f37 !important; }
 .priority-low { color: #198754 !important; }
 
 .ticket-actions {
@@ -477,7 +477,7 @@
 }
 
 .rating .fas.fa-star {
-    color: #ffc107;
+    color: #722f37;
 }
 
 .new-badge {
@@ -783,3 +783,5 @@
         width: 100%;
     }
 }
+
+

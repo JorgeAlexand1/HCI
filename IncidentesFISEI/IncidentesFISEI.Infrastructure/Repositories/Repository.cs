@@ -55,11 +55,11 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
         return entityList;
     }
 
-    public Task UpdateAsync(T entity)
+    public async Task UpdateAsync(T entity)
     {
         entity.UpdatedAt = DateTime.UtcNow;
         _dbSet.Update(entity);
-        return Task.CompletedTask;
+        await _context.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(int id)
@@ -70,15 +70,16 @@ public class Repository<T> : IRepository<T> where T : BaseEntity
             entity.IsDeleted = true;
             entity.UpdatedAt = DateTime.UtcNow;
             _dbSet.Update(entity);
+            await _context.SaveChangesAsync();
         }
     }
 
-    public Task DeleteAsync(T entity)
+    public async Task DeleteAsync(T entity)
     {
         entity.IsDeleted = true;
         entity.UpdatedAt = DateTime.UtcNow;
         _dbSet.Update(entity);
-        return Task.CompletedTask;
+        await _context.SaveChangesAsync();
     }
 
     public async Task<int> CountAsync(Expression<Func<T, bool>>? predicate = null)

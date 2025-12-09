@@ -1,0 +1,442 @@
+@page "/supervisor/knowledge-base"
+@using System.Net.Http.Json
+@using Microsoft.AspNetCore.Authorization
+@using incidentesFISEI.Shared.Components
+@attribute [Authorize(Roles = "SupervisorTecnico")]
+@layout DashboardLayout
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+
+<div class="kb-container">
+    <div class="header">
+        <div>
+            <div class="eyebrow">Supervisor</div>
+            <h1>Base de Conocimiento</h1>
+            <p>Documenta soluciones y envía a revisión del administrador.</p>
+        </div>
+        <div class="tabs">
+            <button class="@GetTabClass(TabMis)" @onclick="@(() => SelectTab(TabMis))">Mis artículos</button>
+            <button class="@GetTabClass(TabCrear)" @onclick="@(() => SelectTab(TabCrear))">Crear artículo</button>
+            <button class="@GetTabClass(TabPublicados)" @onclick="@(() => SelectTab(TabPublicados))">Publicados</button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(errorMessage))
+    {
+        <div class="alert error">@errorMessage</div>
+    }
+
+    @if (selectedTab == TabMis)
+    {
+        <section class="panel">
+            <header>
+                <h2>Mis artículos</h2>
+                <p>Revisa y envía a revisión tus borradores.</p>
+            </header>
+            @if (misArticulos?.Any() == true)
+            {
+                <div class="grid">
+                    @foreach (var a in misArticulos)
+                    {
+                        <article class="card">
+                            <div class="card-head">
+                                <h3>@a.Titulo</h3>
+                                <span class="badge @GetEstadoClass(a.Estado)">@GetEstadoText(a.Estado)</span>
+                            </div>
+                            <p class="summary">@(string.IsNullOrWhiteSpace(a.Resumen) ? TrimContent(a.Contenido) : a.Resumen)</p>
+                            <div class="meta">
+                                <span><i class="fas fa-tag"></i> @a.Categoria?.Nombre</span>
+                                <span><i class="fas fa-calendar"></i> @a.CreatedAt.ToString("dd/MM/yyyy")</span>
+                            </div>
+                            <div class="actions">
+                                <button class="ghost" @onclick="() => EditArticulo(a.Id)"><i class="fas fa-edit"></i> Editar</button>
+                                @if (a.Estado?.Equals("Borrador", StringComparison.OrdinalIgnoreCase) == true)
+                                {
+                                    <button class="primary" @onclick="() => SubmitForReview(a.Id)"><i class="fas fa-paper-plane"></i> Enviar a revisión</button>
+                                }
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty">
+                    <i class="fas fa-inbox"></i>
+                    <p>No tienes artículos. Crea uno nuevo.</p>
+                </div>
+            }
+        </section>
+    }
+
+    @if (selectedTab == TabCrear)
+    {
+        <section class="panel">
+            <header>
+                <h2>Crear artículo</h2>
+                <p>Documenta la solución del incidente asignado.</p>
+            </header>
+            <div class="form-grid">
+                <label>Título *</label>
+                <input class="input" @bind="nuevoArticulo.Titulo" placeholder="Ej: Restablecer conexión VPN" />
+
+                <label>Categoría *</label>
+                <select class="input" @bind="nuevoArticulo.CategoriaId">
+                    <option value="0">Selecciona categoría</option>
+                    @if (categorias != null)
+                    {
+                        @foreach (var c in categorias)
+                        {
+                            <option value="@c.Id">@c.Nombre</option>
+                        }
+                    }
+                </select>
+
+                <label>Resumen *</label>
+                <textarea class="input" rows="2" @bind="nuevoArticulo.Resumen" placeholder="Breve descripción"></textarea>
+
+                <label>Contenido *</label>
+                <textarea class="input" rows="6" @bind="nuevoArticulo.Contenido" placeholder="Explica los pasos y consideraciones"></textarea>
+
+                <label>Pasos detallados</label>
+                <textarea class="input" rows="4" @bind="nuevoArticulo.PasosDetallados" placeholder="1. Paso uno&#10;2. Paso dos"></textarea>
+
+                <label>Requisitos previos</label>
+                <textarea class="input" rows="3" @bind="nuevoArticulo.Prerequisites" placeholder="Accesos, dependencias"></textarea>
+
+                <label>Limitaciones</label>
+                <textarea class="input" rows="3" @bind="nuevoArticulo.Limitaciones" placeholder="Casos en los que no aplica"></textarea>
+
+                <label>Tags (coma separados)</label>
+                <input class="input" @bind="tagsInput" placeholder="vpn, red, conexion" />
+
+                <div class="form-actions">
+                    <button class="ghost" @onclick="GuardarComoEsBorrador"><i class="fas fa-save"></i> Guardar borrador</button>
+                    <button class="primary" @onclick="GuardarYEnviarARevision"><i class="fas fa-paper-plane"></i> Guardar y enviar</button>
+                </div>
+            </div>
+        </section>
+    }
+
+    @if (selectedTab == TabPublicados)
+    {
+        <section class="panel">
+            <header>
+                <h2>Artículos publicados</h2>
+                <p>Conocimiento aprobado disponible para el equipo.</p>
+            </header>
+            @if (articulosPublicados?.Any() == true)
+            {
+                <div class="grid">
+                    @foreach (var a in articulosPublicados)
+                    {
+                        <article class="card">
+                            <div class="card-head">
+                                <h3>@a.Titulo</h3>
+                                <span class="badge published">Publicado</span>
+                            </div>
+                            <p class="summary">@(string.IsNullOrWhiteSpace(a.Resumen) ? TrimContent(a.Contenido) : a.Resumen)</p>
+                            <div class="meta">
+                                <span><i class="fas fa-tag"></i> @a.Categoria?.Nombre</span>
+                                <span><i class="fas fa-eye"></i> @a.Visualizaciones vistas</span>
+                                <span><i class="fas fa-thumbs-up"></i> @a.VotosPositivos votos</span>
+                            </div>
+                            <div class="actions">
+                                <button class="ghost" @onclick="() => ViewArticulo(a.Id)"><i class="fas fa-eye"></i> Ver</button>
+                            </div>
+                        </article>
+                    }
+                </div>
+            }
+            else
+            {
+                <div class="empty">
+                    <i class="fas fa-book"></i>
+                    <p>No hay artículos publicados.</p>
+                </div>
+            }
+        </section>
+    }
+</div>
+
+<style>
+.kb-container { padding: 20px; background: #f7f5f4; min-height: 100vh; }
+.header { display: flex; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 16px; }
+.header h1 { margin: 4px 0; color: #5a252b; }
+.eyebrow { text-transform: uppercase; letter-spacing: .08em; font-size: 12px; color: #8b4b5c; }
+.tabs { display: flex; gap: 10px; }
+.tab { border: 1px solid #d1c7c7; background: #fff; padding: 10px 14px; border-radius: 10px; cursor: pointer; transition: all .2s; }
+.tab.active { border-color: #722f37; color: #722f37; box-shadow: 0 3px 12px rgba(114,47,55,.15); }
+.panel { background: #fff; border: 1px solid #e6dddd; border-radius: 14px; padding: 18px; box-shadow: 0 6px 18px rgba(0,0,0,.05); margin-bottom: 18px; }
+.panel header h2 { margin: 0; color: #5a252b; }
+.panel header p { margin: 4px 0 12px; color: #666; }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 14px; }
+.card { border: 1px solid #eadfdf; border-radius: 12px; padding: 14px; background: linear-gradient(145deg,#fff,#fdf8f8); box-shadow: 0 4px 12px rgba(0,0,0,.04); }
+.card-head { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+.card h3 { margin: 0; font-size: 17px; color: #3b2c2c; }
+.badge { padding: 4px 8px; border-radius: 10px; font-size: 12px; font-weight: 600; }
+.badge.borrador { background: #fff3cd; color: #856404; }
+.badge.enrevision { background: #e2e3ff; color: #4b4fa8; }
+.badge.aprobado, .badge.published { background: #d4edda; color: #155724; }
+.badge.rechazado { background: #f8d7da; color: #721c24; }
+.summary { margin: 10px 0; color: #4a4a4a; min-height: 48px; }
+.meta { display: flex; gap: 12px; flex-wrap: wrap; color: #6b5c5c; font-size: 13px; }
+.meta i { margin-right: 6px; }
+.actions { display: flex; gap: 10px; margin-top: 10px; flex-wrap: wrap; }
+.ghost { border: 1px solid #c4b5b7; background: #fff; color: #5a252b; padding: 8px 12px; border-radius: 10px; cursor: pointer; transition: all .2s; }
+.ghost:hover { border-color: #722f37; color: #722f37; }
+.primary { border: none; background: linear-gradient(135deg,#722f37,#5a252b); color: #fff; padding: 9px 14px; border-radius: 10px; cursor: pointer; box-shadow: 0 4px 12px rgba(114,47,55,.25); transition: transform .1s; }
+.primary:hover { transform: translateY(-1px); }
+.empty { text-align: center; padding: 30px 0; color: #7a6f6f; }
+.empty i { font-size: 28px; margin-bottom: 8px; color: #b08d95; }
+.alert { padding: 10px 14px; border-radius: 10px; margin-bottom: 12px; }
+.alert.error { background: #fdecea; color: #8c2f39; border: 1px solid #f5c6cb; }
+.form-grid { display: grid; grid-template-columns: 1fr; gap: 10px; }
+.input { width: 100%; border: 1px solid #d6caca; border-radius: 10px; padding: 10px; font-size: 14px; background: #fff; }
+.form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 6px; }
+@@media (max-width: 768px) { .header { flex-direction: column; align-items: flex-start; } .grid { grid-template-columns: 1fr; } }
+</style>
+
+@code {
+    private const string TabMis = "mis";
+    private const string TabCrear = "crear";
+    private const string TabPublicados = "publicados";
+
+    private string selectedTab = TabMis;
+    private List<ArticuloDto>? misArticulos;
+    private List<ArticuloDto>? articulosPublicados;
+    private List<CategoriaDto>? categorias;
+    private ArticuloCrearDto nuevoArticulo = new();
+    private string tagsInput = string.Empty;
+    private string? errorMessage;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await CargarCategoriasAsync();
+        await CargarArticulosAsync();
+        await CargarArticulosPublicadosAsync();
+    }
+
+    private async Task CargarCategoriasAsync()
+    {
+        try
+        {
+            categorias = await Http.GetFromJsonAsync<List<CategoriaDto>>("api/categorias");
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error cargando categorías: {ex.Message}";
+        }
+    }
+
+    private async Task CargarArticulosAsync()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ApiResponse<List<ArticuloDto>>>("api/knowledge-base/mis-articulos");
+            if (response?.success == true)
+            {
+                misArticulos = response.data;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error cargando artículos: {ex.Message}";
+        }
+    }
+
+    private async Task CargarArticulosPublicadosAsync()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ApiResponse<List<ArticuloDto>>>("api/knowledge-base/publicados");
+            if (response?.success == true)
+            {
+                articulosPublicados = response.data;
+            }
+        }
+        catch (Exception ex)
+        {
+            errorMessage = $"Error cargando artículos publicados: {ex.Message}";
+        }
+    }
+
+    private async Task GuardarComoEsBorrador()
+    {
+        if (!ValidarFormulario()) return;
+
+        try
+        {
+            var dto = MapCrearDto();
+            var response = await Http.PostAsJsonAsync("api/knowledge-base/crear", dto);
+            if (response.IsSuccessStatusCode)
+            {
+                await JSRuntime.InvokeVoidAsync("showNotification", "Artículo guardado como borrador", "success");
+                LimpiarFormulario();
+                SelectTab("mis");
+                await CargarArticulosAsync();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("showNotification", "Error al guardar artículo", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("showNotification", $"Error: {ex.Message}", "error");
+        }
+    }
+
+    private async Task GuardarYEnviarARevision()
+    {
+        if (!ValidarFormulario()) return;
+
+        try
+        {
+            var dto = MapCrearDto();
+            var response = await Http.PostAsJsonAsync("api/knowledge-base/crear-y-enviar", dto);
+            if (response.IsSuccessStatusCode)
+            {
+                await JSRuntime.InvokeVoidAsync("showNotification", "Artículo enviado a revisión", "success");
+                LimpiarFormulario();
+                SelectTab("mis");
+                await CargarArticulosAsync();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("showNotification", "Error al enviar artículo", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("showNotification", $"Error: {ex.Message}", "error");
+        }
+    }
+
+    private async Task SubmitForReview(int id)
+    {
+        try
+        {
+            var response = await Http.PostAsync($"api/knowledge-base/{id}/enviar-revision", null);
+            if (response.IsSuccessStatusCode)
+            {
+                await JSRuntime.InvokeVoidAsync("showNotification", "Artículo enviado a revisión", "success");
+                await CargarArticulosAsync();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("showNotification", "No se pudo enviar", "error");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("showNotification", $"Error: {ex.Message}", "error");
+        }
+    }
+
+    private void EditArticulo(int id) => Navigation.NavigateTo($"/supervisor/knowledge-base/edit/{id}");
+
+    private void ViewArticulo(int id) => Navigation.NavigateTo($"/knowledge-base/{id}");
+
+    private void SelectTab(string tab) => selectedTab = tab;
+
+    private string GetTabClass(string tab) => $"tab {(selectedTab == tab ? "active" : string.Empty)}";
+
+    private bool ValidarFormulario()
+    {
+        if (string.IsNullOrWhiteSpace(nuevoArticulo.Titulo)) { JSRuntime.InvokeVoidAsync("showNotification", "El título es requerido", "warning"); return false; }
+        if (nuevoArticulo.CategoriaId <= 0) { JSRuntime.InvokeVoidAsync("showNotification", "Selecciona una categoría", "warning"); return false; }
+        if (string.IsNullOrWhiteSpace(nuevoArticulo.Resumen)) { JSRuntime.InvokeVoidAsync("showNotification", "El resumen es requerido", "warning"); return false; }
+        if (string.IsNullOrWhiteSpace(nuevoArticulo.Contenido)) { JSRuntime.InvokeVoidAsync("showNotification", "El contenido es requerido", "warning"); return false; }
+        return true;
+    }
+
+    private void LimpiarFormulario()
+    {
+        nuevoArticulo = new();
+        tagsInput = string.Empty;
+    }
+
+    private ArticuloCrearDto MapCrearDto()
+    {
+        var tags = string.IsNullOrWhiteSpace(tagsInput)
+            ? Array.Empty<string>()
+            : tagsInput.Split(',', StringSplitOptions.RemoveEmptyEntries).Select(t => t.Trim()).ToArray();
+
+        return new ArticuloCrearDto
+        {
+            Titulo = nuevoArticulo.Titulo,
+            Resumen = nuevoArticulo.Resumen,
+            Contenido = nuevoArticulo.Contenido,
+            PasosDetallados = nuevoArticulo.PasosDetallados,
+            Prerequisites = nuevoArticulo.Prerequisites,
+            Limitaciones = nuevoArticulo.Limitaciones,
+            Tags = tags,
+            CategoriaId = nuevoArticulo.CategoriaId
+        };
+    }
+
+    private string GetEstadoClass(string? estado) => (estado ?? string.Empty).ToLower() switch
+    {
+        "borrador" => "borrador",
+        "revision" => "enrevision",
+        "publicado" => "aprobado",
+        "rechazado" => "rechazado",
+        _ => "borrador"
+    };
+
+    private string GetEstadoText(string? estado) => (estado ?? "Borrador") switch
+    {
+        "Borrador" => "Borrador",
+        "Revision" => "En revisión",
+        "Publicado" => "Publicado",
+        "Rechazado" => "Rechazado",
+        _ => "Borrador"
+    };
+
+    private string TrimContent(string text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return "";
+        return text.Length <= 150 ? text : text[..150] + "...";
+    }
+
+    private class ApiResponse<T>
+    {
+        public bool success { get; set; }
+        public T? data { get; set; }
+        public string? message { get; set; }
+    }
+
+    private class ArticuloDto
+    {
+        public int Id { get; set; }
+        public string Titulo { get; set; } = string.Empty;
+        public string? Resumen { get; set; }
+        public string Contenido { get; set; } = string.Empty;
+        public string? Estado { get; set; }
+        public int Visualizaciones { get; set; }
+        public int VotosPositivos { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public CategoriaDto? Categoria { get; set; }
+    }
+
+    private class ArticuloCrearDto
+    {
+        public string Titulo { get; set; } = string.Empty;
+        public string Resumen { get; set; } = string.Empty;
+        public string Contenido { get; set; } = string.Empty;
+        public string? PasosDetallados { get; set; }
+        public string? Prerequisites { get; set; }
+        public string? Limitaciones { get; set; }
+        public string[]? Tags { get; set; }
+        public int CategoriaId { get; set; }
+    }
+
+    private class CategoriaDto
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; } = string.Empty;
+        public string? Descripcion { get; set; }
+    }
+}

@@ -24,4 +24,12 @@ public class IncidenteListDto
     public string? ServicioNombre { get; set; }
     public int? ServicioId { get; set; }
     public string? Solucion { get; set; }
+    
+    // Información de SLA
+    public int? ConfiguracionSLAId { get; set; }
+    public string? SLANombre { get; set; }
+    public int? TiempoRespuestaSLA { get; set; }
+    public int? TiempoResolucionSLA { get; set; }
+    public DateTime? FechaVencimiento { get; set; }
+    public TimeSpan? TiempoRestante { get; set; }
 }

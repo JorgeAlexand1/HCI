@@ -72,6 +72,18 @@
                     }
                 </button>
             </div>
+
+            <div class="forgot-password-link">
+                <a href="/forgot-password" class="text-link">
+                    <i class="fas fa-key me-1"></i>¿Olvidaste tu contraseña?
+                </a>
+            </div>
+
+            <div class="back-to-home-link">
+                <a href="/" class="text-link">
+                    <i class="fas fa-arrow-left me-1"></i>Volver al Inicio
+                </a>
+            </div>
         </EditForm>
 
         @if (UserSession.IsAuthenticated)
@@ -88,30 +100,6 @@
                 </a>
             </div>
         }
-
-        <div class="login-footer">
-            <div class="credentials-info">
-                <h5><i class="fas fa-info-circle me-2"></i>Usuarios de Prueba:</h5>
-                <div class="credentials-grid">
-                    <div class="credential-item">
-                        <strong>Administrador:</strong>
-                        <small>admin@1001@uta.edu.ec / TempPass123!</small>
-                    </div>
-                    <div class="credential-item">
-                        <strong>Supervisor:</strong>
-                        <small>supervisor2001@uta.edu.ec / TempPass123!</small>
-                    </div>
-                    <div class="credential-item">
-                        <strong>Técnico:</strong>
-                        <small>tecnico3001@uta.edu.ec / TempPass123!</small>
-                    </div>
-                    <div class="credential-item">
-                        <strong>Docente:</strong>
-                        <small>docente4001@uta.edu.ec / TempPass123!</small>
-                    </div>
-                </div>
-            </div>
-        </div>
     </div>
 </div>
 
@@ -221,7 +209,7 @@
                         TipoUsuario = apiResponse.Data.Usuario.Rol.ToLower() switch
                         {
                             "administrador" => incidentesFISEI.Services.TipoUsuario.Administrador,
-                            "supervisor" => incidentesFISEI.Services.TipoUsuario.Supervisor,
+                            "supervisortecnico" => incidentesFISEI.Services.TipoUsuario.Supervisor,
                             "tecnico" => incidentesFISEI.Services.TipoUsuario.Tecnico,
                             "docente" => incidentesFISEI.Services.TipoUsuario.Docente,
                             "estudiante" => incidentesFISEI.Services.TipoUsuario.UsuarioFinal,
@@ -298,7 +286,7 @@
         return role.ToLower() switch
         {
             "administrador" => "/admin-dashboard",
-            "supervisor" => "/supervisor-dashboard", 
+            "supervisortecnico" => "/supervisor-dashboard", 
             "tecnico" => "/technician-dashboard",
             "docente" => "/teacher-dashboard",
             "estudiante" => "/student-dashboard",

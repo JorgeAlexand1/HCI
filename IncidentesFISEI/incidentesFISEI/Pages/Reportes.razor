@@ -1,0 +1,543 @@
+@page "/reportes"
+@using incidentesFISEI.Services
+@using System.Text.Json
+@layout incidentesFISEI.Shared.Components.DashboardLayout
+@inject UserSessionService UserSession
+@inject NavigationManager Navigation
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Reportes y Analytics - IncidentesFISEI</PageTitle>
+
+<div class="reportes-page">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <button class="btn btn-link back-button p-0" @onclick='() => Navigation.NavigateTo("/dashboard")'>
+                    <i class="fas fa-arrow-left"></i> Volver
+                </button>
+            </div>
+            <div class="header-title-container">
+                <h1 class="page-title">
+                    <i class="fas fa-chart-line"></i> Reportes y Analytics
+                </h1>
+                <p class="page-subtitle">Monitorear y analizar métricas del sistema</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Content -->
+    <div class="reportes-content">
+
+        <div class="row g-4">
+            <!-- Reporte de Rendimiento -->
+            <div class="col-lg-6 col-xl-3">
+                <div class="report-card performance-card">
+                    <div class="card-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Reporte de Rendimiento</h3>
+                        <p>Análisis de KPIs y métricas del sistema</p>
+                        @if (performanceData != null)
+                        {
+                            <span class="status-badge success">@performanceData.ResolutionRate.ToString("F1")% Resolución</span>
+                        }
+                        else
+                        {
+                            <span class="status-badge loading">Cargando...</span>
+                        }
+                    </div>
+                    <button class="btn-action" @onclick='() => SelectReport("performance")' @onclick:stopPropagation="true">
+                        Ver Reporte
+                    </button>
+                </div>
+            </div>
+
+            <!-- Cumplimiento SLA -->
+            <div class="col-lg-6 col-xl-3">
+                <div class="report-card sla-card">
+                    <div class="card-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Cumplimiento SLA</h3>
+                        <p>Seguimiento de acuerdos de nivel de servicio</p>
+                        @if (slaData != null)
+                        {
+                            <span class="status-badge info">@slaData.CompliancePercentage.ToString("F1")% Cumplimiento</span>
+                        }
+                        else
+                        {
+                            <span class="status-badge loading">Cargando...</span>
+                        }
+                    </div>
+                    <button class="btn-action" @onclick='() => SelectReport("sla")' @onclick:stopPropagation="true">
+                        Ver Reporte
+                    </button>
+                </div>
+            </div>
+
+            <!-- Actividad de Usuarios -->
+            <div class="col-lg-6 col-xl-3">
+                <div class="report-card users-card">
+                    <div class="card-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Actividad de Usuarios</h3>
+                        <p>Estadísticas de uso y actividad del sistema</p>
+                        @if (userActivityData != null)
+                        {
+                            <span class="status-badge warning">@userActivityData.ActiveUsers Usuarios Activos</span>
+                        }
+                        else
+                        {
+                            <span class="status-badge loading">Cargando...</span>
+                        }
+                    </div>
+                    <button class="btn-action" @onclick='() => SelectReport("users")' @onclick:stopPropagation="true">
+                        Ver Reporte
+                    </button>
+                </div>
+            </div>
+
+            <!-- Exportar Datos -->
+            <div class="col-lg-6 col-xl-3">
+                <div class="report-card export-card">
+                    <div class="card-icon">
+                        <i class="fas fa-download"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Exportar Datos</h3>
+                        <p>Descargar reporte completo en formato PDF</p>
+                        <span class="status-badge primary">Documento PDF</span>
+                    </div>
+                    <button class="btn-action" @onclick="ShowExportModal" @onclick:stopPropagation="true">
+                        Exportar
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Report Details Section -->
+        @if (!string.IsNullOrEmpty(selectedReport))
+        {
+            <div class="report-details-section mt-5">
+                @if (selectedReport == "performance" && performanceData != null)
+                {
+                    <div class="report-container">
+                        <div class="report-header">
+                            <h2><i class="fas fa-chart-line me-2"></i>Reporte de Rendimiento</h2>
+                            <p class="report-date">Actualizado: @performanceData.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                        </div>
+
+                        <div class="report-stats">
+                            <div class="stat-box">
+                                <h3>Total de Incidentes</h3>
+                                <p class="stat-value">@performanceData.TotalIncidents</p>
+                            </div>
+                            <div class="stat-box success">
+                                <h3>Resueltos</h3>
+                                <p class="stat-value">@performanceData.ResolvedIncidents</p>
+                            </div>
+                            <div class="stat-box warning">
+                                <h3>Pendientes</h3>
+                                <p class="stat-value">@performanceData.PendingIncidents</p>
+                            </div>
+                            <div class="stat-box info">
+                                <h3>Tasa de Resolución</h3>
+                                <p class="stat-value">@performanceData.ResolutionRate.ToString("F1")%</p>
+                            </div>
+                            <div class="stat-box info">
+                                <h3>Tiempo Promedio</h3>
+                                <p class="stat-value">@performanceData.AverageResolutionTime.ToString("F1") hrs</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (selectedReport == "sla" && slaData != null)
+                {
+                    <div class="report-container">
+                        <div class="report-header">
+                            <h2><i class="fas fa-clock me-2"></i>Reporte de Cumplimiento SLA</h2>
+                            <p class="report-date">Actualizado: @slaData.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                        </div>
+
+                        <div class="report-stats">
+                            <div class="stat-box">
+                                <h3>Total de Incidentes</h3>
+                                <p class="stat-value">@slaData.TotalSLAMetric</p>
+                            </div>
+                            <div class="stat-box success">
+                                <h3>SLA Cumplido</h3>
+                                <p class="stat-value">@slaData.SLAMet</p>
+                            </div>
+                            <div class="stat-box danger">
+                                <h3>SLA Incumplido</h3>
+                                <p class="stat-value">@slaData.SLABreached</p>
+                            </div>
+                            <div class="stat-box info">
+                                <h3>Porcentaje Cumplimiento</h3>
+                                <p class="stat-value">@slaData.CompliancePercentage.ToString("F1")%</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+                else if (selectedReport == "users" && userActivityData != null)
+                {
+                    <div class="report-container">
+                        <div class="report-header">
+                            <h2><i class="fas fa-users me-2"></i>Reporte de Actividad de Usuarios</h2>
+                            <p class="report-date">Actualizado: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</p>
+                        </div>
+
+                        <div class="report-stats">
+                            <div class="stat-box">
+                                <h3>Usuarios Activos (7 días)</h3>
+                                <p class="stat-value">@userActivityData.ActiveUsers</p>
+                            </div>
+                            <div class="stat-box">
+                                <h3>Total de Usuarios</h3>
+                                <p class="stat-value">@userActivityData.TotalUsers</p>
+                            </div>
+                            <div class="stat-box success">
+                                <h3>Incidentes Creados Hoy</h3>
+                                <p class="stat-value">@userActivityData.IncidentsCreatedToday</p>
+                            </div>
+                            <div class="stat-box info">
+                                <h3>Incidentes Resueltos Hoy</h3>
+                                <p class="stat-value">@userActivityData.IncidentsResolvedToday</p>
+                            </div>
+                        </div>
+
+                        @if (userActivityData.TopActiveUsers != null && userActivityData.TopActiveUsers.Count > 0)
+                        {
+                            <div class="top-users-section">
+                                <h3>Usuarios Más Activos</h3>
+                                <table class="users-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Usuario</th>
+                                            <th>Incidentes Asignados</th>
+                                            <th>Última Actividad</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var user in userActivityData.TopActiveUsers)
+                                        {
+                                            <tr>
+                                                <td>@user.UserName</td>
+                                                <td>@user.IncidentCount</td>
+                                                <td>@user.LastActivity.ToString("dd/MM/yyyy HH:mm")</td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="report-container">
+                        <p style="text-align: center; color: #6c757d;">Cargando reporte...</p>
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <!-- Export Modal -->
+    @if (showExportModal)
+    {
+        <div class="modal-overlay" @onclick="CloseExportModal">
+            <div class="modal-content" @onclick:stopPropagation="true">
+                <div class="modal-header">
+                    <h3><i class="fas fa-download me-2"></i>Exportar Reportes</h3>
+                    <button class="btn-close" @onclick="CloseExportModal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <p class="export-description">Genera un reporte completo en PDF con todos los datos actuales del sistema.</p>
+                    <div class="export-options">
+                        <div class="export-option pdf-option" @onclick="ExportToPdf">
+                            <i class="fas fa-file-pdf"></i>
+                            <div class="export-option-content">
+                                <span class="export-option-title">Exportar Reporte Completo</span>
+                                <span class="export-option-subtitle">Incluye métricas de rendimiento, SLA y actividad de usuarios</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    private string selectedReport = "";
+    private bool showExportModal = false;
+    private bool isLoading = true;
+    
+    // DTOs from API
+    private PerformanceReportDto performanceData;
+    private SLAReportDto slaData;
+    private UserActivityReportDto userActivityData;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserSession.InitializeAsync();
+        
+        if (!UserSession.IsLoggedIn)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        // Load stats from API
+        await LoadStats();
+    }
+
+    private async Task LoadStats()
+    {
+        try
+        {
+            isLoading = true;
+            StateHasChanged();
+
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+
+            // Load performance report
+            try
+            {
+                var performanceResponse = await Http.GetAsync("http://localhost:7001/api/reports/performance");
+                if (performanceResponse.IsSuccessStatusCode)
+                {
+                    var json = await performanceResponse.Content.ReadAsStringAsync();
+                    Console.WriteLine($"Performance JSON: {json}");
+                    performanceData = JsonSerializer.Deserialize<PerformanceReportDto>(json, options);
+                }
+                else
+                {
+                    Console.WriteLine($"Performance API error: {performanceResponse.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading performance: {ex.Message}");
+            }
+
+            // Load SLA report
+            try
+            {
+                var slaResponse = await Http.GetAsync("http://localhost:7001/api/reports/sla");
+                if (slaResponse.IsSuccessStatusCode)
+                {
+                    var json = await slaResponse.Content.ReadAsStringAsync();
+                    Console.WriteLine($"SLA JSON: {json}");
+                    slaData = JsonSerializer.Deserialize<SLAReportDto>(json, options);
+                }
+                else
+                {
+                    Console.WriteLine($"SLA API error: {slaResponse.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading SLA: {ex.Message}");
+            }
+
+            // Load user activity report
+            try
+            {
+                var userActivityResponse = await Http.GetAsync("http://localhost:7001/api/reports/user-activity");
+                if (userActivityResponse.IsSuccessStatusCode)
+                {
+                    var json = await userActivityResponse.Content.ReadAsStringAsync();
+                    Console.WriteLine($"User Activity JSON: {json}");
+                    userActivityData = JsonSerializer.Deserialize<UserActivityReportDto>(json, options);
+                }
+                else
+                {
+                    Console.WriteLine($"User Activity API error: {userActivityResponse.StatusCode}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error loading user activity: {ex.Message}");
+            }
+
+            isLoading = false;
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading reports: {ex.Message}");
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ShowExportModal()
+    {
+        showExportModal = true;
+    }
+
+    private void CloseExportModal()
+    {
+        showExportModal = false;
+    }
+
+    private void SelectReport(string reportType)
+    {
+        selectedReport = reportType;
+        StateHasChanged();
+    }
+
+    private async Task ExportToPdf()
+    {
+        try
+        {
+            // Llamar al API para generar el PDF
+            var response = await Http.GetAsync("http://localhost:7001/api/reports/export-pdf", HttpCompletionOption.ResponseHeadersRead);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                var fileBytes = await response.Content.ReadAsByteArrayAsync();
+                var fileName = $"Reporte_Incidentes_{DateTime.Now:yyyyMMdd_HHmmss}.pdf";
+                
+                // Descargar el archivo PDF
+                await JSRuntime.InvokeVoidAsync("downloadFile", fileName, "application/pdf", fileBytes);
+                
+                showExportModal = false;
+                StateHasChanged();
+            }
+            else
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Error al generar el reporte PDF");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error exporting PDF: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+        }
+    }
+
+    // DTOs
+    private class PerformanceReportDto
+    {
+        public int TotalIncidents { get; set; }
+        public int ResolvedIncidents { get; set; }
+        public int PendingIncidents { get; set; }
+        public double AverageResolutionTime { get; set; }
+        public double ResolutionRate { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    private class SLAReportDto
+    {
+        public double CompliancePercentage { get; set; }
+        public int TotalSLAMetric { get; set; }
+        public int SLAMet { get; set; }
+        public int SLABreached { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    private class UserActivityReportDto
+    {
+        public int ActiveUsers { get; set; }
+        public int TotalUsers { get; set; }
+        public int IncidentsCreatedToday { get; set; }
+        public int IncidentsResolvedToday { get; set; }
+        public List<UserActivityDetail> TopActiveUsers { get; set; } = new();
+    }
+
+    private class UserActivityDetail
+    {
+        public int UserId { get; set; }
+        public string UserName { get; set; }
+        public int IncidentCount { get; set; }
+        public DateTime LastActivity { get; set; }
+    }
+
+    // Placeholder components - will be replaced with proper components later
+    private class PerformanceReport : ComponentBase
+    {
+        protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder)
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", "report-container");
+            
+            builder.OpenElement(2, "h3");
+            builder.AddContent(3, "Reporte de Rendimiento");
+            builder.CloseElement();
+            
+            builder.OpenElement(4, "p");
+            builder.AddContent(5, "KPIs y métricas del sistema actualizadas en tiempo real.");
+            builder.CloseElement();
+            
+            builder.CloseElement();
+        }
+    }
+
+    private class SLAReport : ComponentBase
+    {
+        protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder)
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", "report-container");
+            
+            builder.OpenElement(2, "h3");
+            builder.AddContent(3, "Cumplimiento de SLA");
+            builder.CloseElement();
+            
+            builder.OpenElement(4, "p");
+            builder.AddContent(5, "Seguimiento de acuerdos de nivel de servicio.");
+            builder.CloseElement();
+            
+            builder.CloseElement();
+        }
+    }
+
+    private class UsersReport : ComponentBase
+    {
+        [Parameter] public int ActiveUsers { get; set; }
+
+        protected override void BuildRenderTree(Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder builder)
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", "report-container");
+            
+            builder.OpenElement(2, "h3");
+            builder.AddContent(3, "Actividad de Usuarios");
+            builder.CloseElement();
+            
+            builder.OpenElement(4, "p");
+            builder.AddContent(5, $"Actualmente hay {ActiveUsers} usuarios activos en el sistema.");
+            builder.CloseElement();
+            
+            builder.CloseElement();
+        }
+    }
+}
+
+<script>
+    window.downloadFile = function (filename, contentType, data) {
+        const blob = new Blob([new Uint8Array(data)], { type: contentType });
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+    };
+</script>

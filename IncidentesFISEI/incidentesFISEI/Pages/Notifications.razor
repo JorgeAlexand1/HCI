@@ -1,0 +1,330 @@
+@page "/notifications"
+@using incidentesFISEI.Services
+@layout incidentesFISEI.Shared.Components.DashboardLayout
+@inject UserSessionService UserSession
+@inject NavigationManager Navigation
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Notificaciones - IncidentesFISEI</PageTitle>
+
+<div class="notifications-page">
+    <!-- Header -->
+    <div class="page-header">
+        <div class="header-content">
+            <div class="header-left">
+                <button class="btn btn-link back-button p-0" @onclick='() => Navigation.NavigateTo("/dashboard")'>
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <div class="header-title-section">
+                    <h1 class="page-title">
+                        <i class="fas fa-bell me-2"></i>Notificaciones
+                    </h1>
+                    @if (unreadCount > 0)
+                    {
+                        <span class="badge bg-danger ms-2">@unreadCount nuevas</span>
+                    }
+                </div>
+            </div>
+            <div class="header-actions">
+                @if (notifications?.Any(n => !n.Leida) == true)
+                {
+                    <button class="btn btn-outline-primary btn-sm" @onclick="MarkAllAsRead">
+                        <i class="fas fa-check-double me-2"></i>Marcar todas como leídas
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="filters-section">
+        <div class="filter-tabs">
+            <button class="filter-tab @(currentFilter == "all" ? "active" : "")" 
+                    @onclick='() => ChangeFilter("all")'>
+                <i class="fas fa-list me-2"></i>Todas
+                @if (allCount > 0)
+                {
+                    <span class="count-badge">@allCount</span>
+                }
+            </button>
+            <button class="filter-tab @(currentFilter == "unread" ? "active" : "")" 
+                    @onclick='() => ChangeFilter("unread")'>
+                <i class="fas fa-envelope me-2"></i>No leídas
+                @if (unreadCount > 0)
+                {
+                    <span class="count-badge">@unreadCount</span>
+                }
+            </button>
+            <button class="filter-tab @(currentFilter == "read" ? "active" : "")" 
+                    @onclick='() => ChangeFilter("read")'>
+                <i class="fas fa-envelope-open me-2"></i>Leídas
+            </button>
+        </div>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="notifications-content">
+        @if (isLoading)
+        {
+            <div class="loading-state">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Cargando...</span>
+                </div>
+                <p class="mt-3">Cargando notificaciones...</p>
+            </div>
+        }
+        else if (filteredNotifications?.Any() != true)
+        {
+            <div class="empty-state">
+                <i class="fas fa-bell-slash"></i>
+                <h3>No hay notificaciones</h3>
+                <p>@GetEmptyMessage()</p>
+            </div>
+        }
+        else
+        {
+            <div class="notifications-list">
+                @foreach (var notification in filteredNotifications)
+                {
+                    <div class="notification-card @(notification.Leida ? "read" : "unread")"
+                         @onclick="() => MarkAsRead(notification)">
+                        <div class="notification-icon-container">
+                            <div class="notification-icon @GetNotificationTypeClass(notification.TipoNotificacion)">
+                                <i class="@GetNotificationIcon(notification.TipoNotificacion)"></i>
+                            </div>
+                        </div>
+                        
+                        <div class="notification-body">
+                            <div class="notification-header-row">
+                                <h4 class="notification-title">@notification.Titulo</h4>
+                                @if (!notification.Leida)
+                                {
+                                    <span class="unread-badge"></span>
+                                }
+                            </div>
+                            
+                            <p class="notification-message">@notification.Mensaje</p>
+                            
+                            <div class="notification-footer">
+                                <span class="notification-time">
+                                    <i class="fas fa-clock me-1"></i>
+                                    @FormatDate(notification.FechaCreacion)
+                                </span>
+                                <span class="notification-type-badge @GetNotificationTypeClass(notification.TipoNotificacion)">
+                                    @GetNotificationTypeLabel(notification.TipoNotificacion)
+                                </span>
+                            </div>
+                        </div>
+
+                        @if (!notification.Leida)
+                        {
+                            <button class="btn-mark-read" @onclick="() => MarkAsRead(notification)"
+                                    @onclick:stopPropagation="true">
+                                <i class="fas fa-check"></i>
+                            </button>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private List<NotificationDto>? notifications;
+    private List<NotificationDto>? filteredNotifications;
+    private bool isLoading = true;
+    private int unreadCount = 0;
+    private int allCount = 0;
+    private string currentFilter = "all";
+
+    public class NotificationDto
+    {
+        public int Id { get; set; }
+        public string Titulo { get; set; } = "";
+        public string Mensaje { get; set; } = "";
+        public string TipoNotificacion { get; set; } = "";
+        public bool Leida { get; set; }
+        public DateTime FechaCreacion { get; set; }
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserSession.InitializeAsync();
+        
+        if (!UserSession.IsLoggedIn)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        await LoadNotifications();
+    }
+
+    private async Task LoadNotifications()
+    {
+        isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var response = await Http.GetFromJsonAsync<NotificationsResponse>("/api/notification");
+            notifications = response?.Notifications?.ToList() ?? new();
+            allCount = notifications.Count;
+            unreadCount = notifications.Count(n => !n.Leida);
+            
+            ApplyFilter();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "Error al cargar notificaciones", ex.Message);
+            notifications = new();
+            filteredNotifications = new();
+        }
+        finally
+        {
+            isLoading = false;
+            StateHasChanged();
+        }
+    }
+
+    private void ChangeFilter(string filter)
+    {
+        currentFilter = filter;
+        ApplyFilter();
+    }
+
+    private void ApplyFilter()
+    {
+        if (notifications == null)
+        {
+            filteredNotifications = new();
+            return;
+        }
+
+        filteredNotifications = currentFilter switch
+        {
+            "unread" => notifications.Where(n => !n.Leida).ToList(),
+            "read" => notifications.Where(n => n.Leida).ToList(),
+            _ => notifications.ToList()
+        };
+
+        StateHasChanged();
+    }
+
+    private async Task MarkAsRead(NotificationDto notification)
+    {
+        if (notification.Leida) return;
+
+        try
+        {
+            await Http.PutAsync($"/api/notification/{notification.Id}/read", null);
+            notification.Leida = true;
+            unreadCount = Math.Max(0, unreadCount - 1);
+            ApplyFilter();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "Error al marcar notificación como leída", ex.Message);
+        }
+    }
+
+    private async Task MarkAllAsRead()
+    {
+        try
+        {
+            await Http.PutAsync("/api/notification/read-all", null);
+            
+            if (notifications != null)
+            {
+                foreach (var notification in notifications)
+                {
+                    notification.Leida = true;
+                }
+            }
+            
+            unreadCount = 0;
+            ApplyFilter();
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "Error al marcar todas como leídas", ex.Message);
+        }
+    }
+
+    private string GetEmptyMessage()
+    {
+        return currentFilter switch
+        {
+            "unread" => "No tienes notificaciones sin leer",
+            "read" => "No tienes notificaciones leídas",
+            _ => "Aún no tienes notificaciones"
+        };
+    }
+
+    private string GetNotificationTypeClass(string tipo)
+    {
+        return tipo switch
+        {
+            "Info" => "info",
+            "Alerta" => "danger",
+            "Advertencia" => "warning",
+            "Exito" => "success",
+            _ => "info"
+        };
+    }
+
+    private string GetNotificationIcon(string tipo)
+    {
+        return tipo switch
+        {
+            "Info" => "fas fa-info-circle",
+            "Alerta" => "fas fa-exclamation-triangle",
+            "Advertencia" => "fas fa-exclamation-circle",
+            "Exito" => "fas fa-check-circle",
+            _ => "fas fa-bell"
+        };
+    }
+
+    private string GetNotificationTypeLabel(string tipo)
+    {
+        return tipo switch
+        {
+            "Info" => "Información",
+            "Alerta" => "Alerta",
+            "Advertencia" => "Advertencia",
+            "Exito" => "Éxito",
+            _ => tipo
+        };
+    }
+
+    private string FormatDate(DateTime date)
+    {
+        var now = DateTime.Now;
+        var diff = now - date;
+
+        if (diff.TotalMinutes < 1)
+            return "Hace un momento";
+        if (diff.TotalMinutes < 60)
+            return $"Hace {(int)diff.TotalMinutes} minuto{((int)diff.TotalMinutes != 1 ? "s" : "")}";
+        if (diff.TotalHours < 24)
+            return $"Hace {(int)diff.TotalHours} hora{((int)diff.TotalHours != 1 ? "s" : "")}";
+        if (diff.TotalDays < 7)
+            return $"Hace {(int)diff.TotalDays} día{((int)diff.TotalDays != 1 ? "s" : "")}";
+        if (diff.TotalDays < 30)
+            return $"Hace {(int)(diff.TotalDays / 7)} semana{((int)(diff.TotalDays / 7) != 1 ? "s" : "")}";
+        
+        return date.ToString("dd/MM/yyyy HH:mm");
+    }
+
+    public class NotificationsResponse
+    {
+        public IEnumerable<NotificationDto> Notifications { get; set; } = new List<NotificationDto>();
+        public int Page { get; set; }
+        public int PageSize { get; set; }
+        public int Total { get; set; }
+    }
+}

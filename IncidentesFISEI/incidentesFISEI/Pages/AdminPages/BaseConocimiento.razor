@@ -1,0 +1,237 @@
+@page "/admin/base-conocimiento"
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h2><i class="fas fa-book"></i> Base de Conocimiento</h2>
+                <button class="btn btn-primary" @onclick="OpenCreateModal">
+                    <i class="fas fa-plus me-2"></i>Crear Artículo
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Buscador y Filtros -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <input type="text" class="form-control" placeholder="Buscar artículos..." 
+                   @bind="searchTerm" @onkeyup="@(async (e) => await SearchArticulos())" />
+        </div>
+        <div class="col-md-3">
+            <select class="form-control" @onchange="FilterArticulos">
+                <option value="">Todos los estados</option>
+                <option value="1">Borrador</option>
+                <option value="2">Revisión</option>
+                <option value="3">Publicado</option>
+                <option value="4">Archivado</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <button class="btn btn-outline-secondary w-100" @onclick="ReloadArticulos">
+                <i class="fas fa-sync me-2"></i>Recargar
+            </button>
+        </div>
+    </div>
+
+    <!-- Lista de Artículos -->
+    {
+        <div class="alert alert-info">
+            <i class="fas fa-spinner fa-spin me-2"></i>Cargando artículos...
+        </div>
+    }
+    else if (!articulos.Any())
+    {
+        <div class="alert alert-warning">
+            No hay artículos disponibles
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            @foreach (var articulo in articulos)
+            {
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card h-100 shadow-sm">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title">@articulo.Titulo</h5>
+                                <span class="badge @GetStateBadge(articulo.Estado)">@GetStateLabel(articulo.Estado)</span>
+                            </div>
+                            <p class="card-text text-muted small">@(articulo.Resumen ?? "Sin resumen")</p>
+                            
+                            <div class="small text-muted mb-3">
+                                <i class="fas fa-user me-1"></i>@articulo.AutorNombre
+                                <br />
+                                <i class="fas fa-calendar me-1"></i>@articulo.CreatedAt.ToString("dd/MM/yyyy")
+                                <br />
+                                <i class="fas fa-eye me-1"></i>@articulo.Visualizaciones vistas
+                            </div>
+
+                            <div class="btn-group w-100" role="group">
+                                <button class="btn btn-sm btn-outline-primary" @onclick="@(() => ViewArticulo(articulo.Id))">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-warning" @onclick="@(() => EditArticulo(articulo.Id))">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                @if (articulo.Estado != EstadoArticulo.Publicado)
+                                {
+                                    <button class="btn btn-sm btn-outline-success" @onclick="@(() => PublishArticulo(articulo.Id))">
+                                        <i class="fas fa-check"></i>
+                                    </button>
+                                }
+                                <button class="btn btn-sm btn-outline-danger" @onclick="@(() => DeleteArticulo(articulo.Id))">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    private List<ArticuloConocimientoDto> articulos = new();
+    private bool loading = true;
+    private string searchTerm = "";
+    private string selectedState = "";
+    private int currentUserId = 0;
+
+    protected override async Task OnInitializedAsync()
+    {
+        currentUserId = 1; // TODO: Obtener del token
+        await ReloadArticulos();
+    }
+
+    private async Task ReloadArticulos()
+    {
+        loading = true;
+        try
+        {
+            var response = await Http.GetFromJsonAsync<List<ArticuloConocimientoDto>>("http://localhost:5000/api/baseconocimiento");
+            if (response != null)
+            {
+                articulos = response;
+                StateHasChanged();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        loading = false;
+    }
+
+    private async Task SearchArticulos()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            await ReloadArticulos();
+            return;
+        }
+
+        loading = true;
+        try
+        {
+            var response = await Http.GetFromJsonAsync<List<ArticuloConocimientoDto>>($"http://localhost:5000/api/baseconocimiento/buscar/{searchTerm}");
+            if (response != null)
+            {
+                articulos = response;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+        }
+        loading = false;
+    }
+
+    private Task FilterArticulos(ChangeEventArgs e)
+    {
+        selectedState = e.Value?.ToString() ?? "";
+        return Task.CompletedTask;
+    }
+
+    private void ViewArticulo(int id)
+    {
+        Navigation.NavigateTo($"/admin/articulo/{id}");
+    }
+
+    private void EditArticulo(int id)
+    {
+        Navigation.NavigateTo($"/admin/articulo/{id}/editar");
+    }
+
+    private void OpenCreateModal()
+    {
+        Navigation.NavigateTo("/admin/articulo/crear");
+    }
+
+    private async Task PublishArticulo(int id)
+    {
+        var response = await Http.PostAsync($"http://localhost:5000/api/baseconocimiento/{id}/publicar?revisadoPorId={currentUserId}", null);
+        if (response.IsSuccessStatusCode)
+        {
+            await ReloadArticulos();
+        }
+    }
+
+    private async Task DeleteArticulo(int id)
+    {
+        if (await ConfirmDelete())
+        {
+            var response = await Http.DeleteAsync($"http://localhost:5000/api/baseconocimiento/{id}");
+            if (response.IsSuccessStatusCode)
+            {
+                await ReloadArticulos();
+            }
+        }
+    }
+
+    private Task<bool> ConfirmDelete() => Task.FromResult(true);
+
+    private string GetStateBadge(EstadoArticulo estado) => estado switch
+    {
+        EstadoArticulo.Borrador => "bg-secondary",
+        EstadoArticulo.Revision => "bg-warning",
+        EstadoArticulo.Publicado => "bg-success",
+        EstadoArticulo.Archivado => "bg-dark",
+        _ => "bg-info"
+    };
+
+    private string GetStateLabel(EstadoArticulo estado) => estado switch
+    {
+        EstadoArticulo.Borrador => "Borrador",
+        EstadoArticulo.Revision => "En Revisión",
+        EstadoArticulo.Publicado => "Publicado",
+        EstadoArticulo.Archivado => "Archivado",
+        _ => "Desconocido"
+    };
+
+    public class ArticuloConocimientoDto
+    {
+        public int Id { get; set; }
+        public string Titulo { get; set; }
+        public string Contenido { get; set; }
+        public string Resumen { get; set; }
+        public string[] Tags { get; set; }
+        public EstadoArticulo Estado { get; set; }
+        public int Visualizaciones { get; set; }
+        public string AutorNombre { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public enum EstadoArticulo
+    {
+        Borrador = 1,
+        Revision = 2,
+        Publicado = 3,
+        Archivado = 4
+    }
+}

@@ -8,15 +8,29 @@ public class ArticuloConocimientoDto
     public int Id { get; set; }
     public string Titulo { get; set; } = string.Empty;
     public string Contenido { get; set; } = string.Empty;
-    public TipoArticulo Tipo { get; set; }
-    public int AutorId { get; set; }
-    public string AutorNombre { get; set; } = string.Empty;
-    public bool EsPublico { get; set; }
-    public string Tags { get; set; } = string.Empty;
+    public string? Resumen { get; set; }
+    public string[] Tags { get; set; } = Array.Empty<string>();
+    public EstadoArticulo Estado { get; set; }
+    public int Visualizaciones { get; set; }
     public int VotosPositivos { get; set; }
     public int VotosNegativos { get; set; }
-    public DateTime FechaCreacion { get; set; }
-    public DateTime? FechaModificacion { get; set; }
+    public DateTime? FechaPublicacion { get; set; }
+    public DateTime? FechaRevision { get; set; }
+    public bool EsSolucionValidada { get; set; }
+    public string? PasosDetallados { get; set; }
+    public string? Prerequisites { get; set; }
+    public string? Limitaciones { get; set; }
+    
+    public int AutorId { get; set; }
+    public string AutorNombre { get; set; } = string.Empty;
+    public int? RevisadoPorId { get; set; }
+    public string? RevisadoPorNombre { get; set; }
+    
+    public int CategoriaId { get; set; }
+    public string CategoriaNombre { get; set; } = string.Empty;
+    
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
 }
 
 public class CreateArticuloConocimientoDto
@@ -28,15 +42,21 @@ public class CreateArticuloConocimientoDto
     [Required(ErrorMessage = "El contenido es requerido")]
     public string Contenido { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "El tipo de artículo es requerido")]
-    public TipoArticulo Tipo { get; set; }
+    [MaxLength(500)]
+    public string? Resumen { get; set; }
 
     public int AutorId { get; set; }
 
-    public bool EsPublico { get; set; } = false;
+    [Required]
+    public int CategoriaId { get; set; }
 
-    [MaxLength(500, ErrorMessage = "Los tags no pueden exceder 500 caracteres")]
     public string Tags { get; set; } = string.Empty;
+    
+    public string? PasosDetallados { get; set; }
+    public string? Prerequisites { get; set; }
+    public string? Limitaciones { get; set; }
+
+    public int? IncidenteRelacionadoId { get; set; }
 }
 
 public class UpdateArticuloConocimientoDto
@@ -48,11 +68,14 @@ public class UpdateArticuloConocimientoDto
     [Required(ErrorMessage = "El contenido es requerido")]
     public string Contenido { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "El tipo de artículo es requerido")]
-    public TipoArticulo Tipo { get; set; }
+    [MaxLength(500)]
+    public string? Resumen { get; set; }
 
-    public bool EsPublico { get; set; } = false;
-
-    [MaxLength(500, ErrorMessage = "Los tags no pueden exceder 500 caracteres")]
     public string Tags { get; set; } = string.Empty;
+    
+    public string? PasosDetallados { get; set; }
+    public string? Prerequisites { get; set; }
+    public string? Limitaciones { get; set; }
+
+    public int CategoriaId { get; set; }
 }

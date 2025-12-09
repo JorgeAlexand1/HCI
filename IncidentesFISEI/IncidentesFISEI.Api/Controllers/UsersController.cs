@@ -30,7 +30,9 @@ public class UsersController : ControllerBase
     [HttpPost]
     [ProducesResponseType(typeof(ApiResponse<UsuarioListDto>), 201)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
-    public async Task<IActionResult> CreateUser([FromBody] CreateUserRequest createData)
+    public async Task<IActionResult> CreateUser(
+        [FromBody] CreateUserRequest createData,
+        [FromServices] IncidentesFISEI.Infrastructure.Services.IEmailService emailService)
     {
         try
         {
@@ -41,19 +43,22 @@ public class UsersController : ControllerBase
                 return BadRequest(new ApiResponse<object>(false, null, "El email ya está registrado"));
             }
 
+            // Generar contraseña temporal
+            var tempPassword = GenerarPasswordTemporal();
+
             // Crear nuevo usuario
             var usuario = new Usuario
             {
                 Username = GenerateUsernameFromEmail(createData.Email),
                 Email = createData.Email,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword("TempPass123!"),
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(tempPassword),
                 FirstName = createData.FirstName,
                 LastName = createData.LastName,
                 Phone = createData.Phone,
                 Department = createData.Department,
                 TipoUsuario = createData.TipoUsuario,
                 IsActive = createData.IsActive,
-                IsEmailConfirmed = createData.IsEmailConfirmed,
+                IsEmailConfirmed = false, // Por defecto no confirmado
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -61,12 +66,19 @@ public class UsersController : ControllerBase
             _context.Usuarios.Add(usuario);
             await _context.SaveChangesAsync();
 
+            // Enviar email de verificación con credenciales
+            var emailEnviado = await EnviarEmailBienvenida(emailService, usuario, tempPassword);
+
             var usuarioDto = MapToUsuarioListDto(usuario);
             
-            _logger.LogInformation("Usuario {Email} creado exitosamente por administrador", usuario.Email);
+            _logger.LogInformation("Usuario {Email} creado exitosamente. Email enviado: {EmailEnviado}", 
+                usuario.Email, emailEnviado);
             
             return CreatedAtAction(nameof(GetUser), new { id = usuario.Id }, 
-                new ApiResponse<UsuarioListDto>(true, usuarioDto, "Usuario creado exitosamente"));
+                new ApiResponse<UsuarioListDto>(true, usuarioDto, 
+                    emailEnviado 
+                        ? "Usuario creado. Se envió email con credenciales de acceso." 
+                        : "Usuario creado. ADVERTENCIA: No se pudo enviar el email."));
         }
         catch (Exception ex)
         {
@@ -339,6 +351,64 @@ public class UsersController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Cambiar contraseña del usuario
+    /// </summary>
+    [HttpPost("{id}/change-password")]
+    [ProducesResponseType(typeof(ApiResponse<object>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 404)]
+    public async Task<IActionResult> ChangePassword(int id, [FromBody] ChangePasswordRequest request)
+    {
+        try
+        {
+            var usuario = await _context.Usuarios.FirstOrDefaultAsync(u => u.Id == id);
+            
+            if (usuario == null)
+            {
+                return NotFound(new ApiResponse<object>(false, null, "Usuario no encontrado"));
+            }
+
+            // Verificar contraseña actual
+            if (!BCrypt.Net.BCrypt.Verify(request.CurrentPassword, usuario.PasswordHash))
+            {
+                return BadRequest(new ApiResponse<object>(false, null, "La contraseña actual es incorrecta"));
+            }
+
+            // Validar nueva contraseña
+            if (request.NewPassword.Length < 8)
+            {
+                return BadRequest(new ApiResponse<object>(false, null, "La nueva contraseña debe tener al menos 8 caracteres"));
+            }
+
+            if (request.NewPassword != request.ConfirmPassword)
+            {
+                return BadRequest(new ApiResponse<object>(false, null, "Las contraseñas no coinciden"));
+            }
+
+            // Actualizar contraseña
+            usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
+            usuario.UpdatedAt = DateTime.UtcNow;
+            
+            // Marcar email como confirmado si es la primera vez
+            if (!usuario.IsEmailConfirmed)
+            {
+                usuario.IsEmailConfirmed = true;
+            }
+
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Usuario {Email} cambió su contraseña exitosamente", usuario.Email);
+            
+            return Ok(new ApiResponse<object>(true, null, "Contraseña actualizada exitosamente"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al cambiar contraseña del usuario {Id}", id);
+            return StatusCode(500, new ApiResponse<object>(false, null, "Error interno del servidor"));
+        }
+    }
+
     // Métodos helper
     private static UsuarioListDto MapToUsuarioListDto(Usuario usuario)
     {
@@ -359,6 +429,58 @@ public class UsersController : ControllerBase
     private static string GenerateUsernameFromEmail(string email)
     {
         return email.Split('@')[0].ToLower();
+    }
+
+    private static string GenerarPasswordTemporal()
+    {
+        // Genera una contraseña aleatoria de 12 caracteres
+        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$";
+        var random = new Random();
+        return new string(Enumerable.Repeat(chars, 12)
+            .Select(s => s[random.Next(s.Length)]).ToArray());
+    }
+
+    private async Task<bool> EnviarEmailBienvenida(
+        IncidentesFISEI.Infrastructure.Services.IEmailService emailService, 
+        Usuario usuario, 
+        string passwordTemporal)
+    {
+        try
+        {
+            var mensaje = $@"
+                <h2>¡Bienvenido al Sistema IncidentesFISEI!</h2>
+                <p>Hola <strong>{usuario.FirstName} {usuario.LastName}</strong>,</p>
+                <p>Tu cuenta ha sido creada exitosamente en el sistema de gestión de incidentes de la FISEI - UTA.</p>
+                
+                <div style='background-color: #f8f9fa; padding: 15px; border-left: 4px solid #0056b3; margin: 20px 0;'>
+                    <h3 style='margin-top: 0;'>📧 Credenciales de Acceso:</h3>
+                    <p><strong>Usuario:</strong> {usuario.Email}</p>
+                    <p><strong>Contraseña temporal:</strong> <code style='background-color: #e9ecef; padding: 5px 10px; border-radius: 4px;'>{passwordTemporal}</code></p>
+                </div>
+
+                <p><strong>⚠️ IMPORTANTE:</strong> Por seguridad, te recomendamos cambiar tu contraseña después del primer inicio de sesión.</p>
+                
+                <p><strong>🔗 Acceder al sistema:</strong></p>
+                <p><a href='https://localhost:7000/login' style='background-color: #0056b3; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; display: inline-block;'>Iniciar Sesión</a></p>
+                
+                <hr style='margin: 30px 0;'>
+                <p style='color: #666; font-size: 12px;'>
+                    Si no solicitaste esta cuenta, por favor contacta al administrador del sistema.<br>
+                    Sistema IncidentesFISEI - Facultad de Ingeniería en Sistemas - UTA
+                </p>
+            ";
+
+            return await emailService.EnviarEmailAsync(
+                usuario.Email,
+                "🎓 Bienvenido a IncidentesFISEI - Credenciales de Acceso",
+                mensaje
+            );
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al enviar email de bienvenida a {Email}", usuario.Email);
+            return false;
+        }
     }
 }
 
@@ -386,4 +508,11 @@ public class UpdateUserRequest
     public bool? IsActive { get; set; }
     public bool? IsEmailConfirmed { get; set; }
     public string? NewPassword { get; set; }
+}
+
+public class ChangePasswordRequest
+{
+    public string CurrentPassword { get; set; } = string.Empty;
+    public string NewPassword { get; set; } = string.Empty;
+    public string ConfirmPassword { get; set; } = string.Empty;
 }

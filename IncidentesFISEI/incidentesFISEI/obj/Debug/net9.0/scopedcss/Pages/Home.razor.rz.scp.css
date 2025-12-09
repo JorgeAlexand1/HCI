@@ -32,7 +32,7 @@
     right: 0;
     bottom: 0;
     background-image: 
-        radial-gradient(circle at 25% 25%, rgba(255, 215, 0, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 25% 25%, rgba(94, 39, 41, 0.1) 0%, transparent 50%),
         radial-gradient(circle at 75% 75%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
         linear-gradient(45deg, transparent 40%, rgba(255, 255, 255, 0.02) 50%, transparent 60%);
     background-size: 400px 400px, 300px 300px, 100px 100px;
@@ -67,15 +67,15 @@
 .hero-badge[b-rgcshbvqhp] {
     display: inline-flex;
     align-items: center;
-    background: rgba(255, 215, 0, 0.15);
+    background: rgba(230, 188, 190, 0.15);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 215, 0, 0.3);
+    border: 1px solid rgba(101, 33, 33, 0.3);
     padding: 0.75rem 1.5rem;
     border-radius: 50px;
     font-size: 0.9rem;
     font-weight: 600;
     margin-bottom: 2rem;
-    color: #fbbf24;
+    color: white ;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     box-shadow: 0 4px 20px rgba(255, 215, 0, 0.1);
@@ -92,7 +92,7 @@
 }
 
 .hero-highlight[b-rgcshbvqhp] {
-    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    background: linear-gradient(135deg, #722f37  0%, #8e464e 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -136,15 +136,15 @@
 }
 
 .btn-primary.btn-hero[b-rgcshbvqhp] {
-    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-    color: #0f172a;
-    box-shadow: 0 10px 30px rgba(251, 191, 36, 0.3);
+    background: linear-gradient(135deg, #722f37 0%, #5a252b 100%);
+    color: white;
+    box-shadow: 0 10px 30px rgba(114, 47, 55, 0.3);
 }
 
 .btn-primary.btn-hero:hover[b-rgcshbvqhp] {
     transform: translateY(-3px);
-    box-shadow: 0 15px 40px rgba(251, 191, 36, 0.4);
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    box-shadow: 0 15px 40px rgba(114, 47, 55, 0.4);
+    background: linear-gradient(135deg, #5a252b 0%, #3d1825 100%);
 }
 
 .btn-outline-light.btn-hero[b-rgcshbvqhp] {
@@ -205,7 +205,7 @@
 .feature-card-horizontal:hover[b-rgcshbvqhp] {
     transform: translateY(-2px);
     box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
-    border-color: #fbbf24;
+    border-color: #722f37 ;
 }
 
 .feature-card-horizontal .feature-icon-large[b-rgcshbvqhp] {
@@ -348,12 +348,12 @@
 .quick-feature:hover[b-rgcshbvqhp] {
     transform: translateY(-3px);
     background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 215, 0, 0.4);
+    border-color: rgba(63, 21, 21, 0.4);
 }
 
 .quick-feature i[b-rgcshbvqhp] {
     font-size: 1.5rem;
-    color: #fbbf24;
+    color: #722f37 ;
     margin-bottom: 0.5rem;
     transition: all 0.3s ease;
 }
@@ -475,7 +475,7 @@
     left: 0;
     right: 0;
     height: 3px;
-    background: linear-gradient(90deg, #fbbf24, #f59e0b, #10b981, #3b82f6);
+    background: linear-gradient(90deg, #722f37 , #722f37, #10b981, #3b82f6);
     transform: scaleX(0);
     transition: transform 0.3s ease;
 }
@@ -823,3 +823,4 @@
         justify-content: center;
     }
 }
+

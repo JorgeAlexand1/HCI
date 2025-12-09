@@ -28,8 +28,32 @@ build_property.EnableCodeStyleSeverity =
 build_metadata.AdditionalFiles.TargetPath = QXBwLnJhem9y
 build_metadata.AdditionalFiles.CssScope = 
 
+[c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/AdminPages/ArticuloEditor.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5QYWdlc1xBcnRpY3Vsb0VkaXRvci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/AdminPages/BaseConocimiento.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQWRtaW5QYWdlc1xCYXNlQ29ub2NpbWllbnRvLnJhem9y
+build_metadata.AdditionalFiles.CssScope = 
+
+[c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/Components/PerformanceReport.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ29tcG9uZW50c1xQZXJmb3JtYW5jZVJlcG9ydC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/Components/SLAReport.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ29tcG9uZW50c1xTTEFSZXBvcnQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = 
+
+[c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/Components/UsersReport.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ29tcG9uZW50c1xVc2Vyc1JlcG9ydC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
 [c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/Counter.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ291bnRlci5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = 
+
+[c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/Dashboards/SupervisorKnowledgeBase.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRGFzaGJvYXJkc1xTdXBlcnZpc29yS25vd2xlZGdlQmFzZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = 
 
 [c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/Weather.razor]
@@ -51,6 +75,22 @@ build_metadata.AdditionalFiles.CssScope = b-aqp3iys3f9
 [c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Layout/NavMenu.razor]
 build_metadata.AdditionalFiles.TargetPath = TGF5b3V0XE5hdk1lbnUucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-shkfer60eq
+
+[c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/Configuracion/ConfiguracionIndex.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ29uZmlndXJhY2lvblxDb25maWd1cmFjaW9uSW5kZXgucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-ef7qqkd0sq
+
+[c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/Configuracion/Notificaciones.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ29uZmlndXJhY2lvblxOb3RpZmljYWNpb25lcy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = b-dy8mccyhs2
+
+[c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/Configuracion/SistemaConfig.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ29uZmlndXJhY2lvblxTaXN0ZW1hQ29uZmlnLnJhem9y
+build_metadata.AdditionalFiles.CssScope = b-6y1d5tfmsm
+
+[c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/Configuracion/SLAConfig.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcQ29uZmlndXJhY2lvblxTTEFDb25maWcucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-fc0ncz1c6r
 
 [c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/Dashboard.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRGFzaGJvYXJkLnJhem9y
@@ -76,6 +116,10 @@ build_metadata.AdditionalFiles.CssScope = b-p4hld3hdk8
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRGFzaGJvYXJkc1xUZWNobmljaWFuRGFzaGJvYXJkLnJhem9y
 build_metadata.AdditionalFiles.CssScope = b-9sjs5oqtva
 
+[c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/ForgotPassword.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcRm9yZ290UGFzc3dvcmQucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-zrggpubuuz
+
 [c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/Home.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcSG9tZS5yYXpvcg==
 build_metadata.AdditionalFiles.CssScope = b-rgcshbvqhp
@@ -83,6 +127,18 @@ build_metadata.AdditionalFiles.CssScope = b-rgcshbvqhp
 [c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/Login.razor]
 build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTG9naW4ucmF6b3I=
 build_metadata.AdditionalFiles.CssScope = b-kkuqy5chv5
+
+[c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/Notifications.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcTm90aWZpY2F0aW9ucy5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = b-3ec66hb117
+
+[c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/Reportes.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUmVwb3J0ZXMucmF6b3I=
+build_metadata.AdditionalFiles.CssScope = b-nutn9a5sd4
+
+[c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Pages/ResetPassword.razor]
+build_metadata.AdditionalFiles.TargetPath = UGFnZXNcUmVzZXRQYXNzd29yZC5yYXpvcg==
+build_metadata.AdditionalFiles.CssScope = b-o2796wtbni
 
 [c:/Users/USUARIO/Documents/IHC/proyecto/HCI/IncidentesFISEI/incidentesFISEI/Shared/Components/DashboardLayout.razor]
 build_metadata.AdditionalFiles.TargetPath = U2hhcmVkXENvbXBvbmVudHNcRGFzaGJvYXJkTGF5b3V0LnJhem9y

@@ -4,6 +4,7 @@ using IncidentesFISEI.Infrastructure.Data;
 using IncidentesFISEI.Domain.Entities;
 using IncidentesFISEI.Domain.Enums;
 using IncidentesFISEI.Application.DTOs;
+using IncidentesFISEI.Application.Interfaces;
 
 namespace IncidentesFISEI.Api.Controllers;
 
@@ -17,11 +18,13 @@ public class IncidentesController : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly ILogger<IncidentesController> _logger;
+    private readonly INotificationService _notificationService;
 
-    public IncidentesController(ApplicationDbContext context, ILogger<IncidentesController> logger)
+    public IncidentesController(ApplicationDbContext context, ILogger<IncidentesController> logger, INotificationService notificationService)
     {
         _context = context;
         _logger = logger;
+        _notificationService = notificationService;
     }
 
     /// <summary>
@@ -38,6 +41,7 @@ public class IncidentesController : ControllerBase
                 .Include(i => i.AsignadoA)
                 .Include(i => i.Categoria)
                 .Include(i => i.Servicio)
+                .Include(i => i.ConfiguracionSLA)
                 .OrderByDescending(i => i.CreatedAt)
                 .Select(i => new IncidenteListDto
                 {
@@ -58,7 +62,13 @@ public class IncidentesController : ControllerBase
                     ServicioNombre = i.Servicio != null ? i.Servicio.Nombre : null,
                     ServicioId = i.ServicioId,
                     FechaReporte = i.CreatedAt,
-                    FechaResolucion = i.FechaResolucion
+                    FechaResolucion = i.FechaResolucion,
+                    ConfiguracionSLAId = i.ConfiguracionSLAId,
+                    SLANombre = i.ConfiguracionSLA != null ? i.ConfiguracionSLA.Nombre : null,
+                    TiempoRespuestaSLA = i.TiempoRespuestaSLA,
+                    TiempoResolucionSLA = i.TiempoResolucionSLA,
+                    FechaVencimiento = i.FechaVencimiento,
+                    TiempoRestante = i.FechaVencimiento.HasValue ? i.FechaVencimiento.Value - DateTime.UtcNow : null
                 })
                 .ToListAsync();
 
@@ -86,6 +96,7 @@ public class IncidentesController : ControllerBase
                 .Include(i => i.AsignadoA)
                 .Include(i => i.Categoria)
                 .Include(i => i.Servicio)
+                .Include(i => i.ConfiguracionSLA)
                 .FirstOrDefaultAsync(i => i.Id == id);
 
             if (incidente == null)
@@ -112,7 +123,13 @@ public class IncidentesController : ControllerBase
                 ServicioNombre = incidente.Servicio != null ? incidente.Servicio.Nombre : null,
                 ServicioId = incidente.ServicioId,
                 FechaReporte = incidente.CreatedAt,
-                FechaResolucion = incidente.FechaResolucion
+                FechaResolucion = incidente.FechaResolucion,
+                ConfiguracionSLAId = incidente.ConfiguracionSLAId,
+                SLANombre = incidente.ConfiguracionSLA?.Nombre,
+                TiempoRespuestaSLA = incidente.TiempoRespuestaSLA,
+                TiempoResolucionSLA = incidente.TiempoResolucionSLA,
+                FechaVencimiento = incidente.FechaVencimiento,
+                TiempoRestante = incidente.FechaVencimiento.HasValue ? incidente.FechaVencimiento.Value - DateTime.UtcNow : null
             };
 
             return Ok(incidenteDto);
@@ -176,6 +193,53 @@ public class IncidentesController : ControllerBase
             var categoriaId = createDto.CategoriaId ?? 1;
             var asignadoAId = await GetAutoAssigneeByCategory(categoriaId);
 
+            // Asignar SLA activo y calcular tiempos
+            var slaActivo = await _context.ConfiguracionesSLA
+                .Where(s => s.IsActive)
+                .OrderByDescending(s => s.CreatedAt)
+                .FirstOrDefaultAsync();
+
+            int? tiempoRespuesta = null;
+            int? tiempoResolucion = null;
+            DateTime? fechaVencimiento = null;
+
+            if (slaActivo != null)
+            {
+                // Asignar tiempos según la prioridad
+                switch (createDto.Prioridad)
+                {
+                    case PrioridadIncidente.Critica:
+                        tiempoRespuesta = slaActivo.TiempoRespuestaCritica;
+                        tiempoResolucion = slaActivo.TiempoResolucionCritica;
+                        break;
+                    case PrioridadIncidente.Alta:
+                        tiempoRespuesta = slaActivo.TiempoRespuestaAlta;
+                        tiempoResolucion = slaActivo.TiempoResolucionAlta;
+                        break;
+                    case PrioridadIncidente.Media:
+                        tiempoRespuesta = slaActivo.TiempoRespuestaMedia;
+                        tiempoResolucion = slaActivo.TiempoResolucionMedia;
+                        break;
+                    case PrioridadIncidente.Baja:
+                        tiempoRespuesta = slaActivo.TiempoRespuestaBaja;
+                        tiempoResolucion = slaActivo.TiempoResolucionBaja;
+                        break;
+                }
+
+                // Calcular fecha de vencimiento basada en tiempo de resolución
+                if (tiempoResolucion.HasValue)
+                {
+                    fechaVencimiento = DateTime.UtcNow.AddMinutes(tiempoResolucion.Value);
+                }
+
+                _logger.LogInformation("SLA asignado: {SLANombre}, Tiempo Respuesta: {TiempoRespuesta}min, Tiempo Resolución: {TiempoResolucion}min", 
+                    slaActivo.Nombre, tiempoRespuesta, tiempoResolucion);
+            }
+            else
+            {
+                _logger.LogWarning("No hay SLA activo configurado. El incidente se creará sin SLA.");
+            }
+
             var incidente = new Incidente
             {
                 NumeroIncidente = numeroIncidente,
@@ -187,6 +251,10 @@ public class IncidentesController : ControllerBase
                 CategoriaId = categoriaId, // Categoría por defecto si no se especifica
                 ServicioId = createDto.ServicioId, // Agregar el servicio si se especifica
                 AsignadoAId = asignadoAId, // Asignación automática
+                ConfiguracionSLAId = slaActivo?.Id,
+                TiempoRespuestaSLA = tiempoRespuesta,
+                TiempoResolucionSLA = tiempoResolucion,
+                FechaVencimiento = fechaVencimiento,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
@@ -200,6 +268,7 @@ public class IncidentesController : ControllerBase
                 .Include(i => i.AsignadoA)
                 .Include(i => i.Categoria)
                 .Include(i => i.Servicio)
+                .Include(i => i.ConfiguracionSLA)
                 .FirstAsync(i => i.Id == incidente.Id);
 
             var resultado = new IncidenteListDto
@@ -220,7 +289,13 @@ public class IncidentesController : ControllerBase
                 ServicioNombre = incidenteCreado.Servicio?.Nombre,
                 ServicioId = incidenteCreado.ServicioId,
                 FechaReporte = incidenteCreado.CreatedAt,
-                FechaResolucion = null
+                FechaResolucion = null,
+                ConfiguracionSLAId = incidenteCreado.ConfiguracionSLAId,
+                SLANombre = incidenteCreado.ConfiguracionSLA?.Nombre,
+                TiempoRespuestaSLA = incidenteCreado.TiempoRespuestaSLA,
+                TiempoResolucionSLA = incidenteCreado.TiempoResolucionSLA,
+                FechaVencimiento = incidenteCreado.FechaVencimiento,
+                TiempoRestante = incidenteCreado.FechaVencimiento.HasValue ? incidenteCreado.FechaVencimiento.Value - DateTime.UtcNow : null
             };
 
             _logger.LogInformation("Incidente creado: {NumeroIncidente}", numeroIncidente);
@@ -720,6 +795,128 @@ public class IncidentesController : ControllerBase
         }
     }
 
+    /// <summary>
+    /// Solicitar escalamiento a un supervisor (técnico)
+    /// </summary>
+    [HttpPost("{id}/solicitar-escalamiento")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> SolicitarEscalamiento(int id, [FromBody] SolicitarEscalamientoRequest request)
+    {
+        try
+        {
+            var usuarioActual = await GetUsuarioActual();
+
+            var incidente = await _context.Incidentes
+                .Include(i => i.Comentarios)
+                .FirstOrDefaultAsync(i => i.Id == id && !i.IsDeleted);
+
+            if (incidente == null)
+                return NotFound(new { success = false, message = "Incidente no encontrado" });
+
+            if (usuarioActual == null)
+                return BadRequest(new { success = false, message = "No se pudo identificar al usuario actual" });
+
+            // Solo el técnico asignado puede solicitar escalamiento
+            if (incidente.AsignadoAId.HasValue && incidente.AsignadoAId != usuarioActual.Id)
+                return BadRequest(new { success = false, message = "Solo el técnico asignado puede escalar" });
+
+            var supervisor = await _context.Usuarios.FindAsync(request.SupervisorId);
+            if (supervisor == null || supervisor.TipoUsuario != TipoUsuario.Supervisor)
+                return BadRequest(new { success = false, message = "Supervisor inválido" });
+
+            incidente.Estado = EstadoIncidente.Escalado;
+
+            var comentario = new ComentarioIncidente
+            {
+                IncidenteId = incidente.Id,
+                AutorId = usuarioActual.Id,
+                Contenido = $"ESCALAMIENTO->Supervisor:{supervisor.Id} Motivo: {request.Motivo}",
+                Tipo = TipoComentario.Escalacion,
+                EsInterno = true
+            };
+
+            _context.ComentariosIncidente.Add(comentario);
+            await _context.SaveChangesAsync();
+
+            await _notificationService.CrearNotificacionAsync(
+                supervisor.Id,
+                TipoNotificacion.IncidenteEscalado,
+                $"Incidente #{incidente.NumeroIncidente} escalado",
+                $"Un técnico solicitó escalamiento: {request.Motivo}",
+                incidente.Id);
+
+            return Ok(new { success = true, message = "Escalamiento solicitado al supervisor" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al solicitar escalamiento para incidente {IncidenteId}", id);
+            return StatusCode(500, new { success = false, message = "Error interno del servidor" });
+        }
+    }
+
+    /// <summary>
+    /// Escalar incidente a un administrador (supervisor)
+    /// </summary>
+    [HttpPost("{id}/escalar-admin")]
+    [ProducesResponseType(200)]
+    [ProducesResponseType(400)]
+    [ProducesResponseType(404)]
+    public async Task<IActionResult> EscalarAAdministrador(int id, [FromBody] EscalarAdministradorRequest request)
+    {
+        try
+        {
+            var usuarioActual = await GetUsuarioActual();
+
+            var incidente = await _context.Incidentes
+                .Include(i => i.Comentarios)
+                .FirstOrDefaultAsync(i => i.Id == id && !i.IsDeleted);
+
+            if (incidente == null)
+                return NotFound(new { success = false, message = "Incidente no encontrado" });
+
+            if (usuarioActual == null)
+                return BadRequest(new { success = false, message = "No se pudo identificar al usuario actual" });
+
+            // Solo supervisores pueden escalar a administradores
+            if (usuarioActual.TipoUsuario != TipoUsuario.Supervisor)
+                return BadRequest(new { success = false, message = "Solo supervisores pueden escalar a administradores" });
+
+            var administrador = await _context.Usuarios.FindAsync(request.AdministradorId);
+            if (administrador == null || administrador.TipoUsuario != TipoUsuario.Administrador)
+                return BadRequest(new { success = false, message = "Administrador inválido" });
+
+            incidente.Estado = EstadoIncidente.Escalado;
+
+            var comentario = new ComentarioIncidente
+            {
+                IncidenteId = incidente.Id,
+                AutorId = usuarioActual.Id,
+                Contenido = $"ESCALAMIENTO->Administrador:{administrador.Id} Motivo: {request.Motivo}",
+                Tipo = TipoComentario.Escalacion,
+                EsInterno = true
+            };
+
+            _context.ComentariosIncidente.Add(comentario);
+            await _context.SaveChangesAsync();
+
+            await _notificationService.CrearNotificacionAsync(
+                administrador.Id,
+                TipoNotificacion.IncidenteEscalado,
+                $"Incidente #{incidente.NumeroIncidente} escalado a administrador",
+                $"Un supervisor solicitó tu intervención: {request.Motivo}",
+                incidente.Id);
+
+            return Ok(new { success = true, message = "Escalamiento solicitado al administrador" });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al escalar a administrador el incidente {IncidenteId}", id);
+            return StatusCode(500, new { success = false, message = "Error interno del servidor" });
+        }
+    }
+
     // Métodos auxiliares para validación de permisos
     private bool PuedeResolverIncidente(Usuario? usuario, Incidente incidente)
     {
@@ -836,3 +1033,21 @@ public class AsignarIncidenteRequest
 {
     public int AsignadoAId { get; set; }
 }
+
+    /// <summary>
+    /// DTO para que un técnico solicite escalamiento a un supervisor
+    /// </summary>
+    public class SolicitarEscalamientoRequest
+    {
+        public int SupervisorId { get; set; }
+        public string Motivo { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// DTO para que un supervisor solicite escalamiento a un administrador
+    /// </summary>
+    public class EscalarAdministradorRequest
+    {
+        public int AdministradorId { get; set; }
+        public string Motivo { get; set; } = string.Empty;
+    }

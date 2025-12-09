@@ -44,6 +44,60 @@
             </summary>
             <returns>Confirmación del logout</returns>
         </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.AuthController.ForgotPassword(IncidentesFISEI.Api.Controllers.ForgotPasswordRequest)">
+            <summary>
+            Solicitar recuperación de contraseña
+            </summary>
+            <param name="request">Email del usuario</param>
+            <returns>Confirmación del envío</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.AuthController.ResetPassword(IncidentesFISEI.Api.Controllers.ResetPasswordRequest)">
+            <summary>
+            Restablecer contraseña con token
+            </summary>
+            <param name="request">Token y nueva contraseña</param>
+            <returns>Confirmación del cambio</returns>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.BaseConocimientoController.GetArticulos">
+            <summary>
+            Obtiene todos los artículos (publicados y en revisión) (acceso: Admin, Supervisor, Tecnico)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.BaseConocimientoController.GetArticuloById(System.Int32)">
+            <summary>
+            Obtiene un artículo específico por ID
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.BaseConocimientoController.SearchArticulos(System.String)">
+            <summary>
+            Busca artículos por término (título, contenido, tags)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.BaseConocimientoController.CreateArticulo(IncidentesFISEI.Application.DTOs.CreateArticuloConocimientoDto)">
+            <summary>
+            Crea un nuevo artículo (solo Admin, Supervisor, Tecnico)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.BaseConocimientoController.UpdateArticulo(System.Int32,IncidentesFISEI.Application.DTOs.UpdateArticuloConocimientoDto)">
+            <summary>
+            Actualiza un artículo (solo Admin, Supervisor, Tecnico)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.BaseConocimientoController.DeleteArticulo(System.Int32)">
+            <summary>
+            Elimina un artículo (solo Admin)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.BaseConocimientoController.PublicarArticulo(System.Int32,System.Int32)">
+            <summary>
+            Publica un artículo (solo Admin, Supervisor)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.BaseConocimientoController.GetSugerencias(System.String,System.String)">
+            <summary>
+            Obtiene artículos sugeridos para resolución
+            </summary>
+        </member>
         <member name="T:IncidentesFISEI.Api.Controllers.CategoriasController">
             <summary>
             Controlador para la gestión de categorías de incidentes
@@ -74,6 +128,81 @@
             Eliminar una categoría (soft delete)
             </summary>
         </member>
+        <member name="T:IncidentesFISEI.Api.Controllers.ConfiguracionController">
+            <summary>
+            Controlador para la gestión de configuración del sistema
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConfiguracionController.GetConfiguracionSistema">
+            <summary>
+            Obtener la configuración general del sistema
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConfiguracionController.CreateOrUpdateConfiguracionSistema(IncidentesFISEI.Application.DTOs.CreateConfiguracionSistemaDto)">
+            <summary>
+            Crear o actualizar configuración del sistema
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConfiguracionController.GetConfiguracionesSLA">
+            <summary>
+            Obtener todas las configuraciones de SLA
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConfiguracionController.CreateConfiguracionSLA(IncidentesFISEI.Application.DTOs.CreateConfiguracionSLADto)">
+            <summary>
+            Crear nueva configuración de SLA
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConfiguracionController.UpdateConfiguracionSLA(System.Int32,IncidentesFISEI.Application.DTOs.CreateConfiguracionSLADto)">
+            <summary>
+            Actualizar configuración de SLA existente
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConfiguracionController.DeleteConfiguracionSLA(System.Int32)">
+            <summary>
+            Eliminar (deshabilitar) configuración de SLA
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConfiguracionController.GetPlantillasNotificacion">
+            <summary>
+            Obtener todas las plantillas de notificación activas
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConfiguracionController.GetPlantillaNotificacion(System.Int32)">
+            <summary>
+            Obtener plantilla de notificación por ID
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConfiguracionController.CreatePlantillaNotificacion(IncidentesFISEI.Application.DTOs.CreatePlantillaNotificacionDto)">
+            <summary>
+            Crear nueva plantilla de notificación
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConfiguracionController.UpdatePlantillaNotificacion(System.Int32,IncidentesFISEI.Application.DTOs.UpdatePlantillaNotificacionDto)">
+            <summary>
+            Actualizar plantilla de notificación
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConfiguracionController.GetLogsNotificacion(System.Nullable{System.DateTime},System.Nullable{System.DateTime},System.String)">
+            <summary>
+            Obtener logs de notificaciones enviadas
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConfiguracionController.GetEmailSettings(Microsoft.Extensions.Configuration.IConfiguration)">
+            <summary>
+            Obtener configuración de email (sin credenciales sensibles)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConfiguracionController.TestEmail(IncidentesFISEI.Infrastructure.Services.IEmailService,IncidentesFISEI.Api.Controllers.TestEmailRequest)">
+            <summary>
+            Enviar email de prueba para verificar configuración
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ConfiguracionController.Health">
+            <summary>
+            Verificar que el API de configuración está funcionando
+            </summary>
+        </member>
         <member name="M:IncidentesFISEI.Api.Controllers.DashboardController.GetAdminStats">
             <summary>
             Obtener estadísticas generales del dashboard de administración
@@ -87,6 +216,11 @@
         <member name="M:IncidentesFISEI.Api.Controllers.DashboardController.GetRecentIncidents(System.Int32)">
             <summary>
             Obtener incidentes recientes
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.DashboardController.GetSupervisorDashboard">
+            <summary>
+            Obtener datos del dashboard de supervisor técnico
             </summary>
         </member>
         <member name="T:IncidentesFISEI.Api.Controllers.IncidentesController">
@@ -154,6 +288,16 @@
             Reabrir incidente cerrado (solo administradores)
             </summary>
         </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.IncidentesController.SolicitarEscalamiento(System.Int32,IncidentesFISEI.Api.Controllers.SolicitarEscalamientoRequest)">
+            <summary>
+            Solicitar escalamiento a un supervisor (técnico)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.IncidentesController.EscalarAAdministrador(System.Int32,IncidentesFISEI.Api.Controllers.EscalarAdministradorRequest)">
+            <summary>
+            Escalar incidente a un administrador (supervisor)
+            </summary>
+        </member>
         <member name="T:IncidentesFISEI.Api.Controllers.ResolverIncidenteRequest">
             <summary>
             DTO para resolver incidentes
@@ -182,6 +326,61 @@
         <member name="T:IncidentesFISEI.Api.Controllers.AsignarIncidenteRequest">
             <summary>
             DTO para asignar incidentes
+            </summary>
+        </member>
+        <member name="T:IncidentesFISEI.Api.Controllers.SolicitarEscalamientoRequest">
+            <summary>
+            DTO para que un técnico solicite escalamiento a un supervisor
+            </summary>
+        </member>
+        <member name="T:IncidentesFISEI.Api.Controllers.EscalarAdministradorRequest">
+            <summary>
+            DTO para que un supervisor solicite escalamiento a un administrador
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.KnowledgeBaseController.ObtenerMisArticulos">
+            <summary>
+            Obtener artículos del supervisor actual
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.KnowledgeBaseController.ObtenerArticulosPublicados">
+            <summary>
+            Obtener artículos publicados (públicos)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.KnowledgeBaseController.ObtenerArticulo(System.Int32)">
+            <summary>
+            Obtener un artículo específico
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.KnowledgeBaseController.CrearArticulo(IncidentesFISEI.Api.Controllers.ArticuloCrearDto)">
+            <summary>
+            Crear nuevo artículo como borrador
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.KnowledgeBaseController.CrearYEnviarArticulo(IncidentesFISEI.Api.Controllers.ArticuloCrearDto)">
+            <summary>
+            Crear y enviar artículo a revisión
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.KnowledgeBaseController.EnviarARevision(System.Int32)">
+            <summary>
+            Enviar artículo a revisión (artículo existente)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.KnowledgeBaseController.ObtenerArticulosEnRevision">
+            <summary>
+            Obtener artículos en revisión (solo admin)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.KnowledgeBaseController.AprobarArticulo(System.Int32)">
+            <summary>
+            Aprobar artículo (solo admin)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.KnowledgeBaseController.RechazarArticulo(System.Int32,IncidentesFISEI.Api.Controllers.RechazarArticuloDto)">
+            <summary>
+            Rechazar artículo (solo admin)
             </summary>
         </member>
         <member name="T:IncidentesFISEI.Api.Controllers.NotificationController">
@@ -224,6 +423,31 @@
             Endpoint para pruebas - crear notificación manual (solo administradores)
             </summary>
         </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ReportsController.GetPerformanceReport">
+            <summary>
+            Obtiene el reporte de rendimiento del sistema
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ReportsController.GetSLAReport">
+            <summary>
+            Obtiene el reporte de cumplimiento SLA
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ReportsController.GetUserActivityReport">
+            <summary>
+            Obtiene el reporte de actividad de usuarios
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ReportsController.GetDashboardStats">
+            <summary>
+            Obtiene todos los reportes (dashboard completo)
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.ReportsController.ExportPdf">
+            <summary>
+            Exporta un reporte completo en formato PDF
+            </summary>
+        </member>
         <member name="M:IncidentesFISEI.Api.Controllers.ServiciosController.GetServicios">
             <summary>
             Obtiene todos los servicios
@@ -264,7 +488,7 @@
             Verifica si existe un código de servicio
             </summary>
         </member>
-        <member name="M:IncidentesFISEI.Api.Controllers.UsersController.CreateUser(IncidentesFISEI.Api.Controllers.CreateUserRequest)">
+        <member name="M:IncidentesFISEI.Api.Controllers.UsersController.CreateUser(IncidentesFISEI.Api.Controllers.CreateUserRequest,IncidentesFISEI.Infrastructure.Services.IEmailService)">
             <summary>
             Crear nuevo usuario
             </summary>
@@ -302,6 +526,11 @@
         <member name="M:IncidentesFISEI.Api.Controllers.UsersController.DeleteUser(System.Int32)">
             <summary>
             Rechazar usuario pendiente
+            </summary>
+        </member>
+        <member name="M:IncidentesFISEI.Api.Controllers.UsersController.ChangePassword(System.Int32,IncidentesFISEI.Api.Controllers.ChangePasswordRequest)">
+            <summary>
+            Cambiar contraseña del usuario
             </summary>
         </member>
     </members>

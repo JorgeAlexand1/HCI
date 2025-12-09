@@ -2387,8 +2387,8 @@
         "net9.0": {
           "targetAlias": "net9.0",
           "projectReferences": {
-            "C:\\Users\\USUARIO\\Documents\\IHC\\proyecto\\HCI\\IncidentesFISEI\\IncidentesFISEI.Application\\IncidentesFISEI.Application.csproj": {
-              "projectPath": "C:\\Users\\USUARIO\\Documents\\IHC\\proyecto\\HCI\\IncidentesFISEI\\IncidentesFISEI.Application\\IncidentesFISEI.Application.csproj"
+            "c:\\Users\\USUARIO\\Documents\\IHC\\proyecto\\HCI\\IncidentesFISEI\\IncidentesFISEI.Application\\IncidentesFISEI.Application.csproj": {
+              "projectPath": "c:\\Users\\USUARIO\\Documents\\IHC\\proyecto\\HCI\\IncidentesFISEI\\IncidentesFISEI.Application\\IncidentesFISEI.Application.csproj"
             },
             "c:\\Users\\USUARIO\\Documents\\IHC\\proyecto\\HCI\\IncidentesFISEI\\IncidentesFISEI.Domain\\IncidentesFISEI.Domain.csproj": {
               "projectPath": "c:\\Users\\USUARIO\\Documents\\IHC\\proyecto\\HCI\\IncidentesFISEI\\IncidentesFISEI.Domain\\IncidentesFISEI.Domain.csproj"

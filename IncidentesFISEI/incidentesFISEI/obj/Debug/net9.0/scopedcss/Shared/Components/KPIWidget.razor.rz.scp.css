@@ -108,11 +108,11 @@
 }
 
 .kpi-widget.warning .kpi-icon[b-vsd4be7s1l] {
-    background: linear-gradient(135deg, #ffc107 0%, #d39e00 100%);
+    background: linear-gradient(135deg, #722f37 0%, #5a252b 100%);
 }
 
 .kpi-widget.warning[b-vsd4be7s1l] {
-    border-left-color: #ffc107;
+    border-left-color: #722f37;
 }
 
 .kpi-widget.danger .kpi-icon[b-vsd4be7s1l] {
@@ -264,12 +264,12 @@
 }
 
 .kpi-widget.warning .kpi-icon[b-vsd4be7s1l] {
-    background: linear-gradient(135deg, #ffc107 0%, #d39e00 100%);
-    border-left-color: #ffc107;
+    background: linear-gradient(135deg, #722f37 0%, #5a252b 100%);
+    border-left-color: #722f37;
 }
 
 .kpi-widget.warning:hover[b-vsd4be7s1l] {
-    border-left-color: #d39e00;
+    border-left-color: #5a252b;
 }
 
 .kpi-widget.danger .kpi-icon[b-vsd4be7s1l] {
@@ -354,3 +354,5 @@
 .kpi-widget:nth-child(3)[b-vsd4be7s1l] { animation-delay: 0.3s; }
 .kpi-widget:nth-child(4)[b-vsd4be7s1l] { animation-delay: 0.4s; }
 .kpi-widget:nth-child(5)[b-vsd4be7s1l] { animation-delay: 0.5s; }
+
+

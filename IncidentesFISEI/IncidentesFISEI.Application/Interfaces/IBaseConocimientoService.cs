@@ -13,4 +13,7 @@ public interface IBaseConocimientoService
     Task<ArticuloConocimientoDto> UpdateArticuloAsync(int id, UpdateArticuloConocimientoDto updateArticuloDto);
     Task<bool> DeleteArticuloAsync(int id);
     Task<IEnumerable<ArticuloConocimientoDto>> GetArticulosPublicosAsync();
+    Task<IEnumerable<ArticuloConocimientoDto>> GetArticulosTodosAsync();
+    Task<bool> PublicarArticuloAsync(int id, int revisadoPorId);
+    Task<IEnumerable<ArticuloConocimientoDto>> GetArticulosMasConsultadosAsync(int cantidad = 10);
 }

@@ -1,0 +1,59 @@
+@if (UserActivityData != null)
+{
+    <div class="report-container">
+        <div class="report-header">
+            <h2><i class="fas fa-users me-2"></i>Reporte de Actividad de Usuarios</h2>
+            <p class="report-date">Actualizado: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")</p>
+        </div>
+
+        <div class="report-stats">
+            <div class="stat-box">
+                <h3>Usuarios Activos (7 días)</h3>
+                <p class="stat-value">@UserActivityData.ActiveUsers</p>
+            </div>
+            <div class="stat-box">
+                <h3>Total de Usuarios</h3>
+                <p class="stat-value">@UserActivityData.TotalUsers</p>
+            </div>
+            <div class="stat-box success">
+                <h3>Incidentes Creados Hoy</h3>
+                <p class="stat-value">@UserActivityData.IncidentsCreatedToday</p>
+            </div>
+            <div class="stat-box info">
+                <h3>Incidentes Resueltos Hoy</h3>
+                <p class="stat-value">@UserActivityData.IncidentsResolvedToday</p>
+            </div>
+        </div>
+
+        @if (UserActivityData.TopActiveUsers != null && UserActivityData.TopActiveUsers.Count > 0)
+        {
+            <div class="top-users-section">
+                <h3>Usuarios Más Activos</h3>
+                <table class="users-table">
+                    <thead>
+                        <tr>
+                            <th>Usuario</th>
+                            <th>Incidentes Asignados</th>
+                            <th>Última Actividad</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var user in UserActivityData.TopActiveUsers)
+                        {
+                            <tr>
+                                <td>@user.UserName</td>
+                                <td>@user.IncidentCount</td>
+                                <td>@user.LastActivity.ToString("dd/MM/yyyy HH:mm")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    [Parameter]
+    public dynamic UserActivityData { get; set; }
+}

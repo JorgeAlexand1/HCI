@@ -340,7 +340,7 @@
 
 .student-ticket-card.open { --status-color: #2196f3; }
 .student-ticket-card.inprogress { --status-color: #ff9800; }
-.student-ticket-card.waiting { --status-color: #ffc107; }
+.student-ticket-card.waiting { --status-color: #722f37; }
 .student-ticket-card.resolved { --status-color: #4caf50; }
 .student-ticket-card.closed { --status-color: #9e9e9e; }
 
@@ -415,7 +415,7 @@
 
 .priority-critical { color: #f44336; }
 .priority-high { color: #ff9800; }
-.priority-medium { color: #ffc107; }
+.priority-medium { color: #722f37; }
 .priority-low { color: #4caf50; }
 
 .ticket-actions {
@@ -851,3 +851,5 @@
         text-align: center;
     }
 }
+
+

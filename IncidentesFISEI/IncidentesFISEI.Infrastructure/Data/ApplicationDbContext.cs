@@ -31,6 +31,13 @@ public class ApplicationDbContext : DbContext
     public DbSet<PlantillaNotificacion> PlantillasNotificacion { get; set; }
     public DbSet<LogNotificacion> LogsNotificacion { get; set; }
 
+    // Configuración del Sistema
+    public DbSet<ConfiguracionSistema> ConfiguracionesSistema { get; set; }
+    public DbSet<ConfiguracionSLA> ConfiguracionesSLA { get; set; }
+    public DbSet<PoliticaSeguridad> PoliticasSeguridad { get; set; }
+    public DbSet<ConfiguracionServicioExterno> ConfiguracionesServiciosExternos { get; set; }
+    public DbSet<RegistroAuditoria> RegistrosAuditoria { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         base.OnConfiguring(optionsBuilder);

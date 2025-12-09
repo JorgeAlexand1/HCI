@@ -29,8 +29,8 @@ public class EmailService : IEmailService
             var mailMessage = new MailMessage
             {
                 From = new MailAddress(
-                    _configuration["Email:FromAddress"] ?? "noreply@fisei.uta.edu.ec",
-                    _configuration["Email:FromName"] ?? "Sistema de Incidentes FISEI"
+                    _configuration["EmailSettings:FromEmail"] ?? "noreply@fisei.uta.edu.ec",
+                    _configuration["EmailSettings:FromName"] ?? "Sistema de Incidentes FISEI"
                 ),
                 Subject = asunto,
                 Body = GenerarCuerpoHtml(mensaje),
@@ -53,11 +53,11 @@ public class EmailService : IEmailService
 
     private SmtpClient ConfigureSmtpClient()
     {
-        var smtpHost = _configuration["Email:SmtpHost"] ?? "smtp.gmail.com";
-        var smtpPort = int.Parse(_configuration["Email:SmtpPort"] ?? "587");
-        var username = _configuration["Email:Username"];
-        var password = _configuration["Email:Password"];
-        var enableSsl = bool.Parse(_configuration["Email:EnableSsl"] ?? "true");
+        var smtpHost = _configuration["EmailSettings:SmtpHost"] ?? "smtp-mail.outlook.com";
+        var smtpPort = int.Parse(_configuration["EmailSettings:SmtpPort"] ?? "587");
+        var username = _configuration["EmailSettings:SmtpUser"];
+        var password = _configuration["EmailSettings:SmtpPassword"];
+        var enableSsl = true; // Siempre SSL para seguridad
 
         var client = new SmtpClient(smtpHost, smtpPort)
         {

@@ -227,9 +227,35 @@
                             }
                         </div>
                     </div>
+                </div>
+            </div>
 
-
-
+            <!-- Base de Conocimiento -->
+            <div class="col-lg-6 mb-4">
+                <div class="admin-module-card" @onclick="ShowKnowledgeBase">
+                    <div class="module-header">
+                        <div class="module-icon knowledge">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="module-info">
+                            <h3>Base de Conocimiento</h3>
+                            <p>Administrar artículos y soluciones de incidentes</p>
+                        </div>
+                    </div>
+                    <div class="module-preview">
+                        <div class="preview-stats">
+                            @if (knowledgeBaseStats != null)
+                            {
+                                <span class="stat-highlight">@knowledgeBaseStats.TotalArticulos artículos</span>
+                                <span class="stat-detail">@knowledgeBaseStats.ArticulosPublicados publicados, @knowledgeBaseStats.VisualizacionesTotales visualizaciones</span>
+                            }
+                            else
+                            {
+                                <span class="stat-highlight">Cargando...</span>
+                                <span class="stat-detail">Obteniendo datos...</span>
+                            }
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -240,15 +266,18 @@
     @if (currentView == "users")
     {
         <div class="module-full-view">
-            <div class="module-header-nav">
-                <button class="btn-back" @onclick="BackToDashboard">
+            <div class="page-title-section">
+                <button class="btn btn-link back-button" @onclick="BackToDashboard">
                     <i class="fas fa-arrow-left me-2"></i>
-                    Volver al Dashboard
+                    Volver
                 </button>
-                <h1 class="module-title">
-                    <i class="fas fa-users-cog me-2"></i>
-                    Gestión de Usuarios
-                </h1>
+                <div class="title-content">
+                    <h1 class="page-main-title">
+                        <i class="fas fa-users-cog me-2"></i>
+                        Gestión de Usuarios
+                    </h1>
+                    <p class="page-subtitle">Administrar usuarios, roles y permisos del sistema</p>
+                </div>
             </div>
             
             <div class="module-content-full">
@@ -351,15 +380,18 @@
     @if (currentView == "incidents")
     {
         <div class="module-full-view">
-            <div class="module-header-nav">
-                <button class="btn-back" @onclick="BackToDashboard">
+            <div class="page-title-section">
+                <button class="btn btn-link back-button" @onclick="BackToDashboard">
                     <i class="fas fa-arrow-left me-2"></i>
-                    Volver al Dashboard
+                    Volver
                 </button>
-                <h1 class="module-title">
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    Gestión de Incidentes
-                </h1>
+                <div class="title-content">
+                    <h1 class="page-main-title">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Gestión de Incidentes
+                    </h1>
+                    <p class="page-subtitle">Monitorear y gestionar todos los incidentes del sistema</p>
+                </div>
             </div>
             
             <div class="module-content-full">
@@ -813,16 +845,6 @@
                             <div class="setting-info">
                                 <h5>Notificaciones</h5>
                                 <p>Configurar alertas y notificaciones</p>
-                            </div>
-                            <button class="btn-config">Configurar</button>
-                        </div>
-                        <div class="setting-item">
-                            <div class="setting-icon">
-                                <i class="fas fa-shield-alt"></i>
-                            </div>
-                            <div class="setting-info">
-                                <h5>Seguridad</h5>
-                                <p>Políticas de seguridad y acceso</p>
                             </div>
                             <button class="btn-config">Configurar</button>
                         </div>
@@ -1746,6 +1768,521 @@
     <div class="modal-backdrop fade show"></div>
 }
 
+    <!-- Vista Base de Conocimiento -->
+    @if (currentView == "knowledge-base")
+    {
+        <div class="module-full-view">
+            <div class="page-title-section">
+                <button class="btn btn-link back-button" @onclick="BackToDashboard">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Volver
+                </button>
+                <div class="title-content">
+                    <h1 class="page-main-title">
+                        <i class="fas fa-book me-2"></i>
+                        Base de Conocimiento
+                    </h1>
+                    <p class="page-subtitle">Administrar artículos y soluciones de incidentes resueltos</p>
+                </div>
+            </div>
+
+            <div class="module-content-full">
+                <!-- Buscador y Filtros -->
+                <div class="content-section">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h4><i class="fas fa-book"></i> Artículos de Conocimiento</h4>
+                        <button class="btn btn-primary" @onclick="OpenCreateKBModal">
+                            <i class="fas fa-plus me-2"></i>
+                            Nuevo Artículo
+                        </button>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <input type="text" class="form-control" placeholder="Buscar artículos..." 
+                                   @bind="kbSearchTerm" @onkeyup="@(async (e) => await SearchKnowledgeBase())" />
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-control" @onchange="FilterKnowledgeBaseByState">
+                                <option value="">Todos los estados</option>
+                                <option value="1">Borrador</option>
+                                <option value="2">En Revisión</option>
+                                <option value="3">Publicado</option>
+                                <option value="4">Archivado</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-control" @onchange="FilterKnowledgeBaseByCategory">
+                                <option value="0">Todas las categorías</option>
+                                @if (categorias != null)
+                                {
+                                    @foreach (var cat in categorias)
+                                    {
+                                        <option value="@cat.Id">@cat.Nombre</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-outline-secondary w-100" @onclick="ReloadKnowledgeBase">
+                                <i class="fas fa-sync me-2"></i>Actualizar
+                            </button>
+                        </div>
+                    </div>
+
+                    @if (kbLoading)
+                    {
+                        <div class="text-center">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando...</span>
+                            </div>
+                            <p class="mt-2">Cargando artículos...</p>
+                        </div>
+                    }
+                    else if (knowledgeBaseArticles == null || !knowledgeBaseArticles.Any())
+                    {
+                        <div class="alert alert-info">
+                            No hay artículos disponibles
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="kb-articles-grid">
+                            @foreach (var articulo in knowledgeBaseArticles)
+                            {
+                                <div class="kb-article-card">
+                                    <div class="card-header">
+                                        <h5 class="card-title">@articulo.Titulo</h5>
+                                        <span class="badge @GetKBStateBadge(articulo.Estado)">@GetKBStateLabel(articulo.Estado)</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text text-muted small">@(articulo.Resumen ?? "Sin resumen")</p>
+                                        <div class="article-meta">
+                                            <small>
+                                                <i class="fas fa-user me-1"></i>@articulo.AutorNombre
+                                                <br/>
+                                                <i class="fas fa-calendar me-1"></i>@articulo.CreatedAt.ToString("dd/MM/yyyy")
+                                                <br/>
+                                                <i class="fas fa-eye me-1"></i>@articulo.Visualizaciones vistas
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer">
+                                        <button class="btn btn-sm btn-info" @onclick="@(() => OpenViewKBModal(articulo.Id))" title="Ver detalles">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-warning" @onclick="@(() => OpenEditKBModal(articulo.Id))" title="Editar">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        @if (articulo.Estado != 3)
+                                        {
+                                            <button class="btn btn-sm btn-success" @onclick="@(() => OpenPublishKBModal(articulo.Id))" title="Publicar">
+                                                <i class="fas fa-check"></i>
+                                            </button>
+                                        }
+                                        <button class="btn btn-sm btn-danger" @onclick="@(() => OpenDeleteKBModal(articulo.Id))" title="Eliminar">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+<!-- Modal Crear Artículo KB -->
+@if (showCreateKBModal)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #2c5282 0%, #1a3a52 100%); color: white;">
+                    <h5 class="modal-title">
+                        <i class="fas fa-book me-2"></i>
+                        Crear Artículo de Conocimiento
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseCreateKBModal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="kbTitulo" class="form-label fw-bold">
+                                    <i class="fas fa-heading me-2"></i>Título *
+                                </label>
+                                <input type="text" class="form-control" id="kbTitulo" 
+                                       @bind="newKBArticle.Titulo" 
+                                       placeholder="Ej: Cómo resolver error de conexión a la base de datos"
+                                       required maxlength="200" />
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="kbResumen" class="form-label fw-bold">
+                                    <i class="fas fa-align-left me-2"></i>Resumen
+                                </label>
+                                <textarea class="form-control" id="kbResumen" rows="2" 
+                                          @bind="newKBArticle.Resumen" 
+                                          placeholder="Breve descripción del artículo..."
+                                          maxlength="500"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="kbContenido" class="form-label fw-bold">
+                                    <i class="fas fa-file-alt me-2"></i>Contenido / Solución *
+                                </label>
+                                <textarea class="form-control" id="kbContenido" rows="6" 
+                                          @bind="newKBArticle.Contenido" 
+                                          placeholder="Describe la solución paso a paso..."
+                                          required></textarea>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="kbCategoria" class="form-label fw-bold">
+                                    <i class="fas fa-folder me-2"></i>Categoría
+                                </label>
+                                <select class="form-control" id="kbCategoria" @bind="newKBArticle.CategoriaId">
+                                    <option value="0">Sin categoría</option>
+                                    @if (categorias != null)
+                                    {
+                                        @foreach (var cat in categorias)
+                                        {
+                                            <option value="@cat.Id">@cat.Nombre</option>
+                                        }
+                                    }
+                                </select>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="kbTags" class="form-label fw-bold">
+                                    <i class="fas fa-tags me-2"></i>Tags
+                                </label>
+                                <input type="text" class="form-control" id="kbTags" 
+                                       @bind="newKBArticle.Tags" 
+                                       placeholder="base-datos, conexión, error (separados por coma)" />
+                                <small class="text-muted">Separe los tags con comas</small>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-12 mb-3">
+                                <label for="kbPasos" class="form-label fw-bold">
+                                    <i class="fas fa-list-ol me-2"></i>Pasos Detallados
+                                </label>
+                                <textarea class="form-control" id="kbPasos" rows="4" 
+                                          @bind="newKBArticle.PasosDetallados" 
+                                          placeholder="1. Primer paso&#10;2. Segundo paso&#10;3. Tercer paso"></textarea>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseCreateKBModal">
+                        <i class="fas fa-times me-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" @onclick="CreateKBArticle" 
+                            disabled="@(isProcessing || string.IsNullOrWhiteSpace(newKBArticle.Titulo) || string.IsNullOrWhiteSpace(newKBArticle.Contenido))">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span>Guardando...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-save me-2"></i>
+                            <span>Guardar Artículo</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- Modal Ver Detalles KB -->
+@if (showViewKBModal && selectedKBArticle != null)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-info-gradient">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-eye me-2"></i>
+                        Detalles del Artículo
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseViewKBModal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <h4>@selectedKBArticle.Titulo</h4>
+                        <span class="badge @GetKBStateBadge(selectedKBArticle.Estado)">@GetKBStateLabel(selectedKBArticle.Estado)</span>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <strong><i class="fas fa-user me-2"></i>Autor:</strong> @selectedKBArticle.AutorNombre
+                        </div>
+                        <div class="col-md-6">
+                            <strong><i class="fas fa-calendar me-2"></i>Creado:</strong> @selectedKBArticle.CreatedAt.ToString("dd/MM/yyyy HH:mm")
+                        </div>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(selectedKBArticle.CategoriaNombre))
+                    {
+                        <div class="mb-3">
+                            <strong><i class="fas fa-tag me-2"></i>Categoría:</strong> @selectedKBArticle.CategoriaNombre
+                        </div>
+                    }
+                    
+                    @if (!string.IsNullOrEmpty(selectedKBArticle.Resumen))
+                    {
+                        <div class="mb-3">
+                            <strong>Resumen:</strong>
+                            <p class="text-muted">@selectedKBArticle.Resumen</p>
+                        </div>
+                    }
+                    
+                    <div class="mb-3">
+                        <strong>Contenido:</strong>
+                        <div class="border rounded p-3 mt-2">@((MarkupString)selectedKBArticle.Contenido)</div>
+                    </div>
+                    
+                    @if (!string.IsNullOrEmpty(selectedKBArticle.PasosDetallados))
+                    {
+                        <div class="mb-3">
+                            <strong>Pasos Detallados:</strong>
+                            <div class="border rounded p-3 mt-2">@((MarkupString)selectedKBArticle.PasosDetallados.Replace("\n", "<br/>"))</div>
+                        </div>
+                    }
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <strong><i class="fas fa-eye me-2"></i>Visualizaciones:</strong> @selectedKBArticle.Visualizaciones
+                        </div>
+                        @if (selectedKBArticle.FechaPublicacion.HasValue)
+                        {
+                            <div class="col-md-4">
+                                <strong><i class="fas fa-calendar-check me-2"></i>Publicado:</strong> @selectedKBArticle.FechaPublicacion.Value.ToString("dd/MM/yyyy")
+                            </div>
+                        }
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseViewKBModal">
+                        <i class="fas fa-times me-2"></i>
+                        Cerrar
+                    </button>
+                    <button type="button" class="btn btn-warning" @onclick="EditFromViewModal">
+                        <i class="fas fa-edit me-2"></i>
+                        Editar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- Modal Editar KB -->
+@if (showEditKBModal && editKBArticle != null)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-warning-gradient">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-edit me-2"></i>
+                        Editar Artículo de Conocimiento
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseEditKBModal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                        <div class="mb-3">
+                            <label for="editKbTitle" class="form-label fw-bold">
+                                <i class="fas fa-heading me-2"></i>Título *
+                            </label>
+                            <input type="text" class="form-control" id="editKbTitle" 
+                                   @bind="editKBArticle.Titulo" 
+                                   placeholder="Título descriptivo del artículo" />
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editKbCategory" class="form-label fw-bold">
+                                <i class="fas fa-tag me-2"></i>Categoría
+                            </label>
+                            <select class="form-select" id="editKbCategory" @bind="editKBArticle.CategoriaId">
+                                <option value="0">Sin categoría</option>
+                                @if (categorias != null)
+                                {
+                                    @foreach (var cat in categorias)
+                                    {
+                                        <option value="@cat.Id">@cat.Nombre</option>
+                                    }
+                                }
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editKbResumen" class="form-label fw-bold">
+                                <i class="fas fa-align-left me-2"></i>Resumen
+                            </label>
+                            <textarea class="form-control" id="editKbResumen" rows="2" 
+                                      @bind="editKBArticle.Resumen" 
+                                      placeholder="Breve descripción del artículo"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editKbContent" class="form-label fw-bold">
+                                <i class="fas fa-file-alt me-2"></i>Contenido *
+                            </label>
+                            <textarea class="form-control" id="editKbContent" rows="8" 
+                                      @bind="editKBArticle.Contenido" 
+                                      placeholder="Contenido completo del artículo"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editKbTags" class="form-label fw-bold">
+                                <i class="fas fa-tags me-2"></i>Etiquetas
+                            </label>
+                            <input type="text" class="form-control" id="editKbTags" 
+                                   @bind="editKBArticle.Tags" 
+                                   placeholder="error, solución, configuración (separadas por comas)" />
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="editKbPasos" class="form-label fw-bold">
+                                <i class="fas fa-list-ol me-2"></i>Pasos Detallados
+                            </label>
+                            <textarea class="form-control" id="editKbPasos" rows="4" 
+                                      @bind="editKBArticle.PasosDetallados" 
+                                      placeholder="1. Primer paso&#10;2. Segundo paso&#10;3. Tercer paso"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseEditKBModal">
+                        <i class="fas fa-times me-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" @onclick="UpdateKBArticle" 
+                            disabled="@(isProcessing || string.IsNullOrWhiteSpace(editKBArticle.Titulo) || string.IsNullOrWhiteSpace(editKBArticle.Contenido))">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span>Guardando...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-save me-2"></i>
+                            <span>Guardar Cambios</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- Modal Confirmar Publicar KB -->
+@if (showPublishKBModal && selectedKBArticleId.HasValue)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-success-gradient">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Publicar Artículo
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="ClosePublishKBModal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center">
+                        <i class="fas fa-globe text-success" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                        <h5>¿Desea publicar este artículo?</h5>
+                        <p class="text-muted mb-3">El artículo estará visible para todos los usuarios técnicos y supervisores.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="ClosePublishKBModal">
+                        <i class="fas fa-times me-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" @onclick="PublishKBArticle" disabled="@isProcessing">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span>Publicando...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-check-circle me-2"></i>
+                            <span>Publicar</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- Modal Confirmar Eliminar KB -->
+@if (showDeleteKBModal && selectedKBArticleId.HasValue)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header bg-danger-gradient">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-trash me-2"></i>
+                        Eliminar Artículo
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseDeleteKBModal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="text-center">
+                        <i class="fas fa-exclamation-triangle text-danger" style="font-size: 3rem; margin-bottom: 1rem;"></i>
+                        <h5>¿Está seguro que desea eliminar este artículo?</h5>
+                        <p class="text-muted mb-3">Esta acción no se puede deshacer.</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseDeleteKBModal">
+                        <i class="fas fa-times me-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-danger" @onclick="DeleteKBArticle" disabled="@isProcessing">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span>Eliminando...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-trash me-2"></i>
+                            <span>Eliminar</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
 @code {
     // Data properties
     private AdminDashboardStatsDto? dashboardStats;
@@ -1801,6 +2338,23 @@
     private List<IncidentesFISEI.Application.DTOs.UsuarioListDto> availableAssignees = new();
     
     // ITIL Workflow models - Variables are defined in the ITIL section below
+
+    // Knowledge Base properties
+    private List<KBArticuloDto>? knowledgeBaseArticles;
+    private KBStatsDto? knowledgeBaseStats;
+    private bool kbLoading = false;
+    private string kbSearchTerm = "";
+    private string kbFilterState = "";
+    private int kbFilterCategoria = 0;
+    private bool showCreateKBModal = false;
+    private bool showViewKBModal = false;
+    private bool showEditKBModal = false;
+    private bool showPublishKBModal = false;
+    private bool showDeleteKBModal = false;
+    private KBArticleFormModel newKBArticle = new();
+    private KBArticleFormModel? editKBArticle;
+    private KBArticuloDto? selectedKBArticle;
+    private int? selectedKBArticleId;
 
     protected override async Task OnInitializedAsync()
     {
@@ -1920,18 +2474,409 @@
 
     private void ShowSystemSettings()
     {
-        currentView = "settings";
+        Navigation.NavigateTo("/configuracion");
     }
 
     private void ShowReports()
     {
-        currentView = "reports";
+        Navigation.NavigateTo("/reportes");
     }
 
     private void BackToDashboard()
     {
         currentView = "dashboard";
     }
+
+    private async Task ShowKnowledgeBase()
+    {
+        currentView = "knowledge-base";
+        await ReloadKnowledgeBase();
+    }
+
+    private async Task ReloadKnowledgeBase()
+    {
+        kbLoading = true;
+        try
+        {
+            var response = await Http.GetFromJsonAsync<List<KBArticuloDto>>("/api/baseconocimiento/articulos");
+            knowledgeBaseArticles = response ?? new List<KBArticuloDto>();
+            await LoadKBStats();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando KB: {ex.Message}");
+        }
+        kbLoading = false;
+    }
+
+    private async Task SearchKnowledgeBase()
+    {
+        if (string.IsNullOrWhiteSpace(kbSearchTerm))
+        {
+            await ReloadKnowledgeBase();
+            return;
+        }
+
+        kbLoading = true;
+        try
+        {
+            var response = await Http.GetFromJsonAsync<List<KBArticuloDto>>($"/api/baseconocimiento/buscar?termino={kbSearchTerm}");
+            knowledgeBaseArticles = response ?? new List<KBArticuloDto>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error buscando KB: {ex.Message}");
+        }
+        kbLoading = false;
+    }
+
+    private async Task FilterKnowledgeBaseByState(ChangeEventArgs e)
+    {
+        kbFilterState = e.Value?.ToString() ?? "";
+        await ApplyKBFilters();
+    }
+
+    private async Task FilterKnowledgeBaseByCategory(ChangeEventArgs e)
+    {
+        if (int.TryParse(e.Value?.ToString(), out int categoriaId))
+        {
+            kbFilterCategoria = categoriaId;
+            await ApplyKBFilters();
+        }
+    }
+
+    private async Task ApplyKBFilters()
+    {
+        kbLoading = true;
+        try
+        {
+            // Recargar todos los artículos
+            var response = await Http.GetFromJsonAsync<List<KBArticuloDto>>("/api/baseconocimiento/articulos");
+            var allArticles = response ?? new List<KBArticuloDto>();
+            
+            // Aplicar filtros localmente
+            knowledgeBaseArticles = allArticles
+                .Where(a => string.IsNullOrEmpty(kbFilterState) || a.Estado.ToString() == kbFilterState)
+                .Where(a => kbFilterCategoria == 0 || a.CategoriaId == kbFilterCategoria)
+                .ToList();
+            
+            await LoadKBStats();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error aplicando filtros KB: {ex.Message}");
+        }
+        kbLoading = false;
+    }
+
+    private async Task LoadKBStats()
+    {
+        try
+        {
+            var total = knowledgeBaseArticles?.Count() ?? 0;
+            var publicados = knowledgeBaseArticles?.Count(a => a.Estado == 3) ?? 0;
+            var visualizaciones = knowledgeBaseArticles?.Sum(a => a.Visualizaciones) ?? 0;
+
+            knowledgeBaseStats = new KBStatsDto
+            {
+                TotalArticulos = total,
+                ArticulosPublicados = publicados,
+                VisualizacionesTotales = visualizaciones
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando estadísticas KB: {ex.Message}");
+        }
+    }
+
+    private async Task OpenCreateKBModal()
+    {
+        newKBArticle = new KBArticleFormModel();
+        showCreateKBModal = true;
+        
+        // Cargar categorías si no están cargadas
+        if (categorias == null || !categorias.Any())
+        {
+            try
+            {
+                var response = await Http.GetFromJsonAsync<List<CategoriaIncidenteDto>>("/api/categorias");
+                if (response != null)
+                {
+                    categorias = response;
+                    StateHasChanged();
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error cargando categorías: {ex.Message}");
+            }
+        }
+    }
+
+    private void CloseCreateKBModal()
+    {
+        showCreateKBModal = false;
+        newKBArticle = new KBArticleFormModel();
+    }
+
+    private async Task CreateKBArticle()
+    {
+        isProcessing = true;
+        try
+        {
+            // Validar que los campos requeridos estén completos
+            if (string.IsNullOrWhiteSpace(newKBArticle.Titulo) || string.IsNullOrWhiteSpace(newKBArticle.Contenido))
+            {
+                Console.WriteLine("Título y Contenido son requeridos");
+                isProcessing = false;
+                return;
+            }
+
+            // Crear el DTO exactamente como lo espera el servidor
+            var createDto = new
+            {
+                titulo = newKBArticle.Titulo,
+                contenido = newKBArticle.Contenido,
+                resumen = newKBArticle.Resumen,
+                tags = newKBArticle.Tags,
+                categoriaId = newKBArticle.CategoriaId,
+                pasosDetallados = newKBArticle.PasosDetallados,
+                autorId = UserSession.UserId > 0 ? UserSession.UserId : 1,
+                prerequisites = (string?)null,
+                limitaciones = (string?)null
+            };
+
+            var response = await Http.PostAsJsonAsync("/api/baseconocimiento/articulos", createDto);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                CloseCreateKBModal();
+                await ReloadKnowledgeBase();
+                Console.WriteLine("Artículo creado exitosamente");
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error creando artículo: {response.StatusCode} - {errorContent}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error creando artículo: {ex.Message}");
+        }
+        isProcessing = false;
+    }
+
+    private async Task OpenViewKBModal(int id)
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<KBArticuloDto>($"/api/baseconocimiento/articulos/{id}");
+            if (response != null)
+            {
+                selectedKBArticle = response;
+                showViewKBModal = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando artículo KB: {ex.Message}");
+        }
+    }
+
+    private void CloseViewKBModal()
+    {
+        showViewKBModal = false;
+        selectedKBArticle = null;
+    }
+
+    private async Task EditFromViewModal()
+    {
+        if (selectedKBArticle == null) return;
+        
+        int articleId = selectedKBArticle.Id;
+        CloseViewKBModal();
+        await OpenEditKBModal(articleId);
+    }
+
+    private async Task OpenEditKBModal(int id)
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<KBArticuloDto>($"/api/baseconocimiento/articulos/{id}");
+            if (response != null)
+            {
+                editKBArticle = new KBArticleFormModel
+                {
+                    Titulo = response.Titulo,
+                    Contenido = response.Contenido,
+                    Resumen = response.Resumen,
+                    Tags = response.Tags != null ? string.Join(", ", response.Tags) : "",
+                    CategoriaId = response.CategoriaId,
+                    PasosDetallados = response.PasosDetallados
+                };
+                selectedKBArticleId = id;
+                showEditKBModal = true;
+                
+                // Cargar categorías si no están cargadas
+                if (categorias == null || !categorias.Any())
+                {
+                    var categoriasResponse = await Http.GetFromJsonAsync<List<CategoriaIncidenteDto>>("/api/categorias");
+                    if (categoriasResponse != null)
+                    {
+                        categorias = categoriasResponse;
+                        StateHasChanged();
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando artículo para editar: {ex.Message}");
+        }
+    }
+
+    private void CloseEditKBModal()
+    {
+        showEditKBModal = false;
+        editKBArticle = null;
+        selectedKBArticleId = null;
+    }
+
+    private async Task UpdateKBArticle()
+    {
+        if (!selectedKBArticleId.HasValue || editKBArticle == null) return;
+        
+        isProcessing = true;
+        try
+        {
+            var updateDto = new
+            {
+                titulo = editKBArticle.Titulo,
+                contenido = editKBArticle.Contenido,
+                resumen = editKBArticle.Resumen,
+                tags = editKBArticle.Tags,
+                categoriaId = editKBArticle.CategoriaId > 0 ? editKBArticle.CategoriaId : (int?)null,
+                pasosDetallados = editKBArticle.PasosDetallados
+            };
+
+            var response = await Http.PutAsJsonAsync($"/api/baseconocimiento/articulos/{selectedKBArticleId.Value}", updateDto);
+            
+            if (response.IsSuccessStatusCode)
+            {
+                CloseEditKBModal();
+                await ReloadKnowledgeBase();
+                Console.WriteLine("Artículo actualizado exitosamente");
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error actualizando artículo: {response.StatusCode} - {errorContent}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error actualizando artículo: {ex.Message}");
+        }
+        isProcessing = false;
+    }
+
+    private void OpenPublishKBModal(int id)
+    {
+        selectedKBArticleId = id;
+        showPublishKBModal = true;
+    }
+
+    private void ClosePublishKBModal()
+    {
+        showPublishKBModal = false;
+        selectedKBArticleId = null;
+    }
+
+    private async Task PublishKBArticle()
+    {
+        if (!selectedKBArticleId.HasValue) return;
+        
+        isProcessing = true;
+        try
+        {
+            var response = await Http.PostAsync($"/api/baseconocimiento/articulos/{selectedKBArticleId.Value}/publicar?revisadoPorId={UserSession.UserId}", null);
+            if (response.IsSuccessStatusCode)
+            {
+                ClosePublishKBModal();
+                await ReloadKnowledgeBase();
+                Console.WriteLine("Artículo publicado exitosamente");
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error publicando artículo: {response.StatusCode} - {errorContent}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error publicando KB: {ex.Message}");
+        }
+        isProcessing = false;
+    }
+
+    private void OpenDeleteKBModal(int id)
+    {
+        selectedKBArticleId = id;
+        showDeleteKBModal = true;
+    }
+
+    private void CloseDeleteKBModal()
+    {
+        showDeleteKBModal = false;
+        selectedKBArticleId = null;
+    }
+
+    private async Task DeleteKBArticle()
+    {
+        if (!selectedKBArticleId.HasValue) return;
+        
+        isProcessing = true;
+        try
+        {
+            var response = await Http.DeleteAsync($"/api/baseconocimiento/articulos/{selectedKBArticleId.Value}");
+            if (response.IsSuccessStatusCode)
+            {
+                CloseDeleteKBModal();
+                await ReloadKnowledgeBase();
+                Console.WriteLine("Artículo eliminado exitosamente");
+            }
+            else
+            {
+                var errorContent = await response.Content.ReadAsStringAsync();
+                Console.WriteLine($"Error eliminando artículo: {response.StatusCode} - {errorContent}");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error eliminando KB: {ex.Message}");
+        }
+        isProcessing = false;
+    }
+
+    private string GetKBStateBadge(int estado) => estado switch
+    {
+        1 => "bg-secondary",
+        2 => "bg-warning",
+        3 => "bg-success",
+        4 => "bg-dark",
+        _ => "bg-info"
+    };
+
+    private string GetKBStateLabel(int estado) => estado switch
+    {
+        1 => "Borrador",
+        2 => "En Revisión",
+        3 => "Publicado",
+        4 => "Archivado",
+        _ => "Desconocido"
+    };
 
     private async Task RetryLoadData()
     {
@@ -3164,6 +4109,43 @@
         showReopenModal = false;
         selectedIncidentForAction = null;
         motivoReapertura = "";
+    }
+
+    // Knowledge Base DTOs
+    public class KBArticuloDto
+    {
+        public int Id { get; set; }
+        public string Titulo { get; set; } = string.Empty;
+        public string Contenido { get; set; } = string.Empty;
+        public string Resumen { get; set; } = string.Empty;
+        public string[] Tags { get; set; } = Array.Empty<string>();
+        public int Estado { get; set; }
+        public int Visualizaciones { get; set; }
+        public string AutorNombre { get; set; } = string.Empty;
+        public string CategoriaNombre { get; set; } = string.Empty;
+        public int CategoriaId { get; set; }
+        public string? PasosDetallados { get; set; }
+        public DateTime? FechaPublicacion { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public int VotosPositivos { get; set; }
+        public int VotosNegativos { get; set; }
+    }
+
+    public class KBStatsDto
+    {
+        public int TotalArticulos { get; set; }
+        public int ArticulosPublicados { get; set; }
+        public int VisualizacionesTotales { get; set; }
+    }
+
+    public class KBArticleFormModel
+    {
+        public string Titulo { get; set; } = string.Empty;
+        public string Contenido { get; set; } = string.Empty;
+        public string Resumen { get; set; } = string.Empty;
+        public string Tags { get; set; } = string.Empty;
+        public int CategoriaId { get; set; }
+        public string PasosDetallados { get; set; } = string.Empty;
     }
 }
 

@@ -223,6 +223,17 @@ public class ArticuloConocimientoRepository : Repository<ArticuloConocimiento>, 
             .ToListAsync();
     }
 
+    public async Task<IEnumerable<ArticuloConocimiento>> GetArticulosTodosAsync()
+    {
+        return await _dbSet
+            .Include(a => a.Autor)
+            .Include(a => a.Categoria)
+            .Include(a => a.RevisadoPor)
+            .Where(a => !a.IsDeleted)
+            .OrderByDescending(a => a.CreatedAt)
+            .ToListAsync();
+    }
+
     public async Task<IEnumerable<ArticuloConocimiento>> GetArticulosByAutorAsync(int autorId)
     {
         return await _dbSet

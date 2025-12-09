@@ -124,15 +124,19 @@ builder.Services.AddScoped<IArticuloConocimientoRepository, ArticuloConocimiento
 builder.Services.AddScoped<IComentarioRepository, ComentarioRepository>();
 builder.Services.AddScoped<IArchivoAdjuntoRepository, ArchivoAdjuntoRepository>();
 builder.Services.AddScoped<IServicioRepository, ServicioRepository>();
+builder.Services.AddScoped<INotificationRepository, IncidentesFISEI.Infrastructure.Repositories.NotificationRepository>();
 
 // Registro de servicios
 builder.Services.AddScoped<IAuthService, IncidentesFISEI.Infrastructure.Services.AuthService>();
 builder.Services.AddScoped<IServicioService, IncidentesFISEI.Application.Services.ServicioService>();
-//builder.Services.AddScoped<IIncidenteService, IncidenteService>();
-//builder.Services.AddScoped<IComentarioService, ComentarioService>();
-//builder.Services.AddScoped<ICategoriaService, CategoriaService>();
-//builder.Services.AddScoped<IBaseConocimientoService, BaseConocimientoService>();
-//builder.Services.AddScoped<IUsuarioService, UsuarioServiceSimple>();
+builder.Services.AddScoped<IBaseConocimientoService, IncidentesFISEI.Infrastructure.Services.BaseConocimientoService>();
+builder.Services.AddScoped<IncidentesFISEI.Infrastructure.Services.IEmailService, IncidentesFISEI.Infrastructure.Services.EmailService>();
+builder.Services.AddScoped<IncidentesFISEI.Infrastructure.Services.ISMSService, IncidentesFISEI.Infrastructure.Services.SMSService>();
+builder.Services.AddScoped<INotificationService, IncidentesFISEI.Infrastructure.Services.NotificationService>();
+builder.Services.AddScoped<IReportService, IncidentesFISEI.Infrastructure.Services.ReportService>();
+builder.Services.AddScoped<IncidentesFISEI.Api.Services.PdfGeneratorService>();
+builder.Services.AddScoped<IncidentesFISEI.Infrastructure.Services.ISupervisorService, IncidentesFISEI.Infrastructure.Services.SupervisorService>();
+builder.Services.AddScoped<IncidentesFISEI.Infrastructure.Services.IKnowledgeBaseService, IncidentesFISEI.Infrastructure.Services.KnowledgeBaseService>();
 
 // AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());

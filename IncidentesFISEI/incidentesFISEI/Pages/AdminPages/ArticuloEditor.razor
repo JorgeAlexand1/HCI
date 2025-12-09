@@ -1,0 +1,249 @@
+@page "/admin/articulo/crear"
+@page "/admin/articulo/{Id}/editar"
+@using System.Net.Http.Json
+@inject HttpClient Http
+@inject NavigationManager Navigation
+
+<div class="container-fluid mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h2>@(IsEdit ? "Editar Artículo" : "Crear Nuevo Artículo")</h2>
+            <hr />
+        </div>
+    </div>
+
+    @if (loading)
+    {
+        <div class="alert alert-info">
+            <i class="fas fa-spinner fa-spin me-2"></i>Cargando...
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <div class="col-lg-8">
+                <form @onsubmit="SaveArticulo">
+                    <div class="mb-3">
+                        <label for="titulo" class="form-label">Título *</label>
+                        <input type="text" class="form-control" id="titulo" @bind="articulo.Titulo" required maxlength="200" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="resumen" class="form-label">Resumen</label>
+                        <textarea class="form-control" id="resumen" @bind="articulo.Resumen" rows="2" maxlength="500"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="contenido" class="form-label">Contenido *</label>
+                        <textarea class="form-control" id="contenido" @bind="articulo.Contenido" rows="10" required></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="pasos" class="form-label">Pasos Detallados</label>
+                        <textarea class="form-control" id="pasos" @bind="articulo.PasosDetallados" rows="5" placeholder="Ej: 1. Conectar a...&#10;2. Ejecutar..."></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="prerequisites" class="form-label">Prerequisitos</label>
+                        <input type="text" class="form-control" id="prerequisites" @bind="articulo.Prerequisites" placeholder="Ej: .NET 6+, SQL Server 2019+" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="limitaciones" class="form-label">Limitaciones</label>
+                        <textarea class="form-control" id="limitaciones" @bind="articulo.Limitaciones" rows="2"></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="tags" class="form-label">Tags (separados por coma)</label>
+                        <input type="text" class="form-control" id="tags" @bind="articulo.Tags" placeholder="software, instalación, windows" />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="categoria" class="form-label">Categoría *</label>
+                        <select class="form-control" id="categoria" @bind="articulo.CategoriaId" required>
+                            <option value="">Seleccionar categoría...</option>
+                            @foreach (var cat in categorias)
+                            {
+                                <option value="@cat.Id">@cat.Nombre</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>@(IsEdit ? "Actualizar" : "Crear")
+                        </button>
+                        <button type="button" class="btn btn-secondary" @onclick="Cancel">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="col-lg-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Información</h5>
+                    </div>
+                    <div class="card-body small">
+                        <p><strong>Estado:</strong> <span class="badge @GetStateBadge(articulo.Estado)">@GetStateLabel(articulo.Estado)</span></p>
+                        <p><strong>Autor:</strong> Admin</p>
+                        <p><strong>Creado:</strong> @articulo.CreatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+                        @if (IsEdit)
+                        {
+                            <p><strong>Visualizaciones:</strong> @articulo.Visualizaciones</p>
+                            <p><strong>Votos positivos:</strong> @articulo.VotosPositivos</p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string? Id { get; set; }
+
+    private bool IsEdit => !string.IsNullOrEmpty(Id);
+    private bool loading = false;
+    private ArticuloConocimientoDto articulo = new();
+    private List<CategoriaDto> categorias = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        loading = true;
+        await LoadCategorias();
+
+        if (IsEdit && int.TryParse(Id, out int articuloId))
+        {
+            await LoadArticulo(articuloId);
+        }
+        else
+        {
+            articulo = new ArticuloConocimientoDto 
+            { 
+                AutorId = 1, // TODO: Obtener del token
+                CreatedAt = DateTime.Now,
+                Estado = EstadoArticulo.Borrador
+            };
+        }
+
+        loading = false;
+    }
+
+    private async Task LoadCategorias()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<List<CategoriaDto>>("http://localhost:5000/api/categorias/activas");
+            if (response != null)
+            {
+                categorias = response;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando categorías: {ex.Message}");
+        }
+    }
+
+    private async Task LoadArticulo(int id)
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ArticuloConocimientoDto>($"http://localhost:5000/api/baseconocimiento/{id}");
+            if (response != null)
+            {
+                articulo = response;
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error cargando artículo: {ex.Message}");
+        }
+    }
+
+    private async Task SaveArticulo()
+    {
+        loading = true;
+        try
+        {
+            articulo.AutorId = 1; // TODO: Obtener del token
+
+            HttpResponseMessage response;
+            if (IsEdit && int.TryParse(Id, out int articuloId))
+            {
+                var updateDto = new { articulo.Titulo, articulo.Contenido, articulo.Resumen, articulo.Tags, articulo.CategoriaId, articulo.PasosDetallados, articulo.Prerequisites, articulo.Limitaciones };
+                response = await Http.PutAsJsonAsync($"http://localhost:5000/api/baseconocimiento/{articuloId}", updateDto);
+            }
+            else
+            {
+                response = await Http.PostAsJsonAsync("http://localhost:5000/api/baseconocimiento", articulo);
+            }
+
+            if (response.IsSuccessStatusCode)
+            {
+                Navigation.NavigateTo("/admin/base-conocimiento");
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error guardando artículo: {ex.Message}");
+        }
+        loading = false;
+    }
+
+    private void Cancel()
+    {
+        Navigation.NavigateTo("/admin/base-conocimiento");
+    }
+
+    private string GetStateBadge(EstadoArticulo estado) => estado switch
+    {
+        EstadoArticulo.Borrador => "bg-secondary",
+        EstadoArticulo.Revision => "bg-warning",
+        EstadoArticulo.Publicado => "bg-success",
+        _ => "bg-info"
+    };
+
+    private string GetStateLabel(EstadoArticulo estado) => estado switch
+    {
+        EstadoArticulo.Borrador => "Borrador",
+        EstadoArticulo.Revision => "En Revisión",
+        EstadoArticulo.Publicado => "Publicado",
+        _ => "Desconocido"
+    };
+
+    public class ArticuloConocimientoDto
+    {
+        public int Id { get; set; }
+        public string Titulo { get; set; } = string.Empty;
+        public string Contenido { get; set; } = string.Empty;
+        public string Resumen { get; set; } = string.Empty;
+        public string Tags { get; set; } = string.Empty;
+        public EstadoArticulo Estado { get; set; }
+        public int Visualizaciones { get; set; }
+        public int VotosPositivos { get; set; }
+        public int CategoriaId { get; set; }
+        public int AutorId { get; set; }
+        public string PasosDetallados { get; set; } = string.Empty;
+        public string Prerequisites { get; set; } = string.Empty;
+        public string Limitaciones { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public class CategoriaDto
+    {
+        public int Id { get; set; }
+        public string Nombre { get; set; }
+    }
+
+    public enum EstadoArticulo
+    {
+        Borrador = 1,
+        Revision = 2,
+        Publicado = 3,
+        Archivado = 4
+    }
+}

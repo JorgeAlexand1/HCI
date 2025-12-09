@@ -191,7 +191,8 @@ public class AuthService : IAuthService
             new Claim(ClaimTypes.NameIdentifier, usuario.Id.ToString()),
             new Claim(ClaimTypes.Email, usuario.Email),
             new Claim(ClaimTypes.Name, $"{usuario.FirstName} {usuario.LastName}"),
-            new Claim("TipoUsuario", usuario.TipoUsuario.ToString()),
+            new Claim("TipoUsuario", ((int)usuario.TipoUsuario).ToString()),
+            new Claim(ClaimTypes.Role, MapTipoUsuarioToRolString(usuario.TipoUsuario)),
             new Claim("Username", usuario.Username)
         };
 
@@ -247,5 +248,84 @@ public class AuthService : IAuthService
     {
         var parts = nombreCompleto.Trim().Split(' ');
         return parts.Length > 1 ? string.Join(" ", parts.Skip(1)) : "";
+    }
+
+    public async Task<Usuario?> GetUserByEmailAsync(string email)
+    {
+        return await _usuarioRepository.GetByEmailAsync(email);
+    }
+
+    public async Task SavePasswordResetTokenAsync(int usuarioId, string token, DateTime expirationTime)
+    {
+        var usuario = await _usuarioRepository.GetByIdAsync(usuarioId);
+        if (usuario != null)
+        {
+            usuario.PasswordResetToken = token;
+            usuario.PasswordResetTokenExpiration = expirationTime;
+            await _usuarioRepository.UpdateAsync(usuario);
+            await _usuarioRepository.SaveChangesAsync();
+            Console.WriteLine($"Token guardado para usuario {usuarioId}: {token}, Expira: {expirationTime}");
+        }
+    }
+
+    public async Task<Usuario?> ValidatePasswordResetTokenAsync(string token)
+    {
+        var usuarios = await _usuarioRepository.GetAllAsync();
+        var currentTime = DateTime.UtcNow;
+        
+        var usuario = usuarios.FirstOrDefault(u => 
+            u.PasswordResetToken == token && 
+            u.PasswordResetTokenExpiration.HasValue && 
+            u.PasswordResetTokenExpiration.Value > currentTime);
+        
+        if (usuario != null)
+        {
+            Console.WriteLine($"Token válido encontrado. Expira: {usuario.PasswordResetTokenExpiration}, Ahora: {currentTime}");
+        }
+        else
+        {
+            var usuarioConToken = usuarios.FirstOrDefault(u => u.PasswordResetToken == token);
+            if (usuarioConToken != null)
+            {
+                Console.WriteLine($"Token encontrado pero expirado. Expira: {usuarioConToken.PasswordResetTokenExpiration}, Ahora: {currentTime}");
+            }
+            else
+            {
+                Console.WriteLine($"Token no encontrado en la base de datos: {token}");
+            }
+        }
+        
+        return usuario;
+    }
+
+    public async Task<bool> ResetPasswordAsync(int usuarioId, string newPassword)
+    {
+        var usuario = await _usuarioRepository.GetByIdAsync(usuarioId);
+        if (usuario == null)
+        {
+            return false;
+        }
+
+        usuario.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+        usuario.IsEmailConfirmed = true;
+        await _usuarioRepository.UpdateAsync(usuario);
+        await _usuarioRepository.SaveChangesAsync();
+        Console.WriteLine($"Contraseña actualizada para usuario {usuarioId}");
+        return true;
+    }
+
+    public async Task InvalidatePasswordResetTokenAsync(string token)
+    {
+        var usuarios = await _usuarioRepository.GetAllAsync();
+        var usuario = usuarios.FirstOrDefault(u => u.PasswordResetToken == token);
+        
+        if (usuario != null)
+        {
+            usuario.PasswordResetToken = null;
+            usuario.PasswordResetTokenExpiration = null;
+            await _usuarioRepository.UpdateAsync(usuario);
+            await _usuarioRepository.SaveChangesAsync();
+            Console.WriteLine($"Token invalidado para usuario {usuario.Id}");
+        }
     }
 }

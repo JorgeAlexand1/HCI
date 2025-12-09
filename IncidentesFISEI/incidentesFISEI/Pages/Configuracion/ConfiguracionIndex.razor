@@ -1,0 +1,94 @@
+@page "/configuracion"
+@using incidentesFISEI.Services
+@layout incidentesFISEI.Shared.Components.DashboardLayout
+@inject UserSessionService UserSession
+@inject NavigationManager Navigation
+
+<PageTitle>Configuración del Sistema - IncidentesFISEI</PageTitle>
+
+<div class="configuracion-container">
+    <!-- Título con botón volver alineado -->
+    <div class="page-title-section">
+        <button class="btn btn-link back-button" @onclick='() => Navigation.NavigateTo("/admin-dashboard")'>
+            <i class="fas fa-arrow-left me-2"></i>Volver
+        </button>
+        <div class="title-content">
+            <h1 class="page-main-title">
+                <i class="fas fa-cogs me-2"></i>Configuración del Sistema
+            </h1>
+            <p class="page-subtitle">Administración de parámetros, SLAs y políticas de seguridad</p>
+        </div>
+    </div>
+
+    <div class="config-modules">
+        <div class="row g-4">
+            <!-- SLAs y Tiempos -->
+            <div class="col-lg-6 col-xl-3">
+                <div class="config-card sla-card" @onclick='() => Navigation.NavigateTo("/configuracion/slas")'>
+                    <div class="card-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>SLAs y Tiempos</h3>
+                        <p>Configurar acuerdos de nivel de servicio</p>
+                    </div>
+                    <div class="card-action">
+                        <span>Configurar <i class="fas fa-arrow-right ms-2"></i></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuración General -->
+            <div class="col-lg-6 col-xl-3">
+                <div class="config-card general-card" @onclick='() => Navigation.NavigateTo("/configuracion/sistema")'>
+                    <div class="card-icon">
+                        <i class="fas fa-sliders-h"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Sistema General</h3>
+                        <p>Parámetros generales del sistema</p>
+                    </div>
+                    <div class="card-action">
+                        <span>Configurar <i class="fas fa-arrow-right ms-2"></i></span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notificaciones -->
+            <div class="col-lg-6 col-xl-3">
+                <div class="config-card notif-card" @onclick='() => Navigation.NavigateTo("/configuracion/notificaciones")'>
+                    <div class="card-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div class="card-content">
+                        <h3>Notificaciones</h3>
+                        <p>Configurar alertas y notificaciones</p>
+                    </div>
+                    <div class="card-action">
+                        <span>Configurar <i class="fas fa-arrow-right ms-2"></i></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    protected override async Task OnInitializedAsync()
+    {
+        await UserSession.InitializeAsync();
+        
+        if (!UserSession.IsLoggedIn)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        // Verificar que el usuario sea administrador
+        if (UserSession.CurrentUser?.TipoUsuario != TipoUsuario.Administrador)
+        {
+            Navigation.NavigateTo("/dashboard");
+            return;
+        }
+    }
+}

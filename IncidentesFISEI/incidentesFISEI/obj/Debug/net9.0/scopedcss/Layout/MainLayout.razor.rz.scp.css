@@ -8,7 +8,7 @@
 .navbar[b-aqp3iys3f9] {
     background: linear-gradient(135deg, #1a202c 0%, #2d3748 100%);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-    border-bottom: 2px solid #fbbf24;
+    border-bottom: 2px solid #722f37;
     min-height: 90px;
     padding: 0.5rem 1rem;
     position: relative;
@@ -58,7 +58,7 @@
 .brand-subtitle[b-aqp3iys3f9] {
     font-size: 0.9rem;
     font-weight: 600;
-    color: #fbbf24 !important;
+    color: #722f37 !important;
     text-shadow: 0 2px 4px rgba(0,0,0,0.4);
     margin-top: 4px;
     letter-spacing: 0.5px;
@@ -95,19 +95,19 @@
 }
 
 .btn-primary[b-aqp3iys3f9] {
-    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-    border: 2px solid #fbbf24;
-    color: #1a202c;
+    background: linear-gradient(135deg, #722f37 0%, #8e464e 100%);
+    border: 2px solid #722f37;
+    color: #dae3f6;
     font-weight: 700;
     text-shadow: none;
 }
 
 .btn-primary:hover[b-aqp3iys3f9] {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-    border-color: #f59e0b;
-    color: #1a202c;
+    background: linear-gradient(135deg, #722f37 0%, #8e464e 100%);
+    border-color: #8e464e;
+    color: #dae3f6;
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(251, 191, 36, 0.4);
+    box-shadow: 0 6px 20px rgba(167, 93, 114, 0.4);
 }
 
 .btn-outline-light[b-aqp3iys3f9] {
@@ -180,3 +180,4 @@
 .menu-link:hover[b-aqp3iys3f9] {
     color: #fbbf24 !important;
 }
+

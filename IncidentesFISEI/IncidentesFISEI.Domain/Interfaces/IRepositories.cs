@@ -37,6 +37,7 @@ public interface ICategoriaIncidenteRepository : IRepository<CategoriaIncidente>
 public interface IArticuloConocimientoRepository : IRepository<ArticuloConocimiento>
 {
     Task<IEnumerable<ArticuloConocimiento>> GetArticulosPublicadosAsync();
+    Task<IEnumerable<ArticuloConocimiento>> GetArticulosTodosAsync();
     Task<IEnumerable<ArticuloConocimiento>> GetArticulosByAutorAsync(int autorId);
     Task<IEnumerable<ArticuloConocimiento>> GetArticulosByCategoriaAsync(int categoriaId);
     Task<IEnumerable<ArticuloConocimiento>> BuscarArticulosAsync(string termino);

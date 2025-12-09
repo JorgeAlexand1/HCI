@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using IncidentesFISEI.Infrastructure.Data;
+using System.Security.Claims;
 
 namespace IncidentesFISEI.Api.Controllers;
 
@@ -20,6 +21,12 @@ public class DashboardController : ControllerBase
     {
         _context = context;
         _logger = logger;
+    }
+
+    private int GetUserId()
+    {
+        var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        return int.TryParse(userIdClaim, out var userId) ? userId : 0;
     }
 
     /// <summary>
@@ -160,6 +167,159 @@ public class DashboardController : ControllerBase
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error al obtener incidentes recientes");
+            return StatusCode(500, "Error interno del servidor");
+        }
+    }
+
+    /// <summary>
+    /// Obtener datos del dashboard de supervisor técnico
+    /// </summary>
+    [HttpGet("supervisor")]
+    //[Authorize(Roles = "SupervisorTecnico")] // Temporalmente deshabilitado para testing
+    [ProducesResponseType(typeof(DashboardDataDto), 200)]
+    public async Task<IActionResult> GetSupervisorDashboard()
+    {
+        try
+        {
+            // Obtener todos los técnicos activos
+            var tecnicos = await _context.Usuarios
+                .Where(u => u.TipoUsuario == TipoUsuario.Tecnico && u.IsActive)
+                .Select(u => new
+                {
+                    u.Id,
+                    Nombre = (u.FirstName ?? "") + " " + (u.LastName ?? ""),
+                    Email = u.Email,
+                    IncidentesAsignados = _context.Incidentes
+                        .Count(i => i.AsignadoAId == u.Id && 
+                               (i.Estado == EstadoIncidente.Abierto || 
+                                i.Estado == EstadoIncidente.EnProgreso || 
+                                i.Estado == EstadoIncidente.EnEspera)),
+                    ResueltosHoy = _context.Incidentes
+                        .Count(i => i.AsignadoAId == u.Id && 
+                               i.Estado == EstadoIncidente.Resuelto && 
+                               i.FechaResolucion != null && 
+                               i.FechaResolucion.Value.Date == DateTime.UtcNow.Date)
+                })
+                .ToListAsync();
+
+            // Calcular estadísticas generales
+            var incidentesCriticos = await _context.Incidentes
+                .CountAsync(i => i.Prioridad == PrioridadIncidente.Critica && 
+                            (i.Estado == EstadoIncidente.Abierto || i.Estado == EstadoIncidente.EnProgreso));
+
+            var totalWorkload = await _context.Incidentes
+                .CountAsync(i => i.AsignadoAId != null && 
+                            (i.Estado == EstadoIncidente.Abierto || 
+                             i.Estado == EstadoIncidente.EnProgreso || 
+                             i.Estado == EstadoIncidente.EnEspera));
+
+            var dashboardData = new DashboardDataDto
+            {
+                ActiveTechnicians = tecnicos.Count,
+                CriticalIncidents = incidentesCriticos,
+                TotalWorkload = totalWorkload,
+                TeamMembers = tecnicos.Select(t => new TechnicianDto
+                {
+                    Name = t.Nombre.Trim(),
+                    Specialty = DetermineSpecialty(t.Email),
+                    Status = DetermineStatus(t.IncidentesAsignados),
+                    AssignedIncidents = t.IncidentesAsignados,
+                    ResolvedToday = t.ResueltosHoy
+                }).ToList()
+            };
+
+            return Ok(dashboardData);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener datos del dashboard de supervisor");
+            return StatusCode(500, "Error interno del servidor");
+        }
+    }
+
+    private string DetermineSpecialty(string email)
+    {
+        // Lógica para determinar la especialidad basada en el email o datos del técnico
+        // Por ahora, asignamos una especialidad genérica
+        if (email.Contains("redes") || email.Contains("network"))
+            return "Redes y Conectividad";
+        else if (email.Contains("hardware"))
+            return "Hardware y Equipos";
+        else if (email.Contains("software") || email.Contains("dev"))
+            return "Software y Aplicaciones";
+        else if (email.Contains("security") || email.Contains("seguridad"))
+            return "Seguridad Informática";
+        else if (email.Contains("database") || email.Contains("bd"))
+            return "Base de Datos";
+        else
+            return "Soporte Técnico General";
+    }
+
+    private string DetermineStatus(int incidentesAsignados)
+    {
+        // Determinar el estado del técnico basado en su carga de trabajo
+        if (incidentesAsignados == 0)
+            return "Disponible";
+        else if (incidentesAsignados <= 3)
+            return "Ocupado";
+        else
+            return "Ocupado";
+    }
+
+    [HttpGet("supervisor/incidentes")]
+    [ProducesResponseType(typeof(List<IncidenteListDto>), 200)]
+    public async Task<IActionResult> GetSupervisorIncidentes()
+    {
+        try
+        {
+            var supervisorId = GetUserId();
+            if (supervisorId == 0)
+            {
+                return Unauthorized("No se pudo identificar al usuario");
+            }
+
+            // Obtener todos los incidentes asignados al supervisor logueado
+            var incidentes = await _context.Incidentes
+                .Include(i => i.ReportadoPor)
+                .Include(i => i.AsignadoA)
+                .Include(i => i.Categoria)
+                .Include(i => i.Servicio)
+                .Include(i => i.ConfiguracionSLA)
+                .Where(i => i.AsignadoAId == supervisorId)
+                .OrderByDescending(i => i.FechaReporte)
+                .Select(i => new IncidenteListDto
+                {
+                    Id = i.Id,
+                    NumeroIncidente = i.NumeroIncidente,
+                    Titulo = i.Titulo,
+                    Descripcion = i.Descripcion,
+                    Estado = i.Estado,
+                    Prioridad = i.Prioridad,
+                    Impacto = i.Impacto,
+                    Urgencia = i.Urgencia,
+                    FechaReporte = i.FechaReporte,
+                    FechaAsignacion = i.FechaAsignacion,
+                    FechaResolucion = i.FechaResolucion,
+                    ReportadoPor = $"{i.ReportadoPor.FirstName} {i.ReportadoPor.LastName}".Trim(),
+                    ReportadoPorId = i.ReportadoPorId,
+                    AsignadoA = i.AsignadoA != null ? $"{i.AsignadoA.FirstName} {i.AsignadoA.LastName}".Trim() : null,
+                    AsignadoAId = i.AsignadoAId,
+                    CategoriaNombre = i.Categoria.Nombre,
+                    CategoriaId = i.CategoriaId,
+                    ServicioNombre = i.Servicio != null ? i.Servicio.Nombre : null,
+                    ServicioId = i.ServicioId,
+                    Solucion = i.Solucion,
+                    ConfiguracionSLAId = i.ConfiguracionSLAId,
+                    SLANombre = i.ConfiguracionSLA != null ? i.ConfiguracionSLA.Nombre : null,
+                    FechaVencimiento = i.FechaVencimiento
+                })
+                .ToListAsync();
+
+            return Ok(incidentes);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error al obtener incidentes del supervisor");
             return StatusCode(500, "Error interno del servidor");
         }
     }

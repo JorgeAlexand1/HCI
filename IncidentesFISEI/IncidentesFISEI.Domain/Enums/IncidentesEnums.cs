@@ -128,6 +128,9 @@ public enum TipoNotificacion
     // Base de Conocimiento
     ArticuloPublicado = 30,
     ArticuloActualizado = 31,
+    NuevoArticuloConocimiento = 32,
+    ArticuloAprobado = 33,
+    ArticuloRechazado = 34,
     
     // Recordatorios
     RecordatorioTarea = 40,
@@ -172,4 +175,37 @@ public enum EstadoEnvioNotificacion
     Entregado = 4,
     Fallido = 5,
     Cancelado = 6
+}
+
+// ===== ENUMS PARA CONFIGURACIÓN DEL SISTEMA =====
+
+public enum TipoServicio
+{
+    Email = 1,
+    SMS = 2,
+    Slack = 3,
+    Teams = 4,
+    Telegram = 5,
+    OtroServicio = 6
+}
+
+public enum TipoAccion
+{
+    CreacionIncidente = 1,
+    ActualizacionIncidente = 2,
+    CierreIncidente = 3,
+    RreaperturaIncidente = 4,
+    AsignacionIncidente = 5,
+    CreacionUsuario = 6,
+    ActualizacionUsuario = 7,
+    EliminacionUsuario = 8,
+    DesactivacionUsuario = 9,
+    CambioContraseña = 10,
+    ActualizacionConfiguracion = 11,
+    AccesoAlSistema = 12,
+    IntenteFallido = 13,
+    ExportacionDatos = 14,
+    ImportacionDatos = 15,
+    EliminacionDatos = 16,
+    ModificacionPermisos = 17
 }

@@ -1,0 +1,37 @@
+@if (PerformanceData != null)
+{
+    <div class="report-container">
+        <div class="report-header">
+            <h2><i class="fas fa-chart-line me-2"></i>Reporte de Rendimiento</h2>
+            <p class="report-date">Actualizado: @PerformanceData.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+        </div>
+
+        <div class="report-stats">
+            <div class="stat-box">
+                <h3>Total de Incidentes</h3>
+                <p class="stat-value">@PerformanceData.TotalIncidents</p>
+            </div>
+            <div class="stat-box success">
+                <h3>Resueltos</h3>
+                <p class="stat-value">@PerformanceData.ResolvedIncidents</p>
+            </div>
+            <div class="stat-box warning">
+                <h3>Pendientes</h3>
+                <p class="stat-value">@PerformanceData.PendingIncidents</p>
+            </div>
+            <div class="stat-box info">
+                <h3>Tasa de Resolución</h3>
+                <p class="stat-value">@PerformanceData.ResolutionRate.ToString("F1")%</p>
+            </div>
+            <div class="stat-box info">
+                <h3>Tiempo Promedio</h3>
+                <p class="stat-value">@PerformanceData.AverageResolutionTime.ToString("F1") hrs</p>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public dynamic PerformanceData { get; set; }
+}

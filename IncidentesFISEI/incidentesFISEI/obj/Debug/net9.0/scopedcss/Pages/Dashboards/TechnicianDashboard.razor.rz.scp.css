@@ -119,12 +119,12 @@
 }
 
 .incident-card.high[b-9sjs5oqtva] {
-    border-left-color: #fd7e14;
+    border-left-color: #5a252b;
     background: linear-gradient(135deg, rgba(253, 126, 20, 0.05) 0%, white 100%);
 }
 
 .incident-card.medium[b-9sjs5oqtva] {
-    border-left-color: #ffc107;
+    border-left-color: #722f37;
 }
 
 .incident-card.low[b-9sjs5oqtva] {
@@ -180,12 +180,12 @@
 }
 
 .priority-badge.high[b-9sjs5oqtva] {
-    background: #fd7e14;
+    background: #5a252b;
     color: white;
 }
 
 .priority-badge.medium[b-9sjs5oqtva] {
-    background: #ffc107;
+    background: #722f37;
     color: #212529;
 }
 
@@ -220,7 +220,7 @@
 }
 
 .detail-item .critical[b-9sjs5oqtva] {
-    color: #fd7e14;
+    color: #5a252b;
     font-weight: 600;
 }
 
@@ -733,3 +733,5 @@
 .incident-card:nth-child(3)[b-9sjs5oqtva] { animation-delay: 0.3s; }
 .incident-card:nth-child(4)[b-9sjs5oqtva] { animation-delay: 0.4s; }
 .incident-card:nth-child(5)[b-9sjs5oqtva] { animation-delay: 0.5s; }
+
+

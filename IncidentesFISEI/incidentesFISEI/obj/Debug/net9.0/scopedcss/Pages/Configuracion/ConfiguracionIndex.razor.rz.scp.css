@@ -1,0 +1,167 @@
+.configuracion-container[b-ef7qqkd0sq] {
+    padding: 2rem;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.page-title-section[b-ef7qqkd0sq] {
+    margin-bottom: 2rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.back-button[b-ef7qqkd0sq] {
+    background: #5a252b;
+    border: 1px solid #722f37;
+    color: white;
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    cursor: pointer;
+    text-decoration: none;
+    flex-shrink: 0;
+}
+
+.back-button:hover[b-ef7qqkd0sq] {
+    background: #722f37;
+    border-color: #722f37;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(114, 47, 55, 0.25);
+}
+
+.title-content[b-ef7qqkd0sq] {
+    flex: 1;
+    text-align: right;
+}
+
+.page-main-title[b-ef7qqkd0sq] {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin: 0 0 0.5rem 0;
+}
+
+.page-subtitle[b-ef7qqkd0sq] {
+    font-size: 1rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+.config-modules[b-ef7qqkd0sq] {
+    margin-bottom: 3rem;
+}
+
+.config-card[b-ef7qqkd0sq] {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.config-card:hover[b-ef7qqkd0sq] {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.config-card.sla-card:hover[b-ef7qqkd0sq] {
+    border-color: #3498db;
+}
+
+.config-card.general-card:hover[b-ef7qqkd0sq] {
+    border-color: #9b59b6;
+}
+
+.config-card.notif-card:hover[b-ef7qqkd0sq] {
+    border-color: #f39c12;
+}
+
+.config-card.security-card:hover[b-ef7qqkd0sq] {
+    border-color: #e74c3c;
+}
+
+.sla-card .card-icon[b-ef7qqkd0sq] {
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    color: white;
+}
+
+.general-card .card-icon[b-ef7qqkd0sq] {
+    background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%);
+    color: white;
+}
+
+.notif-card .card-icon[b-ef7qqkd0sq] {
+    background: linear-gradient(135deg, #f39c12 0%, #e67e22 100%);
+    color: white;
+}
+
+.security-card .card-icon[b-ef7qqkd0sq] {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+}
+
+.card-icon[b-ef7qqkd0sq] {
+    width: 60px;
+    height: 60px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+}
+
+.config-card .card-content h3[b-ef7qqkd0sq] {
+    font-size: 1.4rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.config-card .card-content p[b-ef7qqkd0sq] {
+    color: #7f8c8d;
+    font-size: 0.95rem;
+    margin: 0;
+}
+
+.config-card .card-action[b-ef7qqkd0sq] {
+    margin-top: auto;
+    padding-top: 1.5rem;
+    color: #3498db;
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+@media (max-width: 768px) {
+    .configuracion-container[b-ef7qqkd0sq] {
+        padding: 1rem;
+    }
+
+    .page-main-title[b-ef7qqkd0sq] {
+        font-size: 2rem;
+    }
+
+    .card-icon[b-ef7qqkd0sq] {
+        width: 50px;
+        height: 50px;
+        font-size: 1.5rem;
+    }
+
+    .config-card .card-content h3[b-ef7qqkd0sq] {
+        font-size: 1.2rem;
+    }
+}
+
+

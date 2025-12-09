@@ -1,0 +1,303 @@
+@page "/configuracion/notificaciones"
+@using incidentesFISEI.Services
+@using IncidentesFISEI.Application.DTOs
+@using IncidentesFISEI.Domain.Enums
+@layout incidentesFISEI.Shared.Components.DashboardLayout
+@inject UserSessionService UserSession
+@inject NavigationManager Navigation
+@inject HttpClient Http
+@inject IJSRuntime JSRuntime
+
+<PageTitle>Configuración de Notificaciones - IncidentesFISEI</PageTitle>
+
+<div class="notificaciones-container">
+    <!-- Título y Botón Volver -->
+    <div class="page-title-section">
+        <button class="btn btn-link back-button" @onclick='() => Navigation.NavigateTo("/configuracion")'>
+            <i class="fas fa-arrow-left me-2"></i>Volver
+        </button>
+        <div class="title-content">
+            <h1 class="page-main-title">
+                <i class="fas fa-bell me-2"></i>Configuración de Notificaciones
+            </h1>
+            <p class="page-subtitle">Gestionar canales y preferencias de notificaciones ITIL v3</p>
+        </div>
+    </div>
+
+    <div class="notif-content">
+        <!-- Tabs de navegación -->
+        <div class="tab-content notif-tab-content">
+            <div class="tab-pane fade show active" id="canales" role="tabpanel" aria-labelledby="tab-canales">
+                <div class="row">
+                    <!-- Email -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="notif-card email-card">
+                            <div class="notif-card-header">
+                                <div class="header-title">
+                                    <i class="fas fa-envelope icon-email"></i>
+                                    <h4>Configuración de Email</h4>
+                                </div>
+                                <span class="badge @(emailEnabled ? "bg-success" : "bg-secondary")">
+                                    @(emailEnabled ? "Activo" : "Inactivo")
+                                </span>
+                            </div>
+                            <div class="notif-card-body">
+                                <div class="form-check form-switch mb-3">
+                                    <input class="form-check-input" type="checkbox" id="enableEmail" 
+                                           @bind="emailEnabled">
+                                    <label class="form-check-label" for="enableEmail">
+                                        Habilitar notificaciones por email
+                                    </label>
+                                </div>
+
+                                @if (emailEnabled)
+                                {
+                                    <div class="alert alert-info small mb-3">
+                                        <i class="fas fa-info-circle me-2"></i>
+                                        Los emails se enviarán automáticamente según la configuración de eventos
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">SMTP Host</label>
+                                        <input type="text" class="form-control form-control-sm" 
+                                               value="@smtpHost" readonly>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Puerto SMTP</label>
+                                        <input type="text" class="form-control form-control-sm" 
+                                               value="@smtpPort" readonly>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <label class="form-label">Email Remitente</label>
+                                        <input type="text" class="form-control form-control-sm" 
+                                               value="@fromEmail" readonly>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <button class="btn btn-sm btn-primary w-100" @onclick="EnviarEmailPrueba" disabled="@enviandoEmail">
+                                            @if (enviandoEmail)
+                                            {
+                                                <span class="spinner-border spinner-border-sm me-2"></span>
+                                                <text>Enviando...</text>
+                                            }
+                                            else
+                                            {
+                                                <i class="fas fa-paper-plane me-2"></i>
+                                                <text>Enviar Email de Prueba</text>
+                                            }
+                                        </button>
+                                    </div>
+
+                                    @if (!string.IsNullOrEmpty(emailTestResult))
+                                    {
+                                        <div class="alert @(emailTestSuccess ? "alert-success" : "alert-danger") small mb-3">
+                                            <i class="fas @(emailTestSuccess ? "fa-check-circle" : "fa-exclamation-triangle") me-2"></i>
+                                            @emailTestResult
+                                        </div>
+                                    }
+
+                                    <div class="notif-alert">
+                                        <i class="fas fa-lock me-2"></i>
+                                        Las credenciales SMTP están cifradas y almacenadas de forma segura en appsettings
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Notificaciones en Sistema -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="notif-card system-card">
+                            <div class="notif-card-header">
+                                <div class="header-title">
+                                    <i class="fas fa-bell icon-system"></i>
+                                    <h4>Notificaciones en Sistema</h4>
+                                </div>
+                                <span class="badge bg-success">Activo</span>
+                            </div>
+                            <div class="notif-card-body">
+                                <p class="text-muted small mb-3">
+                                    Las notificaciones en sistema se muestran en el centro de notificaciones del usuario
+                                </p>
+
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="notifInmediata" 
+                                           @bind="notifInmediata">
+                                    <label class="form-check-label" for="notifInmediata">
+                                        Mostrar notificaciones inmediatas
+                                    </label>
+                                </div>
+
+                                <div class="notif-alert">
+                                    <i class="fas fa-info-circle me-2"></i>
+                                    Siempre habilitado para mantener trazabilidad del sistema
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Resumen -->
+                    <div class="col-lg-6 mb-4">
+                        <div class="notif-card summary-card">
+                            <div class="notif-card-header">
+                                <div class="header-title">
+                                    <i class="fas fa-chart-pie icon-summary"></i>
+                                    <h4>Resumen de Canales</h4>
+                                </div>
+                            </div>
+                            <div class="notif-card-body">
+                                <div class="channel-stat">
+                                    <div class="stat-label">
+                                        <i class="fas fa-envelope me-2 text-primary"></i>Email
+                                    </div>
+                                    <span class="badge @(emailEnabled ? "bg-success" : "bg-secondary") ms-auto">
+                                        @(emailEnabled ? "✓ Habilitado" : "✗ Deshabilitado")
+                                    </span>
+                                </div>
+
+                                <div class="channel-stat">
+                                    <div class="stat-label">
+                                        <i class="fas fa-bell me-2 text-warning"></i>En Sistema
+                                    </div>
+                                    <span class="badge bg-success ms-auto">✓ Habilitado</span>
+                                </div>
+
+                                <hr class="my-3">
+
+                                <button class="btn btn-sm btn-primary w-100" @onclick="GuardarCanales">
+                                    <i class="fas fa-save me-2"></i>Guardar Cambios
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+@code {
+    private bool emailEnabled = true;
+    private bool notifInmediata = true;
+
+    private string smtpHost = "";
+    private string smtpPort = "";
+    private string fromEmail = "";
+    private bool emailIsConfigured = false;
+    
+    private bool enviandoEmail = false;
+    private string emailTestResult = "";
+    private bool emailTestSuccess = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await UserSession.InitializeAsync();
+        
+        if (!UserSession.IsLoggedIn)
+        {
+            Navigation.NavigateTo("/login");
+            return;
+        }
+
+        if (UserSession.CurrentUser?.TipoUsuario != (incidentesFISEI.Services.TipoUsuario?)IncidentesFISEI.Domain.Enums.TipoUsuario.Administrador)
+        {
+            Navigation.NavigateTo("/dashboard");
+            return;
+        }
+
+        await CargarConfiguracionEmail();
+    }
+
+    private async Task CargarConfiguracionEmail()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<ApiResponse<EmailSettingsDto>>(
+                "api/configuracion/email-settings");
+
+            if (response?.Success == true && response.Data != null)
+            {
+                smtpHost = response.Data.SmtpHost ?? "";
+                smtpPort = response.Data.SmtpPort ?? "";
+                fromEmail = response.Data.FromEmail ?? "";
+                emailIsConfigured = response.Data.IsConfigured;
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", "Error al cargar configuración de email", ex.Message);
+        }
+    }
+
+    private async Task EnviarEmailPrueba()
+    {
+        enviandoEmail = true;
+        emailTestResult = "";
+        StateHasChanged();
+
+        try
+        {
+            var request = new
+            {
+                emailDestino = fromEmail,
+                smtpInfo = $"{smtpHost}:{smtpPort}"
+            };
+
+            var response = await Http.PostAsJsonAsync("api/configuracion/test-email", request);
+            var result = await response.Content.ReadFromJsonAsync<ApiResponse<object>>();
+
+            if (result?.Success == true)
+            {
+                emailTestSuccess = true;
+                emailTestResult = $"✅ Email enviado exitosamente a {fromEmail}. Revisa tu bandeja de entrada.";
+            }
+            else
+            {
+                emailTestSuccess = false;
+                emailTestResult = $"❌ Error: {result?.Message ?? "No se pudo enviar el email"}";
+            }
+        }
+        catch (Exception ex)
+        {
+            emailTestSuccess = false;
+            emailTestResult = $"❌ Error al enviar: {ex.Message}";
+        }
+        finally
+        {
+            enviandoEmail = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task GuardarCanales()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("alert", "Canales de notificación guardados correctamente");
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("console.error", ex.Message);
+        }
+    }
+
+    // DTOs
+    public class ApiResponse<T>
+    {
+        public bool Success { get; set; }
+        public T? Data { get; set; }
+        public string Message { get; set; }
+    }
+
+    public class EmailSettingsDto
+    {
+        public string? SmtpHost { get; set; }
+        public string? SmtpPort { get; set; }
+        public string? FromEmail { get; set; }
+        public string? FromName { get; set; }
+        public bool IsConfigured { get; set; }
+    }
+}

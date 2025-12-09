@@ -1,375 +1,1477 @@
 @page "/supervisor-dashboard"
+@using System.Net.Http.Json
+@using System.Collections.Generic
+@using System.Linq
 @using Microsoft.AspNetCore.Authorization
+@using IncidentesFISEI.Domain.Enums
+@using IncidentesFISEI.Application.DTOs
 @using incidentesFISEI.Shared.Components
-@attribute [Authorize(Roles = "Supervisor")]
+@attribute [Authorize(Roles = "SupervisorTecnico")]
 @layout DashboardLayout
 @inject HttpClient Http
 @inject IJSRuntime JSRuntime
+@inject NavigationManager Navigation
+@inject incidentesFISEI.Services.UserSessionService UserSession
 
 <div class="supervisor-dashboard">
-    <!-- Critical Alerts Section -->
-    <section class="dashboard-section">
-        <div class="alert-header">
-            <h2>Alertas Críticas</h2>
-            <div class="alert-summary">
-                <span class="critical-count">@dashboardData.CriticalIncidents</span>
-                <span class="alert-label">Requieren atención inmediata</span>
-            </div>
+    @if (currentView == "dashboard")
+    {
+        <!-- Vista Principal -->
+        <div class="dashboard-title-section">
+            <h1 class="dashboard-main-title">Panel de Supervisor Técnico</h1>
+            <p class="dashboard-subtitle">Sistema de Gestión de Incidentes ITIL v3</p>
         </div>
-        
-        @if (dashboardData.CriticalAlerts?.Any() == true)
-        {
-            <div class="critical-alerts">
-                @foreach (var alert in dashboardData.CriticalAlerts)
-                {
-                    <div class="alert-card critical">
-                        <div class="alert-icon">
+
+        <!-- Tarjetas Principales de Módulos -->
+        <div class="supervisor-modules-section">
+        <h2 class="section-title">Módulos de Supervisión</h2>
+        <div class="row">
+            <!-- Tarjeta 1: Técnicos -->
+            <div class="col-lg-6 mb-4">
+                <div class="admin-module-card" @onclick="ShowTechniciansView">
+                    <div class="module-header">
+                        <div class="module-icon technicians">
+                            <i class="fas fa-users"></i>
+                        </div>
+                        <div class="module-info">
+                            <h3>Técnicos Disponibles</h3>
+                            <p>Ver detalles de tu equipo técnico</p>
+                        </div>
+                        <i class="fas fa-chevron-right module-arrow"></i>
+                    </div>
+                    <div class="module-preview">
+                        <div class="preview-stats">
+                            @if (dashboardData != null)
+                            {
+                                <span class="stat-highlight">@dashboardData.ActiveTechnicians técnicos</span>
+                                <span class="stat-detail">Activos en el sistema</span>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tarjeta 2: Gestión de Incidentes -->
+            <div class="col-lg-6 mb-4">
+                <div class="admin-module-card" @onclick="ShowIncidentsView">
+                    <div class="module-header">
+                        <div class="module-icon incidents">
                             <i class="fas fa-exclamation-triangle"></i>
                         </div>
-                        <div class="alert-content">
-                            <h5>@alert.Title</h5>
-                            <p>@alert.Description</p>
-                            <div class="alert-meta">
-                                <span class="time-remaining @GetSlaClass(alert.TimeRemaining)">
-                                    SLA: @FormatTimeRemaining(alert.TimeRemaining)
-                                </span>
-                                <span class="assigned-to">@alert.AssignedTo</span>
-                            </div>
+                        <div class="module-info">
+                            <h3>Gestión de Incidentes</h3>
+                            <p>Administrar incidentes del equipo</p>
                         </div>
-                        <div class="alert-actions">
-                            <button class="btn btn-sm btn-warning" @onclick="() => EscalateIncident(alert.Id)">
-                                <i class="fas fa-level-up-alt"></i> Escalar
-                            </button>
-                            <button class="btn btn-sm btn-primary" @onclick="() => ReassignIncident(alert.Id)">
-                                <i class="fas fa-user-cog"></i> Reasignar
-                            </button>
+                        <i class="fas fa-chevron-right module-arrow"></i>
+                    </div>
+                    <div class="module-preview">
+                        <div class="preview-stats">
+                            @if (dashboardData != null)
+                            {
+                                <span class="stat-highlight">@dashboardData.CriticalIncidents críticos</span>
+                                <span class="stat-detail">@dashboardData.TotalWorkload incidentes asignados</span>
+                            }
                         </div>
                     </div>
-                }
+                </div>
             </div>
-        }
-        else
-        {
-            <div class="no-critical-alerts">
-                <i class="fas fa-check-circle text-success"></i>
-                <p>No hay alertas críticas en este momento</p>
-            </div>
-        }
-    </section>
 
-    <!-- Team Performance Section -->
-    <section class="dashboard-section">
-        <div class="section-header">
-            <h3>Rendimiento del Equipo</h3>
-            <div class="team-stats">
-                <span class="stat">@dashboardData.ActiveTechnicians técnicos activos</span>
-                <span class="stat">@dashboardData.TotalWorkload incidentes asignados</span>
-            </div>
-        </div>
-        
-        <div class="team-grid">
-            @if (dashboardData.TeamMembers?.Any() == true)
-            {
-                @foreach (var member in dashboardData.TeamMembers)
-                {
-                    <div class="team-card">
-                        <div class="member-header">
-                            <div class="member-avatar @GetStatusClass(member.Status)">
-                                <i class="fas fa-user"></i>
-                            </div>
-                            <div class="member-info">
-                                <h5>@member.Name</h5>
-                                <span class="speciality">@member.Specialty</span>
-                                <span class="status @member.Status.ToString().ToLower()">@GetStatusText(member.Status)</span>
-                            </div>
+            <!-- Tarjeta 3: Base de Conocimiento -->
+            <div class="col-lg-6 mb-4">
+                <div class="admin-module-card" @onclick="ShowKnowledgeBaseView">
+                    <div class="module-header">
+                        <div class="module-icon knowledge">
+                            <i class="fas fa-book"></i>
                         </div>
-                        
-                        <div class="member-metrics">
-                            <div class="metric">
-                                <span class="metric-value">@member.AssignedIncidents</span>
-                                <span class="metric-label">Asignados</span>
-                            </div>
-                            <div class="metric">
-                                <span class="metric-value">@member.ResolvedToday</span>
-                                <span class="metric-label">Resueltos hoy</span>
-                            </div>
-                            <div class="metric">
-                                <span class="metric-value">@member.AvgResolutionTime.ToString(@"h\hmm\m")</span>
-                                <span class="metric-label">Tiempo promedio</span>
-                            </div>
+                        <div class="module-info">
+                            <h3>Base de Conocimiento</h3>
+                            <p>Artículos y soluciones</p>
                         </div>
-                        
-                        <div class="member-actions">
-                            <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewMemberDetails(member.Id)">
-                                Ver Detalle
-                            </button>
-                            <button class="btn btn-sm btn-outline-success" @onclick="() => AssignToMember(member.Id)">
-                                Asignar
-                            </button>
+                        <i class="fas fa-chevron-right module-arrow"></i>
+                    </div>
+                    <div class="module-preview">
+                        <div class="preview-stats">
+                            @if (kbStats != null)
+                            {
+                                <span class="stat-highlight">@kbStats.TotalArticulos artículos</span>
+                                <span class="stat-detail">@kbStats.PendingReview pendientes de revisión</span>
+                            }
                         </div>
                     </div>
-                }
-            }
-        </div>
-    </section>
-
-    <!-- SLA Monitoring Section -->
-    <section class="dashboard-section">
-        <div class="section-header">
-            <h3>Monitoreo SLA</h3>
-            <div class="sla-overview">
-                <incidentesFISEI.Shared.Components.KPIWidget Title="Cumplimiento Global" 
-                          Value="@dashboardData.OverallSlaCompliance" 
-                          Unit="%" 
-                          Icon="fas fa-tachometer-alt" 
-                          IconColor="@GetSlaComplianceColor(dashboardData.OverallSlaCompliance)"
-                          ShowProgress="true" 
-                          ProgressPercentage="@dashboardData.OverallSlaCompliance" />
+                </div>
             </div>
         </div>
-        
-        <div class="sla-categories">
-            @if (dashboardData.SlaByCategory?.Any() == true)
-            {
-                @foreach (var category in dashboardData.SlaByCategory)
-                {
-                    <div class="sla-category-card">
-                        <div class="category-header">
-                            <h5>@category.Name</h5>
-                            <span class="sla-percentage @GetSlaComplianceClass(category.Compliance)">
-                                @category.Compliance.ToString("F1")%
-                            </span>
+    </div>
+    }
+
+    <!-- Vista: Técnicos Disponibles -->
+    @if (currentView == "technicians")
+    {
+        <div class="module-full-view">
+            <div class="page-title-section">
+                <button class="btn btn-link back-button" @onclick="BackToDashboard">
+                    <i class="fas fa-arrow-left me-2"></i>
+                    Volver
+                </button>
+                <div class="title-content">
+                    <h1 class="page-main-title">
+                        <i class="fas fa-users me-2"></i>
+                        Técnicos Disponibles
+                    </h1>
+                    <p class="page-subtitle">Información y estado del equipo técnico</p>
+                </div>
+            </div>
+
+            <div class="module-content-full">
+                <div class="content-section">
+                    <h4><i class="fas fa-users me-2"></i>Equipo Técnico</h4>
+                    
+                    @if (dashboardData?.TeamMembers?.Any() == true)
+                    {
+                        <div class="technicians-grid">
+                            @foreach (var tech in dashboardData.TeamMembers)
+                            {
+                                <div class="technician-card-enhanced">
+                                    <!-- Header con estado -->
+                                    <div class="tech-card-header @GetStatusClass(tech.Status)">
+                                        <div class="tech-status-indicator @tech.Status.ToString().ToLower()">
+                                            <i class="fas fa-circle"></i>
+                                        </div>
+                                        <span class="tech-status-label">@GetStatusText(tech.Status)</span>
+                                    </div>
+
+                                    <!-- Avatar y nombre -->
+                                    <div class="tech-avatar-section">
+                                        <div class="tech-avatar @GetStatusClass(tech.Status)">
+                                            <i class="fas fa-user-tie"></i>
+                                        </div>
+                                        <h5 class="tech-name">@tech.Name</h5>
+                                        <p class="tech-specialty">
+                                            <i class="fas fa-briefcase me-1"></i>
+                                            @tech.Specialty
+                                        </p>
+                                    </div>
+
+                                    <!-- Separador -->
+                                    <div class="tech-divider"></div>
+
+                                    <!-- Estadísticas -->
+                                    <div class="tech-stats-container">
+                                        <div class="tech-stat">
+                                            <div class="stat-icon">
+                                                <i class="fas fa-tasks"></i>
+                                            </div>
+                                            <div class="stat-info">
+                                                <strong class="stat-value">@tech.AssignedIncidents</strong>
+                                                <small class="stat-label">Asignados</small>
+                                            </div>
+                                        </div>
+
+                                        <div class="tech-stat">
+                                            <div class="stat-icon">
+                                                <i class="fas fa-check-circle"></i>
+                                            </div>
+                                            <div class="stat-info">
+                                                <strong class="stat-value">@tech.ResolvedToday</strong>
+                                                <small class="stat-label">Resueltos Hoy</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            }
                         </div>
-                        <div class="category-details">
-                            <div class="detail-item">
-                                <span class="label">En tiempo:</span>
-                                <span class="value">@category.OnTime</span>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <div style="font-size: 3rem; color: #ddd; margin-bottom: 1rem;">
+                                <i class="fas fa-users-slash"></i>
                             </div>
-                            <div class="detail-item">
-                                <span class="label">Vencidos:</span>
-                                <span class="value text-danger">@category.Overdue</span>
-                            </div>
-                            <div class="detail-item">
-                                <span class="label">Próximos a vencer:</span>
-                                <span class="value text-warning">@category.NearDeadline</span>
-                            </div>
+                            <p class="text-muted">No hay técnicos disponibles.</p>
                         </div>
-                        <div class="progress-bar">
-                            <div class="progress-fill" style="width: @(category.Compliance)%"></div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Vista: Gestión de Incidentes -->
+    @if (currentView == "incidents")
+    {
+        <div class="module-full-view">
+            <div class="page-title-section">
+                <button class="btn btn-link back-button" @onclick="BackToDashboard">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </button>
+                <div class="title-content">
+                    <h1 class="page-main-title"><i class="fas fa-exclamation-triangle me-2"></i>Gestión de Incidentes</h1>
+                    <p class="page-subtitle">Incidentes asignados a tu equipo</p>
+                </div>
+            </div>
+
+            <div class="module-content-full">
+                <div class="content-section">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="d-flex gap-3 align-items-center">
+                            <select @bind="incidentFilter" @bind:after="FilterIncidentsChanged" class="form-select">
+                                <option value="all">Todos los Estados</option>
+                                <option value="abierto">Abiertos</option>
+                                <option value="en-progreso">En Progreso</option>
+                                <option value="en-espera">En Espera</option>
+                                <option value="resuelto">Resueltos</option>
+                                <option value="escalado">Escalados</option>
+                            </select>
+                            <select @bind="priorityFilter" @bind:after="FilterIncidentsChanged" class="form-select">
+                                <option value="all">Todas las Prioridades</option>
+                                <option value="critica">Crítica</option>
+                                <option value="alta">Alta</option>
+                                <option value="media">Media</option>
+                                <option value="baja">Baja</option>
+                            </select>
                         </div>
+                        <button class="btn btn-primary" @onclick="ShowCreateIncidentModal">
+                            <i class="fas fa-plus me-2"></i>Nuevo Incidente
+                        </button>
                     </div>
-                }
-            }
-        </div>
-    </section>
 
-    <!-- Workload Distribution Section -->
-    <section class="dashboard-section">
-        <div class="section-header">
-            <h3>Distribución de Carga de Trabajo</h3>
-            <button class="btn btn-primary" @onclick="AutoBalanceWorkload">
-                <i class="fas fa-balance-scale"></i> Auto-Balancear
-            </button>
-        </div>
-        
-        <div class="workload-chart">
-            <canvas id="workloadChart"></canvas>
-        </div>
-        
-        <div class="workload-actions">
-            <div class="action-card" @onclick="ShowReassignmentModal">
-                <div class="action-icon">
-                    <i class="fas fa-exchange-alt"></i>
-                </div>
-                <div class="action-content">
-                    <h5>Reasignación Masiva</h5>
-                    <p>Redistribuir incidentes entre técnicos</p>
+                    <h4><i class="fas fa-list me-2"></i>Incidentes de Tu Equipo</h4>
+
+                    @if (filteredIncidentes != null && filteredIncidentes.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th style="width: 100px;">ID</th>
+                                        <th style="width: 250px;">Título</th>
+                                        <th style="width: 120px;">Estado</th>
+                                        <th style="width: 180px;">Asignado a</th>
+                                        <th style="width: 100px;">Prioridad</th>
+                                        <th style="width: 120px;">Fecha Creación</th>
+                                        <th style="width: 140px;">Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var incidente in filteredIncidentes.OrderByDescending(i => i.FechaReporte))
+                                    {
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <i class="@GetPriorityIcon(incidente.Prioridad) text-dark me-2"></i>
+                                                    <strong>#@incidente.NumeroIncidente</strong>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="fw-semibold">@incidente.Titulo</div>
+                                                <small class="text-muted">@incidente.CategoriaNombre</small>
+                                            </td>
+                                            <td>
+                                                <span class="badge rounded-pill @GetEstadoBadgeClass(incidente.Estado)">
+                                                    @GetEstadoDisplayName(incidente.Estado).ToUpper()
+                                                </span>
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(incidente.AsignadoA))
+                                                {
+                                                    <div class="d-flex align-items-center">
+                                                        <i class="fas fa-user-check text-success me-2"></i>
+                                                        <span>@incidente.AsignadoA</span>
+                                                    </div>
+                                                }
+                                                else
+                                                {
+                                                    <div class="d-flex align-items-center text-muted">
+                                                        <i class="fas fa-user-slash me-2"></i>
+                                                        <span>Sin asignar</span>
+                                                    </div>
+                                                }
+                                            </td>
+                                            <td>
+                                                <span class="badge rounded-pill" style="@GetPriorityInlineStyle(incidente.Prioridad)">
+                                                    @GetPriorityDisplayName(incidente.Prioridad)
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <div class="small">
+                                                    <div>@incidente.FechaReporte.ToString("yyyy-MM-dd")</div>
+                                                    <div class="text-muted">@incidente.FechaReporte.ToString("HH:mm")</div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <div class="dropdown">
+                                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                                        <i class="fas fa-ellipsis-v"></i>
+                                                    </button>
+                                                    <ul class="dropdown-menu">
+                                                        <li><a class="dropdown-item" href="#" @onclick="() => ViewIncidentDetails(incidente)" @onclick:preventDefault="true">
+                                                            <i class="fas fa-eye me-2"></i>Ver Detalles
+                                                        </a></li>
+                                                        
+                                                        @if (incidente.Estado != EstadoIncidente.Resuelto && incidente.Estado != EstadoIncidente.Escalado)
+                                                        {
+                                                            <li><a class="dropdown-item text-primary" href="#" @onclick="async () => await ShowAssignModal(incidente)" @onclick:preventDefault="true">
+                                                                <i class="fas fa-user-plus me-2"></i>Asignar a Técnico
+                                                            </a></li>
+                                                        }
+                                                        
+                                                        @if (PuedeResolverIncidente(incidente))
+                                                        {
+                                                            <li><a class="dropdown-item text-success" href="#" @onclick="() => ShowResolveModal(incidente)" @onclick:preventDefault="true">
+                                                                <i class="fas fa-check-circle me-2"></i>Resolver
+                                                            </a></li>
+                                                        }
+                                                        
+                                                        @if (incidente.Estado != EstadoIncidente.Escalado && incidente.Estado != EstadoIncidente.Cerrado)
+                                                        {
+                                                            <li><hr class="dropdown-divider"></li>
+                                                            <li><a class="dropdown-item text-warning" href="#" @onclick="() => ShowEscalateModal(incidente)" @onclick:preventDefault="true">
+                                                                <i class="fas fa-arrow-up me-2"></i>Escalar a Admin
+                                                            </a></li>
+                                                        }
+                                                    </ul>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else if (isLoadingIncidents)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando incidentes...</span>
+                            </div>
+                            <p class="mt-2">Cargando incidentes...</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <p class="text-muted">No se encontraron incidentes.</p>
+                        </div>
+                    }
                 </div>
             </div>
-            
-            <div class="action-card" @onclick="ShowEscalationRules">
-                <div class="action-icon">
-                    <i class="fas fa-arrow-up"></i>
-                </div>
-                <div class="action-content">
-                    <h5>Reglas de Escalación</h5>
-                    <p>Configurar escalación automática</p>
+        </div>
+    }
+
+    <!-- Vista: Base de Conocimiento -->
+    @if (currentView == "knowledge-base")
+    {
+        <div class="module-full-view">
+            <div class="page-title-section">
+                <button class="btn btn-link back-button" @onclick="BackToDashboard">
+                    <i class="fas fa-arrow-left me-2"></i>Volver
+                </button>
+                <div class="title-content">
+                    <h1 class="page-main-title"><i class="fas fa-book me-2"></i>Base de Conocimiento</h1>
+                    <p class="page-subtitle">Crear y consultar artículos de soluciones</p>
                 </div>
             </div>
-        </div>
-    </section>
 
-    <!-- Approval Queue Section -->
-    <section class="dashboard-section">
-        <div class="section-header">
-            <h3>Cola de Aprobaciones</h3>
-            <span class="pending-count">@dashboardData.PendingApprovals pendientes</span>
-        </div>
-        
-        <div class="approval-list">
-            @if (dashboardData.PendingApprovalItems?.Any() == true)
-            {
-                @foreach (var approval in dashboardData.PendingApprovalItems)
-                {
-                    <div class="approval-item">
-                        <div class="approval-icon @approval.Type.ToString().ToLower()">
-                            <i class="@GetApprovalIcon(approval.Type)"></i>
-                        </div>
-                        <div class="approval-content">
-                            <h5>@approval.Title</h5>
-                            <p>@approval.Description</p>
-                            <small>Solicitado por: @approval.RequestedBy - @FormatDate(approval.RequestedAt)</small>
-                        </div>
-                        <div class="approval-actions">
-                            <button class="btn btn-sm btn-success" @onclick="() => ApproveRequest(approval.Id)">
-                                <i class="fas fa-check"></i> Aprobar
-                            </button>
-                            <button class="btn btn-sm btn-danger" @onclick="() => RejectRequest(approval.Id)">
-                                <i class="fas fa-times"></i> Rechazar
-                            </button>
-                            <button class="btn btn-sm btn-info" @onclick="() => ViewApprovalDetails(approval.Id)">
-                                <i class="fas fa-eye"></i> Detalle
-                            </button>
-                        </div>
+            <div class="module-content-full">
+                <div class="content-section">
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h4><i class="fas fa-book me-2"></i>Mis Artículos</h4>
+                        <button class="btn btn-primary" @onclick="ShowCreateArticleModal">
+                            <i class="fas fa-plus me-2"></i>Crear Artículo
+                        </button>
                     </div>
-                }
-            }
-            else
-            {
-                <div class="no-approvals">
-                    <i class="fas fa-clipboard-check"></i>
-                    <p>No hay aprobaciones pendientes</p>
+
+                    @if (kbArticles != null && kbArticles.Any())
+                    {
+                        <div class="kb-articles-grid">
+                            @foreach (var article in kbArticles)
+                            {
+                                <div class="kb-article-card">
+                                    <div class="card-header">
+                                        <h5>@article.Titulo</h5>
+                                        <span class="badge bg-info">@article.Estado</span>
+                                    </div>
+                                    <div class="card-body">
+                                        <p class="card-text">@article.Resumen</p>
+                                        <div class="article-meta">
+                                            <small>Por @article.AutorNombre</small><br />
+                                            <small>@article.FechaCreacion.ToString("dd/MM/yyyy")</small>
+                                        </div>
+                                    </div>
+                                    <div class="card-footer">
+                                        <button class="btn btn-sm btn-outline-primary" @onclick="() => ViewArticleDetails(article)">
+                                            <i class="fas fa-eye"></i> Ver
+                                        </button>
+                                        @if (article.Estado != "Publicado")
+                                        {
+                                            <button class="btn btn-sm btn-outline-warning" @onclick="() => EditArticleAsync(article)">
+                                                <i class="fas fa-edit"></i> Editar
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                    else if (isLoadingKB)
+                    {
+                        <div class="text-center py-4">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando artículos...</span>
+                            </div>
+                            <p class="mt-2">Cargando artículos...</p>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <p class="text-muted">No tienes artículos aún. ¡Crea uno!</p>
+                        </div>
+                    }
                 </div>
-            }
+            </div>
         </div>
-    </section>
+    }
 </div>
 
+<!-- Modal para Ver Detalles del Incidente -->
+@if (showIncidentDetailsModal && selectedIncidentForDetails != null)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #5a252b 0%, #7d3540 100%);">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-eye me-2"></i>
+                        Detalles del Incidente #@selectedIncidentForDetails.NumeroIncidente
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseIncidentDetailsModal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Título</label>
+                            <p class="form-control-static border rounded p-2 bg-light">@selectedIncidentForDetails.Titulo</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Número de Incidente</label>
+                            <p class="form-control-static border rounded p-2 bg-light">#@selectedIncidentForDetails.NumeroIncidente</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Estado</label>
+                            <p class="form-control-static border rounded p-2 bg-light">
+                                <span class="badge rounded-pill @GetEstadoBadgeClass(selectedIncidentForDetails.Estado)">
+                                    @GetEstadoDisplayName(selectedIncidentForDetails.Estado)
+                                </span>
+                            </p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Prioridad</label>
+                            <p class="form-control-static border rounded p-2 bg-light">
+                                <span class="badge rounded-pill" style="@GetPriorityInlineStyle(selectedIncidentForDetails.Prioridad)">
+                                    @GetPriorityDisplayName(selectedIncidentForDetails.Prioridad)
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Categoría</label>
+                            <p class="form-control-static border rounded p-2 bg-light">@selectedIncidentForDetails.CategoriaNombre</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Servicio</label>
+                            <p class="form-control-static border rounded p-2 bg-light">@(selectedIncidentForDetails.ServicioNombre ?? "No especificado")</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Reportado por</label>
+                            <p class="form-control-static border rounded p-2 bg-light">@selectedIncidentForDetails.ReportadoPor</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Asignado a</label>
+                            <p class="form-control-static border rounded p-2 bg-light">@(selectedIncidentForDetails.AsignadoA ?? "No asignado")</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Fecha de Reporte</label>
+                            <p class="form-control-static border rounded p-2 bg-light">@selectedIncidentForDetails.FechaReporte.ToString("dd/MM/yyyy HH:mm")</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Fecha de Asignación</label>
+                            <p class="form-control-static border rounded p-2 bg-light">@(selectedIncidentForDetails.FechaAsignacion?.ToString("dd/MM/yyyy HH:mm") ?? "No asignado")</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Descripción</label>
+                        <div class="border rounded p-3 bg-light">
+                            <p class="mb-0">@selectedIncidentForDetails.Descripcion</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseIncidentDetailsModal">
+                        <i class="fas fa-times me-2"></i>
+                        Cerrar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- Modal para Asignar a Técnico -->
+@if (showAssignTechnicianModal && selectedIncidentForAssign != null)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #17a2b8 0%, #138496 100%);">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-user-plus me-2"></i>
+                        Asignar Técnico - #@selectedIncidentForAssign.NumeroIncidente
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseAssignTechnicianModal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Título:</strong> @selectedIncidentForAssign.Titulo<br />
+                        <strong>Prioridad:</strong> @GetPriorityDisplayName(selectedIncidentForAssign.Prioridad)
+                    </div>
+                    
+                    @if (isLoadingTechnicians)
+                    {
+                        <div class="text-center py-3">
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Cargando técnicos...</span>
+                            </div>
+                            <p class="mt-2">Cargando técnicos disponibles...</p>
+                        </div>
+                    }
+                    else if (availableTechnicians != null && availableTechnicians.Any())
+                    {
+                        <div class="mb-3">
+                            <label for="selectTechnician" class="form-label fw-bold">
+                                <i class="fas fa-user me-2"></i>
+                                Seleccionar Técnico *
+                            </label>
+                            <select class="form-select" id="selectTechnician" @bind="selectedTechnicianId">
+                                <option value="0">-- Seleccione un técnico --</option>
+                                @foreach (var tech in availableTechnicians)
+                                {
+                                    <option value="@tech.Id">@tech.FirstName @tech.LastName (@tech.Email)</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No hay técnicos disponibles en este momento.
+                        </div>
+                    }
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseAssignTechnicianModal">
+                        <i class="fas fa-times me-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" @onclick="AssignTechnicianToIncident" 
+                            disabled="@(isProcessing || selectedTechnicianId == 0 || isLoadingTechnicians)">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span>Asignando...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-user-check me-2"></i>
+                            <span>Asignar Técnico</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- Modal para Resolver Incidente -->
+@if (showResolveModal && selectedIncidentForAction != null)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #28a745 0%, #218838 100%);">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-check-circle me-2"></i>
+                        Resolver Incidente #@selectedIncidentForAction.NumeroIncidente
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseResolveModal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Título:</strong> @selectedIncidentForAction.Titulo<br />
+                        <strong>Estado Actual:</strong> @GetEstadoDisplayName(selectedIncidentForAction.Estado)
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="resolveComment" class="form-label fw-bold">
+                            <i class="fas fa-comment me-2"></i>
+                            Solución Implementada *
+                        </label>
+                        <textarea class="form-control" id="resolveComment" rows="4" 
+                                @bind="solucionIncidente" 
+                                placeholder="Describa la solución implementada y los pasos realizados...">
+                        </textarea>
+                        <div class="form-text">Explique cómo se resolvió el incidente y qué acciones se tomaron.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseResolveModal">
+                        <i class="fas fa-times me-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-success" @onclick="ResolveIncident" 
+                            disabled="@(isProcessing || string.IsNullOrWhiteSpace(solucionIncidente))">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span>Resolviendo...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-check-circle me-2"></i>
+                            <span>Resolver Incidente</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- Modal para Escalar a Admin -->
+@if (showEscalateModal && selectedIncidentForEscalate != null)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #ffc107 0%, #ff9800 100%);">
+                    <h5 class="modal-title text-dark">
+                        <i class="fas fa-arrow-up me-2"></i>
+                        Escalar a Administrador - #@selectedIncidentForEscalate.NumeroIncidente
+                    </h5>
+                    <button type="button" class="btn-close" @onclick="CloseEscalateModal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Importante:</strong> Este incidente será escalado al administrador para su revisión. Se enviará un correo y una notificación en el sistema.
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Título:</strong> @selectedIncidentForEscalate.Titulo<br />
+                        <strong>Prioridad:</strong> @GetPriorityDisplayName(selectedIncidentForEscalate.Prioridad)
+                    </div>
+
+                    @if (availableAdmins != null && availableAdmins.Any())
+                    {
+                        <div class="mb-3">
+                            <label for="selectAdmin" class="form-label fw-bold">
+                                <i class="fas fa-user-tie me-2"></i>
+                                Seleccionar Administrador *
+                            </label>
+                            <select class="form-select" id="selectAdmin" @bind="selectedAdminId">
+                                <option value="0">-- Seleccione un administrador --</option>
+                                @foreach (var admin in availableAdmins)
+                                {
+                                    <option value="@admin.Id">@admin.FirstName @admin.LastName (@admin.Email)</option>
+                                }
+                            </select>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="alert alert-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i>
+                            No hay administradores disponibles en este momento.
+                        </div>
+                    }
+                    
+                    <div class="mb-3">
+                        <label for="escalateReason" class="form-label fw-bold">
+                            <i class="fas fa-comment-alt me-2"></i>
+                            Motivo del Escalamiento *
+                        </label>
+                        <textarea class="form-control" id="escalateReason" rows="4" 
+                                @bind="motivoEscalamiento" 
+                                placeholder="Explique por qué es necesario escalar este incidente al administrador...">
+                        </textarea>
+                        <div class="form-text">Detalle los motivos del escalamiento y la gravedad de la situación.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseEscalateModal">
+                        <i class="fas fa-times me-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-warning" @onclick="EscalateToAdmin" 
+                            disabled="@(isProcessing || string.IsNullOrWhiteSpace(motivoEscalamiento) || selectedAdminId == 0)">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span>Escalando...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-arrow-up me-2"></i>
+                            <span>Escalar a Admin</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<!-- Modal para Crear Nuevo Incidente -->
+@if (showCreateIncidentModal)
+{
+    <div class="modal fade show" style="display: block;" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);">
+                    <h5 class="modal-title text-white">
+                        <i class="fas fa-plus-circle me-2"></i>
+                        Crear Nuevo Incidente
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" @onclick="CloseCreateIncidentModal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-section">
+                        <div class="section-header">
+                            <i class="fas fa-clipboard-list me-2"></i>
+                            <h6>Información del Incidente</h6>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Título del Incidente *</label>
+                                    <input type="text" @bind="newIncident.Titulo" 
+                                           class="form-control" 
+                                           placeholder="Ej: Error en sistema de login, Impresora no funciona..." 
+                                           required />
+                                    <small class="form-text text-muted">Sea específico y descriptivo</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Prioridad *</label>
+                                    <select @bind="newIncident.Prioridad" class="form-select" required>
+                                        <option value="@PrioridadIncidente.Baja">🟢 Baja</option>
+                                        <option value="@PrioridadIncidente.Media">🟡 Media</option>
+                                        <option value="@PrioridadIncidente.Alta">🟠 Alta</option>
+                                        <option value="@PrioridadIncidente.Critica">🔴 Crítica</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Categoría del Incidente *</label>
+                                    <select @bind="newIncident.CategoriaId" @bind:after="OnCategoriaChangedAfter" class="form-select" required>
+                                        <option value="0">-- Seleccione una categoría --</option>
+                                        @if (categorias.Any())
+                                        {
+                                            @foreach (var categoria in categorias)
+                                            {
+                                                <option value="@categoria.Id">
+                                                    📁 @categoria.Nombre
+                                                    @if (!string.IsNullOrEmpty(categoria.Descripcion))
+                                                    {
+                                                        <text> - @categoria.Descripcion</text>
+                                                    }
+                                                </option>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <option value="0" disabled>⏳ Cargando categorías...</option>
+                                        }
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Servicio Específico</label>
+                                    <select @bind="newIncident.ServicioId" class="form-select">
+                                        <option value="">-- Seleccione un servicio --</option>
+                                        @if (filteredServicios.Any())
+                                        {
+                                            @foreach (var servicio in filteredServicios)
+                                            {
+                                                <option value="@servicio.Id">
+                                                    🔧 @servicio.Nombre
+                                                    @if (!string.IsNullOrEmpty(servicio.ResponsableArea))
+                                                    {
+                                                        <text> (@servicio.ResponsableArea)</text>
+                                                    }
+                                                </option>
+                                            }
+                                        }
+                                        else if (newIncident.CategoriaId > 0)
+                                        {
+                                            <option value="" disabled>⏳ Cargando servicios...</option>
+                                        }
+                                        else
+                                        {
+                                            <option value="" disabled>Primero seleccione una categoría</option>
+                                        }
+                                    </select>
+                                    <small class="form-text text-muted">Los servicios se filtran según la categoría seleccionada</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sección de Descripción -->
+                    <div class="form-section">
+                        <div class="section-header">
+                            <i class="fas fa-file-alt me-2"></i>
+                            <h6>Descripción Detallada</h6>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Descripción del Problema *</label>
+                            <textarea @bind="newIncident.Descripcion" 
+                                      class="form-control" 
+                                      rows="4" 
+                                      placeholder="Describa detalladamente el problema:&#10;• ¿Qué estaba intentando hacer?&#10;• ¿Qué error o problema encontró?&#10;• ¿Cuándo comenzó el problema?&#10;• ¿Ha intentado alguna solución?" 
+                                      required></textarea>
+                            <small class="form-text text-muted">
+                                Proporcione tantos detalles como sea posible para una resolución más rápida
+                            </small>
+                        </div>
+                    </div>
+
+                    <!-- Información de Proceso -->
+                    <div class="alert alert-info">
+                        <strong>Proceso de Creación:</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>El incidente será creado con estado <span class="badge bg-primary">Abierto</span></li>
+                            <li>Se asignará automáticamente según la categoría y prioridad</li>
+                            <li>Recibirá una notificación de confirmación</li>
+                            <li>Podrá hacer seguimiento desde este panel</li>
+                        </ul>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" @onclick="CloseCreateIncidentModal">
+                        <i class="fas fa-times me-2"></i>
+                        Cancelar
+                    </button>
+                    <button type="button" class="btn btn-primary" @onclick="CreateIncident" disabled="@isProcessing">
+                        @if (isProcessing)
+                        {
+                            <span class="spinner-border spinner-border-sm me-2" role="status"></span>
+                            <span>Creando...</span>
+                        }
+                        else
+                        {
+                            <i class="fas fa-plus-circle me-2"></i>
+                            <span>Crear Incidente</span>
+                        }
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
 @code {
-    private SupervisorDashboardData dashboardData = new();
+    private string currentView = "dashboard";
+    private DashboardDataDto dashboardData = new();
+    private KnowledgeBaseStatsDto kbStats = new();
+    private List<IncidenteListDto> incidentes = new();
+    private List<IncidenteListDto> filteredIncidentes = new();
+    private List<KnowledgeBaseArticleDto> kbArticles = new();
+    private List<UsuarioListDto> availableTechnicians = new();
+    private List<UsuarioListDto> availableAdmins = new();
     
+    private string incidentFilter = "all";
+    private string priorityFilter = "all";
+    private bool isLoading = false;
+    private bool isLoadingIncidents = false;
+    private bool isLoadingKB = false;
+    private bool isLoadingTechnicians = false;
+    private bool isProcessing = false;
+    
+    // Modales
+    private bool showIncidentDetailsModal = false;
+    private bool showAssignTechnicianModal = false;
+    private bool showResolveModal = false;
+    private bool showEscalateModal = false;
+    private bool showCreateIncidentModal = false;
+    
+    // Incidentes seleccionados
+    private IncidenteListDto? selectedIncidentForDetails;
+    private IncidenteListDto? selectedIncidentForAssign;
+    private IncidenteListDto? selectedIncidentForAction;
+    private IncidenteListDto? selectedIncidentForEscalate;
+    
+    // Datos de formularios
+    private int selectedTechnicianId = 0;
+    private int selectedAdminId = 0;
+    private string solucionIncidente = string.Empty;
+    private string motivoEscalamiento = string.Empty;
+    
+    // Crear incidente
+    private List<CategoriaIncidenteDto> categorias = new();
+    private List<ServicioListDto> servicios = new();
+    private List<ServicioListDto> filteredServicios = new();
+    private IncidentFormModel newIncident = new();
+
     protected override async Task OnInitializedAsync()
     {
         await LoadDashboardData();
-        await InitializeCharts();
+        await LoadIncidents();
+        await LoadKnowledgeBase();
     }
 
     private async Task LoadDashboardData()
     {
-        // TODO: Replace with actual API calls
-        dashboardData = new SupervisorDashboardData
+        try
         {
-            CriticalIncidents = 3,
-            ActiveTechnicians = 6,
-            TotalWorkload = 24,
-            OverallSlaCompliance = 89.5,
-            PendingApprovals = 2,
-            // Sample data...
-            CriticalAlerts = new List<CriticalAlert>
+            isLoading = true;
+            dashboardData = await Http.GetFromJsonAsync<DashboardDataDto>("/api/dashboard/supervisor") ?? new();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading dashboard data: {ex.Message}");
+        }
+        finally
+        {
+            isLoading = false;
+        }
+    }
+
+    private async Task LoadIncidents()
+    {
+        try
+        {
+            isLoadingIncidents = true;
+            incidentes = await Http.GetFromJsonAsync<List<IncidenteListDto>>("/api/dashboard/supervisor/incidentes") ?? new();
+            FilterIncidentsChanged();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading incidents: {ex.Message}");
+            incidentes = new List<IncidenteListDto>();
+        }
+        finally
+        {
+            isLoadingIncidents = false;
+        }
+    }
+
+    private async Task LoadKnowledgeBase()
+    {
+        try
+        {
+            isLoadingKB = true;
+            // TODO: Reemplazar con llamada real a API cuando esté disponible
+            // kbArticles = await Http.GetFromJsonAsync<List<KnowledgeBaseArticleDto>>("/api/knowledge-base/supervisor") ?? new();
+            
+            // Datos de prueba temporales
+            kbArticles = new List<KnowledgeBaseArticleDto>();
+            
+            kbStats = new KnowledgeBaseStatsDto
             {
-                new() { Id = 1, Title = "INC-001234", Description = "Servidor de correo caído", TimeRemaining = TimeSpan.FromMinutes(15), AssignedTo = "Carlos Pérez" },
-                new() { Id = 2, Title = "INC-001235", Description = "Falla red edificio principal", TimeRemaining = TimeSpan.FromHours(-0.5), AssignedTo = "Ana García" }
-            },
-            TeamMembers = new List<TeamMember>
+                TotalArticulos = 0,
+                PendingReview = 0
+            };
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading knowledge base: {ex.Message}");
+        }
+        finally
+        {
+            isLoadingKB = false;
+        }
+    }
+
+    private void FilterIncidentsChanged()
+    {
+        filteredIncidentes = incidentes.Where(i =>
+        {
+            bool stateMatch = incidentFilter == "all" || 
+                            i.Estado.ToString().ToLower() == incidentFilter.Replace("-", "");
+            
+            bool priorityMatch = priorityFilter == "all" || 
+                               i.Prioridad.ToString().ToLower() == priorityFilter;
+            
+            return stateMatch && priorityMatch;
+        }).ToList();
+    }
+
+    private void ShowTechniciansView()
+    {
+        currentView = "technicians";
+    }
+
+    private void ShowIncidentsView()
+    {
+        currentView = "incidents";
+    }
+
+    private void ShowKnowledgeBaseView()
+    {
+        currentView = "knowledge-base";
+    }
+
+    private void BackToDashboard()
+    {
+        currentView = "dashboard";
+    }
+
+    // ==================== Ver Detalles ====================
+    private void ViewIncidentDetails(IncidenteListDto incidente)
+    {
+        selectedIncidentForDetails = incidente;
+        showIncidentDetailsModal = true;
+    }
+
+    private void CloseIncidentDetailsModal()
+    {
+        showIncidentDetailsModal = false;
+        selectedIncidentForDetails = null;
+    }
+
+    // ==================== Asignar Técnico ====================
+    private async Task ShowAssignModal(IncidenteListDto incidente)
+    {
+        selectedIncidentForAssign = incidente;
+        selectedTechnicianId = 0;
+        showAssignTechnicianModal = true;
+        await LoadAvailableTechnicians();
+    }
+
+    private void CloseAssignTechnicianModal()
+    {
+        showAssignTechnicianModal = false;
+        selectedIncidentForAssign = null;
+        selectedTechnicianId = 0;
+    }
+
+    private async Task LoadAvailableTechnicians()
+    {
+        try
+        {
+            isLoadingTechnicians = true;
+            availableTechnicians = await Http.GetFromJsonAsync<List<UsuarioListDto>>("/api/users/assignable") ?? new();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading technicians: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("alert", "Error al cargar técnicos disponibles");
+        }
+        finally
+        {
+            isLoadingTechnicians = false;
+        }
+    }
+
+    private async Task AssignTechnicianToIncident()
+    {
+        if (selectedIncidentForAssign == null || selectedTechnicianId == 0)
+            return;
+
+        try
+        {
+            isProcessing = true;
+            var response = await Http.PutAsJsonAsync($"/api/incidentes/{selectedIncidentForAssign.Id}/asignar", 
+                new { AsignadoAId = selectedTechnicianId });
+
+            if (response.IsSuccessStatusCode)
             {
-                new() { Id = 1, Name = "Carlos Pérez", Specialty = "Redes", Status = TechnicianStatus.Available, AssignedIncidents = 4, ResolvedToday = 2, AvgResolutionTime = TimeSpan.FromHours(2.5) },
-                new() { Id = 2, Name = "Ana García", Specialty = "Sistemas", Status = TechnicianStatus.Busy, AssignedIncidents = 6, ResolvedToday = 1, AvgResolutionTime = TimeSpan.FromHours(3.2) }
+                await JSRuntime.InvokeVoidAsync("alert", "Técnico asignado exitosamente");
+                CloseAssignTechnicianModal();
+                await LoadIncidents();
             }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                await JSRuntime.InvokeVoidAsync("alert", $"Error al asignar técnico: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    // ==================== Resolver Incidente ====================
+    private void ShowResolveModal(IncidenteListDto incidente)
+    {
+        selectedIncidentForAction = incidente;
+        solucionIncidente = string.Empty;
+        showResolveModal = true;
+    }
+
+    private void CloseResolveModal()
+    {
+        showResolveModal = false;
+        selectedIncidentForAction = null;
+        solucionIncidente = string.Empty;
+    }
+
+    private async Task ResolveIncident()
+    {
+        if (selectedIncidentForAction == null || string.IsNullOrWhiteSpace(solucionIncidente))
+            return;
+
+        try
+        {
+            isProcessing = true;
+            var response = await Http.PatchAsJsonAsync($"/api/incidentes/{selectedIncidentForAction.Id}/resolver", 
+                new { Solucion = solucionIncidente });
+
+            if (response.IsSuccessStatusCode)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Incidente resuelto exitosamente");
+                CloseResolveModal();
+                await LoadIncidents();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                await JSRuntime.InvokeVoidAsync("alert", $"Error al resolver incidente: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    // ==================== Escalar a Admin ====================
+    private async Task ShowEscalateModal(IncidenteListDto incidente)
+    {
+        selectedIncidentForEscalate = incidente;
+        motivoEscalamiento = string.Empty;
+        await LoadAvailableAdministrators();
+        showEscalateModal = true;
+    }
+
+    private void CloseEscalateModal()
+    {
+        showEscalateModal = false;
+        selectedIncidentForEscalate = null;
+        motivoEscalamiento = string.Empty;
+        selectedAdminId = 0;
+    }
+
+    private async Task LoadAvailableAdministrators()
+    {
+        try
+        {
+            var allUsers = await Http.GetFromJsonAsync<List<UsuarioListDto>>("/api/users/all") ?? new();
+            availableAdmins = allUsers.Where(u => u.TipoUsuario == IncidentesFISEI.Domain.Enums.TipoUsuario.Administrador && u.IsActive).ToList();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading administrators: {ex.Message}");
+            await JSRuntime.InvokeVoidAsync("alert", "Error al cargar administradores disponibles");
+        }
+    }
+
+    private async Task EscalateToAdmin()
+    {
+        if (selectedIncidentForEscalate == null || string.IsNullOrWhiteSpace(motivoEscalamiento) || selectedAdminId == 0)
+            return;
+
+        try
+        {
+            isProcessing = true;
+            var response = await Http.PostAsJsonAsync($"/api/incidentes/{selectedIncidentForEscalate.Id}/escalar-admin", 
+                new { AdministradorId = selectedAdminId, Motivo = motivoEscalamiento });
+
+            if (response.IsSuccessStatusCode)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Incidente escalado al administrador.\nSe ha enviado un correo y una notificación en el sistema al administrador.");
+                CloseEscalateModal();
+                await LoadIncidents();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                await JSRuntime.InvokeVoidAsync("alert", $"Error al escalar incidente: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private void ViewArticleDetails(KnowledgeBaseArticleDto article)
+    {
+        Navigation.NavigateTo($"/knowledge-base/{article.Id}");
+    }
+
+    private async Task EditArticleAsync(KnowledgeBaseArticleDto article)
+    {
+        Navigation.NavigateTo($"/knowledge-base/edit/{article.Id}");
+    }
+
+    private void ShowCreateArticleModal()
+    {
+        Navigation.NavigateTo("/knowledge-base/create");
+    }
+
+    private bool PuedeResolverIncidente(IncidenteListDto incidente)
+    {
+        return incidente.Estado != EstadoIncidente.Cerrado && 
+               incidente.Estado != EstadoIncidente.Resuelto;
+    }
+
+    // ==================== Crear Incidente ====================
+    private async Task ShowCreateIncidentModal()
+    {
+        await LoadCategorias();
+        await LoadAllServicios();
+        
+        newIncident = new IncidentFormModel
+        {
+            Prioridad = PrioridadIncidente.Media,
+            ReportadoPor = UserSession?.UserId ?? 0
         };
+        showCreateIncidentModal = true;
     }
 
-    private async Task InitializeCharts()
+    private void CloseCreateIncidentModal()
     {
-        await JSRuntime.InvokeVoidAsync("initializeSupervisorCharts");
+        showCreateIncidentModal = false;
+        newIncident = new IncidentFormModel();
+        filteredServicios.Clear();
     }
 
-    // Action methods
-    private async Task EscalateIncident(int incidentId) => await JSRuntime.InvokeVoidAsync("escalateIncident", incidentId);
-    private async Task ReassignIncident(int incidentId) => await JSRuntime.InvokeVoidAsync("showReassignModal", incidentId);
-    private async Task ViewMemberDetails(int memberId) => await JSRuntime.InvokeVoidAsync("navigateTo", $"/supervisor/team/{memberId}");
-    private async Task AssignToMember(int memberId) => await JSRuntime.InvokeVoidAsync("showAssignModal", memberId);
-    private async Task AutoBalanceWorkload() => await JSRuntime.InvokeVoidAsync("autoBalanceWorkload");
-    private async Task ShowReassignmentModal() => await JSRuntime.InvokeVoidAsync("showReassignmentModal");
-    private async Task ShowEscalationRules() => await JSRuntime.InvokeVoidAsync("navigateTo", "/supervisor/escalation-rules");
-    private async Task ApproveRequest(int approvalId) => await JSRuntime.InvokeVoidAsync("approveRequest", approvalId);
-    private async Task RejectRequest(int approvalId) => await JSRuntime.InvokeVoidAsync("rejectRequest", approvalId);
-    private async Task ViewApprovalDetails(int approvalId) => await JSRuntime.InvokeVoidAsync("navigateTo", $"/supervisor/approvals/{approvalId}");
-
-    // Helper methods
-    private string GetSlaClass(TimeSpan timeRemaining) => timeRemaining.TotalHours < 0 ? "overdue" : timeRemaining.TotalHours < 1 ? "critical" : "warning";
-    private string GetSlaComplianceColor(double compliance) => compliance >= 95 ? "success" : compliance >= 85 ? "warning" : "danger";
-    private string GetSlaComplianceClass(double compliance) => compliance >= 95 ? "excellent" : compliance >= 85 ? "good" : "poor";
-    private string GetStatusClass(TechnicianStatus status) => status.ToString().ToLower();
-    private string GetStatusText(TechnicianStatus status) => status switch
+    private async Task LoadCategorias()
     {
-        TechnicianStatus.Available => "Disponible",
-        TechnicianStatus.Busy => "Ocupado",
-        TechnicianStatus.Offline => "Desconectado",
+        try
+        {
+            var response = await Http.GetFromJsonAsync<List<CategoriaIncidenteDto>>("/api/categorias");
+            categorias = response ?? new List<CategoriaIncidenteDto>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar categorías: {ex.Message}");
+            categorias = new List<CategoriaIncidenteDto>();
+        }
+    }
+
+    private async Task LoadAllServicios()
+    {
+        try
+        {
+            var response = await Http.GetFromJsonAsync<List<ServicioListDto>>("/api/servicios");
+            servicios = response ?? new List<ServicioListDto>();
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al cargar servicios: {ex.Message}");
+            servicios = new List<ServicioListDto>();
+        }
+    }
+
+    private void OnCategoriaChangedAfter()
+    {
+        if (newIncident.CategoriaId > 0)
+        {
+            filteredServicios = servicios.Where(s => s.CategoriaId == newIncident.CategoriaId && s.IsActive).ToList();
+        }
+        else
+        {
+            filteredServicios.Clear();
+        }
+        
+        newIncident.ServicioId = null;
+        StateHasChanged();
+    }
+
+    private async Task CreateIncident()
+    {
+        if (isProcessing) return;
+        
+        try
+        {
+            isProcessing = true;
+
+            // Validaciones básicas
+            if (string.IsNullOrWhiteSpace(newIncident.Titulo))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "El título es requerido");
+                return;
+            }
+            
+            if (string.IsNullOrWhiteSpace(newIncident.Descripcion))
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "La descripción es requerida");
+                return;
+            }
+            
+            if (newIncident.CategoriaId <= 0)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Debe seleccionar una categoría");
+                return;
+            }
+
+            // Crear el DTO para enviar a la API
+            var createDto = new
+            {
+                Titulo = newIncident.Titulo,
+                Descripcion = newIncident.Descripcion,
+                Prioridad = newIncident.Prioridad,
+                CategoriaId = newIncident.CategoriaId,
+                ServicioId = newIncident.ServicioId,
+                ReportadoPor = newIncident.ReportadoPor
+            };
+
+            var response = await Http.PostAsJsonAsync("/api/incidentes", createDto);
+
+            if (response.IsSuccessStatusCode)
+            {
+                await JSRuntime.InvokeVoidAsync("alert", "Incidente creado exitosamente");
+                CloseCreateIncidentModal();
+                await LoadIncidents();
+                await LoadDashboardData();
+            }
+            else
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                await JSRuntime.InvokeVoidAsync("alert", $"Error al crear incidente: {error}");
+            }
+        }
+        catch (Exception ex)
+        {
+            await JSRuntime.InvokeVoidAsync("alert", $"Error: {ex.Message}");
+        }
+        finally
+        {
+            isProcessing = false;
+        }
+    }
+
+    private string GetStatusClass(string status) => status.ToLower() switch
+    {
+        "disponible" => "available",
+        "ocupado" => "busy",
+        "ausente" => "absent",
+        _ => "unknown"
+    };
+
+    private string GetStatusText(string status) => status switch
+    {
+        "Disponible" => "Disponible",
+        "Ocupado" => "Ocupado",
+        "Ausente" => "Ausente",
         _ => "Desconocido"
     };
-    private string GetApprovalIcon(ApprovalType type) => type switch
+
+    private string GetEstadoBadgeClass(EstadoIncidente estado) => estado switch
     {
-        ApprovalType.Escalation => "fas fa-level-up-alt",
-        ApprovalType.PriorityChange => "fas fa-exclamation-triangle",
-        ApprovalType.Closure => "fas fa-check-circle",
-        _ => "fas fa-question"
+        EstadoIncidente.Abierto => "bg-info",
+        EstadoIncidente.EnProgreso => "bg-warning",
+        EstadoIncidente.EnEspera => "bg-secondary",
+        EstadoIncidente.Resuelto => "bg-success",
+        EstadoIncidente.Cerrado => "bg-dark",
+        EstadoIncidente.Escalado => "bg-danger",
+        _ => "bg-secondary"
     };
-    private string FormatTimeRemaining(TimeSpan timeRemaining) => timeRemaining.TotalHours < 0 ? "VENCIDO" : $"{(int)timeRemaining.TotalHours}h {timeRemaining.Minutes}m";
-    private string FormatDate(DateTime date) => (DateTime.Now - date).TotalDays < 1 ? "Hoy" : $"Hace {(int)(DateTime.Now - date).TotalDays}d";
 
-    // Data classes
-    public class SupervisorDashboardData
+    private string GetEstadoDisplayName(EstadoIncidente estado) => estado switch
     {
-        public int CriticalIncidents { get; set; }
-        public int ActiveTechnicians { get; set; }
-        public int TotalWorkload { get; set; }
-        public double OverallSlaCompliance { get; set; }
-        public int PendingApprovals { get; set; }
-        public List<CriticalAlert>? CriticalAlerts { get; set; }
-        public List<TeamMember>? TeamMembers { get; set; }
-        public List<SlaCategory>? SlaByCategory { get; set; }
-        public List<ApprovalItem>? PendingApprovalItems { get; set; }
-    }
+        EstadoIncidente.Abierto => "Abierto",
+        EstadoIncidente.EnProgreso => "En Progreso",
+        EstadoIncidente.EnEspera => "En Espera",
+        EstadoIncidente.Resuelto => "Resuelto",
+        EstadoIncidente.Cerrado => "Cerrado",
+        EstadoIncidente.Escalado => "Escalado",
+        _ => "Desconocido"
+    };
 
-    public class CriticalAlert
+    private string GetPriorityDisplayName(PrioridadIncidente prioridad) => prioridad switch
     {
-        public int Id { get; set; }
-        public string Title { get; set; } = "";
-        public string Description { get; set; } = "";
-        public TimeSpan TimeRemaining { get; set; }
-        public string AssignedTo { get; set; } = "";
-    }
+        PrioridadIncidente.Critica => "Crítica",
+        PrioridadIncidente.Alta => "Alta",
+        PrioridadIncidente.Media => "Media",
+        PrioridadIncidente.Baja => "Baja",
+        _ => "Desconocida"
+    };
 
-    public class TeamMember
+    private string GetPriorityIcon(PrioridadIncidente prioridad) => prioridad switch
     {
-        public int Id { get; set; }
-        public string Name { get; set; } = "";
-        public string Specialty { get; set; } = "";
-        public TechnicianStatus Status { get; set; }
-        public int AssignedIncidents { get; set; }
-        public int ResolvedToday { get; set; }
-        public TimeSpan AvgResolutionTime { get; set; }
-    }
+        PrioridadIncidente.Critica => "fas fa-fire",
+        PrioridadIncidente.Alta => "fas fa-arrow-up",
+        PrioridadIncidente.Media => "fas fa-minus",
+        PrioridadIncidente.Baja => "fas fa-arrow-down",
+        _ => "fas fa-circle"
+    };
 
-    public class SlaCategory
+    private string GetPriorityInlineStyle(PrioridadIncidente prioridad) => prioridad switch
     {
-        public string Name { get; set; } = "";
-        public double Compliance { get; set; }
-        public int OnTime { get; set; }
-        public int Overdue { get; set; }
-        public int NearDeadline { get; set; }
-    }
+        PrioridadIncidente.Critica => "background: linear-gradient(135deg, #dc3545, #c82333); color: white;",
+        PrioridadIncidente.Alta => "background: linear-gradient(135deg, #fd7e14, #e83e8c); color: white;",
+        PrioridadIncidente.Media => "background: linear-gradient(135deg, #ffc107, #fd7e14); color: #333;",
+        PrioridadIncidente.Baja => "background: linear-gradient(135deg, #28a745, #20c997); color: white;",
+        _ => "background: #6c757d; color: white;"
+    };
 
-    public class ApprovalItem
+    // Incident Form Model
+    public class IncidentFormModel
     {
         public int Id { get; set; }
-        public string Title { get; set; } = "";
-        public string Description { get; set; } = "";
-        public string RequestedBy { get; set; } = "";
-        public DateTime RequestedAt { get; set; }
-        public ApprovalType Type { get; set; }
+        public string Titulo { get; set; } = string.Empty;
+        public string Descripcion { get; set; } = string.Empty;
+        public EstadoIncidente Estado { get; set; } = EstadoIncidente.Abierto;
+        public PrioridadIncidente Prioridad { get; set; } = PrioridadIncidente.Media;
+        public int CategoriaId { get; set; }
+        public int? ServicioId { get; set; }
+        public int ReportadoPor { get; set; } = 1;
+        public int? AsignadoAId { get; set; }
     }
-
-    public enum TechnicianStatus { Available, Busy, Offline }
-    public enum ApprovalType { Escalation, PriorityChange, Closure }
 }
+

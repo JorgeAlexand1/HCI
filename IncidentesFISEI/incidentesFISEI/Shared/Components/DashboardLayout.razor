@@ -44,6 +44,15 @@
                             <small class="user-role">@GetUserRole()</small>
                         </div>
                     </div>
+                    
+                    <!-- Notification Center -->
+                    @if (UserSession.CurrentUser != null)
+                    {
+                        <div class="notification-wrapper me-3">
+                            <NotificationCenter UserId="@UserSession.CurrentUser.Id" />
+                        </div>
+                    }
+                    
                     <button @onclick="Logout" class="btn btn-outline-light btn-sm logout-btn">
                         <i class="fas fa-sign-out-alt me-1"></i>
                         Cerrar Sesión

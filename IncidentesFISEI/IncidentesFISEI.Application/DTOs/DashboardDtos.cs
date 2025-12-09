@@ -79,4 +79,38 @@ namespace IncidentesFISEI.Application.DTOs
         public double TiempoPromedioResolucion { get; set; }
         public double PorcentajeCumplimientoSla { get; set; }
     }
+
+    // DTOs para el Dashboard de Supervisor
+    public class DashboardDataDto
+    {
+        public int ActiveTechnicians { get; set; }
+        public int CriticalIncidents { get; set; }
+        public int TotalWorkload { get; set; }
+        public List<TechnicianDto> TeamMembers { get; set; } = new();
+    }
+
+    public class TechnicianDto
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Specialty { get; set; } = string.Empty;
+        public string Status { get; set; } = string.Empty;
+        public int AssignedIncidents { get; set; }
+        public int ResolvedToday { get; set; }
+    }
+
+    public class KnowledgeBaseStatsDto
+    {
+        public int TotalArticulos { get; set; }
+        public int PendingReview { get; set; }
+    }
+
+    public class KnowledgeBaseArticleDto
+    {
+        public int Id { get; set; }
+        public string Titulo { get; set; } = string.Empty;
+        public string Resumen { get; set; } = string.Empty;
+        public string Estado { get; set; } = string.Empty;
+        public string AutorNombre { get; set; } = string.Empty;
+        public DateTime FechaCreacion { get; set; }
+    }
 }

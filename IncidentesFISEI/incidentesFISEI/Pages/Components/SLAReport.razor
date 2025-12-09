@@ -1,0 +1,33 @@
+@if (SLAData != null)
+{
+    <div class="report-container">
+        <div class="report-header">
+            <h2><i class="fas fa-clock me-2"></i>Reporte de Cumplimiento SLA</h2>
+            <p class="report-date">Actualizado: @SLAData.UpdatedAt.ToString("dd/MM/yyyy HH:mm")</p>
+        </div>
+
+        <div class="report-stats">
+            <div class="stat-box">
+                <h3>Total de Incidentes</h3>
+                <p class="stat-value">@SLAData.TotalSLAMetric</p>
+            </div>
+            <div class="stat-box success">
+                <h3>SLA Cumplido</h3>
+                <p class="stat-value">@SLAData.SLAMet</p>
+            </div>
+            <div class="stat-box danger">
+                <h3>SLA Incumplido</h3>
+                <p class="stat-value">@SLAData.SLABreached</p>
+            </div>
+            <div class="stat-box info">
+                <h3>Porcentaje Cumplimiento</h3>
+                <p class="stat-value">@SLAData.CompliancePercentage.ToString("F1")%</p>
+            </div>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public dynamic SLAData { get; set; }
+}

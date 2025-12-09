@@ -54,6 +54,14 @@ public class Incidente : BaseEntity
     public int? ArticuloConocimientoId { get; set; }
     public ArticuloConocimiento? ArticuloConocimiento { get; set; }
     
+    // Relación con SLA
+    public int? ConfiguracionSLAId { get; set; }
+    public ConfiguracionSLA? ConfiguracionSLA { get; set; }
+    
+    // Tiempo de SLA asignado (en minutos) - almacenado al momento de creación
+    public int? TiempoRespuestaSLA { get; set; }
+    public int? TiempoResolucionSLA { get; set; }
+    
     // Navegación
     public ICollection<ComentarioIncidente> Comentarios { get; set; } = new List<ComentarioIncidente>();
     public ICollection<ArchivoAdjunto> ArchivosAdjuntos { get; set; } = new List<ArchivoAdjunto>();

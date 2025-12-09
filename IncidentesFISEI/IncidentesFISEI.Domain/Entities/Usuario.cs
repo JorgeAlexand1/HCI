@@ -16,6 +16,10 @@ public class Usuario : BaseEntity
     public bool IsEmailConfirmed { get; set; } = false;
     public DateTime? LastLoginAt { get; set; }
     
+    // Recuperación de contraseña
+    public string? PasswordResetToken { get; set; }
+    public DateTime? PasswordResetTokenExpiration { get; set; }
+    
     // Propiedades específicas para técnicos
     public string? Especialidad { get; set; }
     public int? AñosExperiencia { get; set; }

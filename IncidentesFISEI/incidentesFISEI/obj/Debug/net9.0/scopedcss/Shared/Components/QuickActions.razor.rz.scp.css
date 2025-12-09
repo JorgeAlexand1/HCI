@@ -72,8 +72,8 @@
 }
 
 .action-button.teacher-action:hover[b-9wyim7tetl] {
-    background: linear-gradient(135deg, #ffc107 0%, #d39e00 100%);
-    border-color: #ffc107;
+    background: linear-gradient(135deg, #722f37 0%, #5a252b 100%);
+    border-color: #722f37;
 }
 
 .action-button.student-action[b-9wyim7tetl] {
@@ -280,3 +280,5 @@
 .action-button:hover .action-tooltip[b-9wyim7tetl] {
     opacity: 1;
 }
+
+
